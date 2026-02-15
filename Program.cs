@@ -172,6 +172,8 @@ app.MapRazorPages();
 app.MapHub<ReportHub>("/reportHub");
 app.MapHub<UserActivityHub>("/userActivityHub");
 
+if (app.Environment.IsDevelopment())
+{
 try
 {
     using (var scope = app.Services.CreateScope())
@@ -301,5 +303,5 @@ catch (Exception ex)
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
     logger.LogError(ex, "An error occurred while seeding the database.");
 }
-
+}
 app.Run();
