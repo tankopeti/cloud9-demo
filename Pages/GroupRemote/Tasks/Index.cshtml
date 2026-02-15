@@ -1,0 +1,160 @@
+@page
+@model Cloud9_2.Pages.GroupRemote.Tasks.IndexModel
+@using Cloud9_2.Models
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Feladatok";
+    Layout = "_Layout";
+
+    var columns = new[] {
+       "Id","SiteName","City","CreatedByName","Title",
+       "TaskTypePMName","TaskPriorityPMName","CreatedDate",
+       "DueDate","AssignedToName","CompletedDate","TaskStatusPMName"
+    };
+
+    var columnWidths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Id", "80px" },
+        { "SiteName", "240px" },
+        { "City", "120px" },
+        { "CreatedByName", "160px" },
+        { "Title", "30%" },
+        { "TaskTypePMName", "120px" },
+        { "TaskPriorityPMName", "110px" },
+        { "CreatedDate", "140px" },
+        { "DueDate", "140px" },
+        { "AssignedToName", "160px" },
+        { "CompletedDate", "140px" },
+        { "TaskStatusPMName", "110px" },
+        { "Actions", "110px" }
+    };
+
+    var totalCols = columns.Length + 1; // + Actions
+}
+
+@await Html.PartialAsync("_GroupRemoteSidebar")
+
+<div class="right-content">
+    <div class="page-header-fixed-top">
+
+        <!-- Breadcrumb -->
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-body-tertiary rounded-3 p-2 mb-0">
+                    <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
+                    <li class="breadcrumb-item"><a href=/GroupRemote/Dashboard>Group Remote</a></li>
+                    <li class="breadcrumb-item active">Feladatok</li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newTaskModal">
+                + Új feladat
+            </button>
+
+            <div class="d-flex gap-2">
+
+                <!-- Keresés (GET -> reload) -->
+                <form method="get" asp-page="./Index" class="input-group input-group-sm" style="width: 250px;">
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Keresés..."
+                           name="SearchTerm"
+                           value="@Model.SearchTerm" />
+
+                    <input type="hidden" name="pageSize" value="20" />
+
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+
+                    @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                    {
+                        <a href="@Url.Page("./Index")" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-x"></i>
+                        </a>
+                    }
+                </form>
+
+                <!-- Rendezés (GET -> reload) -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                            type="button"
+                            data-bs-toggle="dropdown">
+                        <i class="bi bi-funnel"></i> Rendezés
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" asp-page="./Index" asp-route-sort="CreatedDate" asp-route-order="desc">Legújabb</a></li>
+                        <li><a class="dropdown-item" asp-page="./Index" asp-route-sort="Title" asp-route-order="asc">Cím A-Z</a></li>
+                        <li><a class="dropdown-item" asp-page="./Index" asp-route-sort="DueDate" asp-route-order="asc">Határidő</a></li>
+                        <li><a class="dropdown-item" asp-page="./Index" asp-route-sort="TaskStatusPMName" asp-route-order="asc">Státusz</a></li>
+                        <li><a class="dropdown-item" asp-page="./Index" asp-route-sort="TaskPriorityPMName" asp-route-order="asc">Prioritás</a></li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TABLE (Documents mintára) -->
+        <div class="table-dynamic-height" data-page-size="20">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="sticky-top custom-thead table-blur">
+                    <tr>
+                        @foreach (var column in columns)
+                        {
+                            var width = columnWidths.ContainsKey(column) ? columnWidths[column] : "auto";
+                            <th class="text-nowrap" style="width:@width">
+                                @(
+                                    column == "Id" ? "Azonosító" :
+                                    column == "SiteName" ? "Telephely név" :
+                                    column == "City" ? "Város" :
+                                    column == "CreatedByName" ? "Létrehozta" :
+                                    column == "Title" ? "Tárgy" :
+                                    column == "TaskTypePMName" ? "Bejelentés típusa" :
+                                    column == "TaskPriorityPMName" ? "Prioritás" :
+                                    column == "CreatedDate" ? "Létrehozás dátuma" :
+                                    column == "DueDate" ? "Beütemezve" :
+                                    column == "AssignedToName" ? "Technikus" :
+                                    column == "CompletedDate" ? "Lezárás dátuma" :
+                                    column == "TaskStatusPMName" ? "Státusz" : column
+                                )
+                            </th>
+                        }
+                        <th class="text-nowrap" style="width:@columnWidths["Actions"]">Műveletek</th>
+                    </tr>
+                </thead>
+
+                <!-- JS tölti -->
+                <tbody id="tasksTableBody">
+                    <tr>
+                        <td colspan="@totalCols" class="text-center py-5 text-muted">
+                            Betöltés...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- LOAD MORE (sticky) -->
+
+        <div id="loadMoreTasksContainer" class="text-center py-2">
+            <button id="loadMoreTasksBtn" class="btn btn-outline-primary btn-sm">
+                Több betöltése
+            </button>
+        </div>
+    </div>
+@await Html.PartialAsync("_TaskModals")
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;"></div>
+</div>
+
+@section Scripts {
+    <script src="~/js/Task/tasks.js"></script>
+    <script src="~/js/Task/fileattach.js"></script>
+    <script src="~/js/Task/taskLoadMore.js"></script>
+    <script src="~/js/Task/taskCreate.js"></script>
+}

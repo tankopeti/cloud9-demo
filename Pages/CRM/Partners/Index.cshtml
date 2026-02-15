@@ -1,0 +1,123 @@
+@page
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Identity
+@using Cloud9_2.Models
+@model Cloud9_2.Pages.CRM.Partners.IndexModel
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Partnerek";
+}
+
+@await Html.PartialAsync("_CRMSidebar")
+
+<div class="right-content">
+    <div class="page-header-fixed-top">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-body-tertiary rounded-3 p-2 mb-0">
+                    <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
+                    <li class="breadcrumb-item"><a href="../">CRM Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Partnerek</li>
+                    <li class="breadcrumb-item active" aria-current="page">@Model.Partners.Count of @Model.TotalRecords partner@(Model.TotalRecords != 1 ? "ek" : "") (Oldal @Model.CurrentPage / @Model.TotalPages)</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createPartnerModal">
+                    + Új Partner
+                </button>
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#advancedFilterModal">
+                    <i class="bi bi-funnel me-1"></i> Összetett szűrés
+                </button>
+                <button id="exportExcelBtn"
+                        class="btn btn-outline-success">
+                    <i class="bi bi-file-earmark-excel me-1"></i>
+                    Export Excel
+                </button>
+
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <form method="get" asp-page="./Index" class="input-group input-group-sm" style="width: 250px;">
+                    <input type="text" class="form-control" placeholder="Partnerek keresése..." id="searchInput" name="SearchTerm" value="@Model.SearchTerm">
+                    <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </form>
+                <div class="dropdown">
+                    <button id="partnerQuickFilterToggle"
+                            class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                            type="button"
+                            data-bs-toggle="dropdown">
+                        <i class="bi bi-funnel me-1"></i>Szűrő
+                    </button>
+
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" data-filter="all">Minden Partner</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="active">Aktív Partnerek</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+<div class="table-dynamic-height">
+    <table class="table table-striped table-hover mb-0">
+        <thead class="sticky-top custom-thead table-blur">
+            <tr>
+                <th>Név</th>
+                <th>Email</th>
+                <th>Telefonszám</th>
+                <th>Adószám</th>
+                <th>Címsor 1</th>
+                <th>Címsor 2</th>
+                <th>Város</th>
+                <th>Megye</th>
+                <th>Irányítószám</th>
+                <th>Státusz</th>
+                <th>Pénznem</th>
+                <th>Felelős</th>
+                <th class="text-center">Műveletek</th>
+            </tr>
+        </thead>
+        <tbody id="partnersTableBody">
+            <tr>
+                <td colspan="13" class="text-center py-5 text-muted">
+                    Betöltés...
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="loadMoreContainer" class="text-center py-2">
+    <button id="loadMoreBtn" class="btn btn-outline-primary btn-sm">
+        Több betöltése
+    </button>
+</div>
+
+
+
+    </div>
+
+    <!-- Include Modals -->
+    @await Html.PartialAsync("_Modals")
+
+    @section Scripts {
+        <script src="/js/utils.js"></script>
+        <script src="/js/tomSelectUtils.js"></script>
+        <script src="/js/Partner/loadStatuses.js" onerror="alert('Nem sikerült betölteni a loadStatuses.js fájlt.')"></script>
+        <script src="/js/Partner/advancedFilterTomSelect.js"></script>
+        <script src="/js/Partner/advancedFilter.js"></script>
+        <script src="/js/Partner/createPartner.js" onerror="alert('Nem sikerült betölteni a createPartner.js fájlt.')"></script>
+        <script src="/js/Partner/viewPartner.js" onerror="alert('Nem sikerült betölteni a viewPartner.js fájlt.')"></script>
+        <script src="/js/Partner/editPartner.js" onerror="alert('Nem sikerült betölteni a editPartner.js fájlt.')"></script>
+        <script src="/js/Partner/deletePartner.js" onerror="alert('Nem sikerült betölteni a deletePartner.js fájlt.')"></script>
+        <script src="/js/Partner/viewHistory.js" onerror="alert('Nem sikerült betölteni a viewHistory.js fájlt.')"></script>
+        @* <script src="/js/Partner/partnerFilter.js" onerror="alert('Nem sikerült betölteni az partners.js fájlt.')"></script> *@
+        @* <script src="/js/Partner/partnerQuickSearch.js"></script> *@
+        @* <script src="/js/Partner/partnerQuickStatusDropdown.js"></script> *@
+        <script src="/js/Partner/partnersIndex.js"></script>
+
+    }

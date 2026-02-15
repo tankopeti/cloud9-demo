@@ -1,0 +1,132 @@
+@page
+@model Cloud9_2.Pages.DocManagement.Contracts.IndexModel
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Szerződések";
+}
+
+@await Html.PartialAsync("_DocManSidebar")
+
+<div class="right-content">
+    <div class="page-header-fixed-top">
+
+        <!-- Breadcrumb -->
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-body-tertiary rounded-3 p-2 mb-0">
+                    <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
+                    <li class="breadcrumb-item"><a href="../">CRM Dashboard</a></li>
+                    <li class="breadcrumb-item active">Szerződések</li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Header actions -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createDocumentModal">
+                    + Új Dokumentum
+                </button>
+
+                <button class="btn btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#docFilterModal">
+                    <i class="bi bi-funnel me-2"></i>Szűrő
+                </button>
+
+                <span class="badge bg-success">
+                    Szerződés típusok (típusnév tartalmazza: „szerződés”)
+                </span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <form method="get"
+                      class="input-group input-group-sm"
+                      style="width: 250px;">
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Szerződések keresése..."
+                           name="searchTerm"
+                           value="@(Request.Query["searchTerm"].ToString())">
+                    <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-dynamic-height" data-page-size="@Model.PageSize">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="sticky-top custom-thead table-blur">
+                    <tr>
+                        <th>Dokumentum ID</th>
+                        <th>Fájlnév</th>
+                        <th>Partner</th>
+                        <th>Dátum</th>
+                        <th>Státusz</th>
+                        <th class="text-center">Műveletek</th>
+                    </tr>
+                </thead>
+
+                <tbody id="documentsTableBody">
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            Betöltés...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- LOAD MORE -->
+        <div id="loadMoreDocsContainer" class="text-center py-2">
+            <button id="loadMoreDocsBtn" class="btn btn-outline-primary btn-sm">
+                Több betöltése
+            </button>
+        </div>
+
+    </div>
+
+    <!-- CREATE / VIEW / EDIT modals -->
+    @await Html.PartialAsync("/Pages/DocManagement/Doc/_Modals.cshtml")
+
+    @section Scripts {
+
+        <!-- Contracts: automatikus "szerződés" dokumentumtípus -->
+        <script>
+            (function () {
+                const qs = new URLSearchParams(window.location.search);
+                if (qs.get('documentTypeId')) return;
+
+                fetch('/api/documenttypes/select?search=' + encodeURIComponent('szerződés'))
+                    .then(r => r.ok ? r.json() : [])
+                    .then(items => {
+                        if (!items || items.length === 0) return;
+
+                        const id = items[0].id;
+                        if (!id) return;
+
+                        const u = new URL(window.location.href);
+                        u.searchParams.set('documentTypeId', id);
+                        u.searchParams.set('pageNumber', '1');
+
+                        window.history.replaceState({}, '', u.toString());
+                        window.dispatchEvent(new CustomEvent('documents:reload'));
+                    })
+                    .catch(err => console.error('[Contracts] documentType load failed', err));
+            })();
+        </script>
+
+        <script src="~/js/Doc/documentFilter.js"></script>
+        <script src="~/js/Doc/docLoadMore.js"></script>
+        <script src="~/js/Doc/viewDocument.js"></script>
+        <script src="~/js/Doc/doc-create.js"></script>
+        <script src="~/js/Doc/editDocument.js"></script>
+        <script src="~/js/Doc/documentHistory.js"></script>
+    }
+</div>

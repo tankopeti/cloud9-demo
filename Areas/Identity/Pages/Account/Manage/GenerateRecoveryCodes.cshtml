@@ -1,0 +1,27 @@
+﻿@page
+@model GenerateRecoveryCodesModel
+@{
+    ViewData["Title"] = "Generate two-factor authentication (2FA) recovery codes";
+    ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
+}
+
+<partial name="_StatusMessage" for="StatusMessage" />
+<h3>@ViewData["Title"]</h3>
+<div class="alert alert-warning" role="alert">
+    <p>
+        <span class="glyphicon glyphicon-warning-sign"></span>
+        <strong>Tegye ezeket a kódokat biztonságos helyre.</strong>
+    </p>
+    <p>
+        Ha elveszíti a készülékét, és nem rendelkezik a helyreállítási kódokkal, elveszíti a fiókjához való hozzáférést..
+    </p>
+    <p>
+        Az új helyreállítási kódok generálása nem változtatja meg a hitelesítő alkalmazásokban használt kulcsokat. Ha meg kívánja változtatni a kulcsot
+        hitelesítő alkalmazásban használt módosítania kell <a asp-page="./ResetAuthenticator">vissza kell állítania a hitelesítő kulcsokat..</a>
+    </p>
+</div>
+<div>
+    <form method="post">
+        <button class="btn btn-danger" type="submit">Visszaállítási kódok generálása</button>
+    </form>
+</div>

@@ -1,0 +1,203 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Cloud9_2.Models
+@using Cloud9_2.Helpers
+@using Cloud9_2.Services
+@using Microsoft.AspNetCore.Antiforgery
+@using System.Globalization
+@model Cloud9_2.Pages.CRM.Orders.IndexModel
+@using System.Security.Claims
+@inject IAntiforgery AntiForgery
+@functions {
+    public string GetAntiForgeryToken()
+    {
+        var tokenSet = AntiForgery.GetAndStoreTokens(HttpContext);
+        return tokenSet.RequestToken ?? string.Empty;
+    }
+}
+@{
+    ViewData["Title"] = "Rendelések";
+    Layout = "_Layout";
+    var username = User.Identity?.Name ?? "System";
+    ViewData["AntiForgeryToken"] = GetAntiForgeryToken();
+}
+
+@await Html.PartialAsync("_CRMSidebar")
+
+<div class="right-content">
+    <div class="page-header-fixed-top">
+        <!-- Breadcrumb Navigation -->
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-body-tertiary rounded-3 p-2 mb-0">
+                    <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
+                    <li class="breadcrumb-item"><a href="../">CRM Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Rendelések</li>
+                    <li class="breadcrumb-item active" aria-current="page">@Model.Orders.Count of @Model.TotalRecords rendelés@(Model.TotalRecords != 1 ? "ek" : "") (Page @Model.CurrentPage of @Model.TotalPages)</li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Header with Buttons and Search -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-primary" id="newOrderButton" data-bs-toggle="modal" data-bs-target="#newOrderModal" aria-label="Új rendelés létrehozása">
+                    + Új rendelés
+                </button>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <form method="get" asp-page="./Index" class="input-group input-group-sm" style="width: 250px;">
+                    <input type="text" class="form-control" placeholder="Keresés..." id="searchInput" name="SearchTerm" value="@Model.SearchTerm" autocomplete="off" aria-label="Keresés rendelések között">
+                    <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                    <button class="btn btn-outline-secondary" type="submit" aria-label="Keresés indítása">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                    {
+                        <a href="@Url.Page("./Index")" class="btn btn-outline-danger btn-sm" aria-label="Keresés törlése">
+                            <i class="bi bi-x"></i>
+                        </a>
+                    }
+                </form>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Rendezési és szűrési opciók">
+                        <i class="bi bi-funnel me-1"></i>Rendezés/Szűrés
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="@Url.Page("./Index", new { SearchTerm = Model.SearchTerm, PageSize = Model.PageSize, sort = "OrderDate" })">Összes rendelés (Legújabb elöl)</a></li>
+                        <li><a class="dropdown-item" href="@Url.Page("./Index", new { SearchTerm = Model.SearchTerm, PageSize = Model.PageSize, sort = "OrderId" })">Rendelés ID (Csökkenő)</a></li>
+                        <li><a class="dropdown-item" href="@Url.Page("./Index", new { SearchTerm = Model.SearchTerm, PageSize = Model.PageSize, sort = "Deadline" })">Határidő</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+<div class="table-responsive table-dynamic-height" data-page-size="@Model.PageSize">
+    <table class="table table-striped table-hover">
+                <thead class="sticky-top custom-thead table-blur">
+                    <tr>
+                        @foreach (var column in new[] { "OrderNumber", "Partner", "OrderDate", "Status", "TotalAmount" })
+                        {
+                            <th class="text-nowrap">@(column == "OrderNumber" ? "Rendelésszám" : column == "OrderDate" ? "Dátum" : column == "TotalAmount" ? "Összeg" : column == "Status" ? "Státusz" : column == "Partner" ? "Ügyfél" : column)</th>
+                        }
+                        <th class="text-nowrap">Műveletek</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Orders.Any())
+                    {
+                        @foreach (var order in Model.Orders)
+                        {
+                            <tr data-order-id="@order.OrderId">
+                                <td class="text-nowrap"><i class="bi bi-file-earmark-text me-1"></i>@order.OrderNumber</td>
+                                <td class="text-nowrap"><i class="bi bi-person me-1"></i>@(order.Partner?.Name ?? order.CompanyName)</td>
+                                <td class="text-nowrap"><i class="bi bi-calendar me-1"></i>@String.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd}", order.OrderDate)</td>
+                                <td class="text-nowrap">
+                                    <span class="badge" style="background-color:@(order.OrderStatusType?.Color ?? "#6c757d")">
+                                        @(order.OrderStatusType?.StatusName ?? "Ismeretlen")
+                                    </span>
+                                </td>
+                                <td class="text-nowrap">
+                                    <i class="bi me-1"></i>
+                                    @String.Format(CultureInfo.CreateSpecificCulture("hu-HU"), "{0:C}", order.TotalAmount)
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button"
+                                                class="btn btn-outline-info view-order-btn"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#viewOrderModal_@order.OrderId"
+                                                aria-label="Rendelés részleteinek megtekintése">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-secondary dropdown-toggle btn-sm" type="button"
+                                                    id="actionsDropdown_@order.OrderId"
+                                                    data-bs-toggle="dropdown"
+                                                    aria-expanded="false"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-placement="top"
+                                                    data-bs-title="További műveletek">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionsDropdown_@order.OrderId">
+                                                <li>
+                                                    <a class="dropdown-item" href="#"
+                                                       data-bs-toggle="modal"
+                                                       data-bs-target="#editOrderModal_@order.OrderId"
+                                                       onclick="populateUpdateForm(@order.OrderId, '@Html.Raw(Json.Serialize(order.OrderNumber))', '@(order.OrderDate != null ? String.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd}", order.OrderDate) : "")', '@(order.Deadline.HasValue ? String.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd}", order.Deadline.Value) : "")', '@Html.Raw(Json.Serialize(order.Description))', @order.TotalAmount, '@Html.Raw(Json.Serialize(order.Partner?.Name ?? order.CompanyName))', '@order.Status')">
+                                                        <i class="bi bi-pencil-square me-2"></i>Szerkesztés
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item copy-order-btn" href="#"
+                                                       data-order-id="@order.OrderId">
+                                                        <i class="bi bi-copy me-2"></i>Másolás
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="#"
+                                                       data-bs-toggle="modal"
+                                                       data-bs-target="#deleteOrderModal_@order.OrderId"
+                                                       data-order-id="@order.OrderId">
+                                                        <i class="bi bi-trash me-2"></i>Törlés
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <div class="alert alert-warning" role="alert">
+                                    @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                                    {
+                                        @:Nincs találat a "@Model.SearchTerm" keresésre az @Model.CurrentPage. oldalon.
+                                    }
+                                    else if (Model.TotalRecords > 0)
+                                    {
+                                        @:Nincs rendelés az @Model.CurrentPage. oldalon, de @Model.TotalRecords rendelés létezik. Próbáljon másik oldalt vagy szűrőt.
+                                    }
+                                    else
+                                    {
+                                        @:Nincs rendelés. <button type="button" class="btn btn-link alert-link p-0 align-baseline" data-bs-toggle="modal" data-bs-target="#newOrderModal" aria-label="Első rendelés létrehozása">Hozza létre az elsőt?</button>
+                                    }
+                                    <div class="mt-2 small text-muted">
+                                        Debug: Page=@Model.CurrentPage, PageSize=@Model.PageSize, TotalRecords=@Model.TotalRecords, SearchTerm="@Model.SearchTerm"
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Footer -->
+        @await Html.PartialAsync("_PaginationFooter", new PaginationViewModel
+        {
+            CurrentPage = Model.CurrentPage,
+            TotalPages = Model.TotalPages,
+            PageSize = Model.PageSize,
+            SearchTerm = Model.SearchTerm,
+            PageRoute = "./Index",
+            EntityName = "Orders"
+        })
+
+        <!-- Toast Container -->
+        <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;"></div>
+
+    </div>
+
+        <!-- Modals -->
+        @await Html.PartialAsync(partialViewName: "_Modals")
+</div>
+
+<script src="~/js/orders.js"></script>

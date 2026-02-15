@@ -1,0 +1,112 @@
+Stakeholder Interviews
+
+<!-- Frici -->
+Kik használják?
+Ügyeletes, 
+Admin, 
+Management
+
+Technikus az árajánlatok alapján dolgozik (ez jelenleg az iktatórendszerben van)
+
+
+
+Mnagement lát mindent - táv és csopi, iratkezelés, partnertörzs
+Ügyeletes - rögzíti a bejelentéseket, táv és csoportmunkát használják
+Admin - sysadmin
+
+Van-e különbség a jogosultságok között?
+
+Adminisztrátor ugyanazokkal a jogokkal rendelkezik, mint a management.
+
+Milyen adatokat tárolnak?
+Partneradatokat - telephelyeket, kapcsolattartókat, szerződéseket, vevőszámlák, 
+Céges szinten több kapcsolattartó
+Telephelyenként több kapcsolattartó (akár 8)
+
+Számlaiktatás nincs
+
+Levelezés iktatás van. Kérdés, hogy szerződésmódosítás itt van-e iktatva.
+
+Árajánlatadás fog kelleni.
+Megrendelés kezelés fog kelleni
+Lead-ek fognak kelleni
+Ügyfélkapcsolat fog kelleni
+Mindegyikhez fontos lesz a felelős, a határidő, és értesítés róla
+
+
+
+Bejelentések adatai - partner, tárgy, bejelentés idp, ügyintéző, technikus (kihez van rendelve, lehet több emberhez is), ütemezés, státusz. lezárás dátuma, bejelentő.
+Telephely alapján megy a bejelentés,
+
+
+Intézkedés menüpont - azonnali hívások kezelése
+Telephely (belsős, külsős azonosító),
+Mikor történt,
+Jelzés típusa (betörés, pánik, tűz, szabotás),
+Felelős,
+Intézkesés (járőr küldése, lemondás, egyéb...),
+Járőr választása (járőrhöz van autó rendelve),
+Intézkedés esetén, járőrnek kell kapnia egy sms-t az adatokkal,
+Intézkedés eredménye (lemondott riasztás, betörést talált)
+Lezárás.
+
+Havonta partner szerint listásva az intézkedések.
+
+
+<!-- Egyeztetés Szilvivel 2025.09.09 (google meet), mail küldés -->
+
+Szia Szilvi,
+
+ahogy azt beszéltünk alant a mai megbeszélés összefoglalója. Ez tartalmazza a jelen felhasználás részleteit és az elvárt fejlesztéseket.
+
+Felhasználók/jogosultságok:
+Ügyeletes,
+Adminisztrátor,
+Vezetőség.
+
+Jelenleg jogosultság szinten nincs különbség, később lehet elvárás az, hogy a vezetői/adminisztrátori funkciókhoz az ügyeleteseknek ne legyen hozzáférése.
+
+Adatok:
+Alapvető partner adatok.
+Egy partnerhez több üzleti kapcsolattartó.
+Egy partnerhez több telephely, telephelyenként több kapcsolattartó (kapcsolattartókhoz szükség lesz majd egy megjegyzés fülre ahol infókat lehet róluk tárolni az alapadatokon túl)
+Dokumentumok kezelése iktatás szinten, jelenleg itt vannak nyilvántartva a szerződés módosítások is.
+Feladatok adatainek tárolása.
+
+Funkciók:
+Technikusok feladatainak nyilvántartása, beütemezése,
+Iktatás,
+
+Fejlesztendő funkciók:
+Lead-ek kezelése (ügyfél telefonon érdeklődik a szolgáltatás iránt, lényege, hogy legyen rögzítve a rendszerben, partnert ilyenkor még nem kell létrehozni, elkerülve a partneradatbázis 'teleszemetelését')
+Árajánlatok kezelése (ha egy lead-nek konkrét elképzelése van, tehát megtörtént vele egy telefonos vagy személyes egyeztetés a részletekről, akkor az alapján a rendszerből lehessen neki egy árajánlatot generálni sablon alapján pdf formátumban).
+Megrendelések kezelése (ajánlatból lehessen megrendeléset generálni pdf formátumban)
+
+Dokumentumok iktatása az alapadatokon túl key-value párok feltöltésével a nagyon gyors és egyszerű keresések kezeléséhez (ezzel a google-höz hasonlóan fogtok tudni keresni minden dokumentumban).
+
+Bejelentések ütemezése a jelenlegi működés szerint egy listával kiegészítve, hogy mindenki lássa a saját tennivalóit.
+
+Intézkedések kezelése, ami az azonnali hívások feldolgozását jelenti, az alábbi adatokkal:
+- Telephely
+- Időpont
+- Jelzés típusa (betörés, pánik, tűz, szabotázs)
+- Felelős
+- Intézkedés (járőr kiküldése, lemondás, egyéb)
+- Járőr választása
+- Intézkedés eredménye
+- Lezárás
+
+Intézkedés esetén a járőrnek sms-t kell kapnia a szükséges adatokkal.
+
+Havi vezetői riport partnerenként az intézkedésekről.
+
+
+Remélem nem hagytam ki semmit :)
+
+Kérlek olvasd át figyelmesen és amennyiben valamit rosszul értettem, vagy kihagytam, jelezd nyugodtan!
+
+Köszönöm&szép napot
+Peti
+
+
+

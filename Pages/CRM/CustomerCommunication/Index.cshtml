@@ -1,0 +1,195 @@
+@page
+@model Cloud9_2.Pages.CRM.CustomerCommunication.IndexModel
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Ügyfélkommunikáció";
+}
+
+@await Html.PartialAsync("_CRMSidebar")
+
+<div class="right-content">
+
+    <!-- Üzenet Modal (Sites mintára) -->
+    <div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header py-2 bg-info text-white">
+                    <h5 class="modal-title fs-5 fw-semibold" id="messageModalLabel">
+                        <i class="bi bi-info-circle me-2"></i> Értesítés
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+                </div>
+                <div class="modal-body py-4" id="messageModalBody">
+                    <!-- JS tölt be tartalmat -->
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i> Bezárás
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-header-fixed-top">
+
+        <!-- Breadcrumb -->
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-body-tertiary rounded-3 p-2 mb-0">
+                    <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
+                    <li class="breadcrumb-item"><a href="../">CRM Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Ügyfélkommunikáció</li>
+
+                    <!-- Sites mintára: itt lehet statikus/fallback szöveg.
+                         A valós "Betöltve X / összes Y" a loadMore gombon lesz. -->
+                    <li class="breadcrumb-item active" aria-current="page">
+                        Kommunikációk
+                    </li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Header: gomb + kereső + szűrő -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button"
+                        id="newCommunicationButton"
+                        class="btn btn-outline-primary px-4"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createCommunicationModal">
+                    <i class="bi bi-plus-circle me-1"></i> Új kommunikáció
+                </button>
+                <button type="button"
+                        id="openFilterButton"
+                        class="btn btn-outline-secondary px-4"
+                        data-bs-toggle="modal"
+                        data-bs-target="#filterModal">
+                    <i class="bi bi-funnel me-1"></i> Szűrés
+                </button>
+            </div>
+            
+
+            <div class="d-flex align-items-center gap-2">
+                <form method="get" asp-page="./Index" class="input-group input-group-sm" style="width: 250px;">
+                    <input id="communicationSearchInput"
+                           type="text"
+                           class="form-control"
+                           placeholder="Keresés partner/tárgy..."
+                           name="SearchTerm"
+                           value="@Model.SearchTerm"
+                           autocomplete="off" />
+                    <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                    <button class="btn btn-outline-secondary" type="submit" aria-label="Keresés">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                    {
+                        <a href="@Url.Page("./Index")" class="btn btn-outline-danger btn-sm" aria-label="Törlés">
+                            <i class="bi bi-x"></i>
+                        </a>
+                    }
+                </form>
+
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                        <i class="bi bi-funnel me-1"></i> Rendezés / Szűrés
+                    </button>
+
+                    <!-- Sites-mintás data-* attribútumok -->
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="#"
+                               data-typefilter="all"
+                               data-sortby="CommunicationDate">
+                                Összes kommunikáció (Legújabb elöl)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#"
+                               data-typefilter="all"
+                               data-sortby="CommunicationId">
+                                Kommunikáció ID (csökkenő)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#"
+                               data-typefilter="all"
+                               data-sortby="PartnerName">
+                                Partner neve
+                            </a>
+                        </li>
+
+                        <li><hr class="dropdown-divider" /></li>
+
+                        <li><a class="dropdown-item" href="#" data-typefilter="E-mail">Csak email</a></li>
+                        <li><a class="dropdown-item" href="#" data-typefilter="Telefonhívás">Csak telefonhívás</a></li>
+                        <li><a class="dropdown-item" href="#" data-typefilter="Találkozó">Csak találkozó</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive table-dynamic-height" data-page-size="@Model.PageSize">
+        <table class="table table-striped table-hover">
+            <thead class="sticky-top custom-thead table-blur">
+                <tr>
+                    <th class="text-nowrap">Típus</th>
+                    <th class="text-nowrap">Partner</th>
+                    <th class="text-nowrap">Felelős</th>
+                    <th class="text-nowrap">Dátum</th>
+                    <th class="text-nowrap">Tárgy</th>
+                    <th class="text-nowrap">Státusz</th>
+                    <th class="text-nowrap">Műveletek</th>
+                </tr>
+            </thead>
+
+            <!-- Sites-mintára: JS tölti -->
+            <tbody id="communicationsTableBody">
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">Betöltés...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Load More (Sites mintára) -->
+    <div id="loadMoreContainer" class="text-center my-3 d-none">
+        <button id="loadMoreBtn" class="btn btn-outline-secondary btn-sm">
+            Több betöltése
+        </button>
+
+        <div id="loadMoreSpinner"
+             class="spinner-border spinner-border-sm ms-2 text-secondary d-none"
+             role="status"
+             aria-hidden="true"></div>
+    </div>
+
+    <!-- Modals (generikus, JS tölti – Sites mintára) -->
+    
+    @await Html.PartialAsync("_CustomerCommunicationModals")
+
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <!-- Sites-szerkezet mintájára -->
+    @* <script src="~/js/CustomerCommunication/cc-advanced-filter.js"></script> *@
+    <script src="~/js/CustomerCommunication/communicationFilter.js"></script>
+    <script src="~/js/CustomerCommunication/customerCommunicationTomSelect.js"></script>
+    <script src="~/js/CustomerCommunication/viewCommunication.js"></script>
+    <script src="~/js/CustomerCommunication/editCommunication.js"></script>
+    <script src="~/js/CustomerCommunication/deleteCommunication.js"></script>
+    <script src="~/js/CustomerCommunication/copyCommunication.js"></script>
+    <script src="~/js/CustomerCommunication/createCommunication.js"></script>
+    <script src="~/js/CustomerCommunication/historyCommunication.js"></script>
+}

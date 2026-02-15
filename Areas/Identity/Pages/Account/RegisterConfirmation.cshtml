@@ -1,0 +1,23 @@
+﻿@page
+@model RegisterConfirmationModel
+@{
+    ViewData["Title"] = "Register confirmation";
+}
+
+<h1>@ViewData["Title"]</h1>
+@{
+    if (@Model.DisplayConfirmAccountLink)
+    {
+<p>
+    Ez az alkalmazás jelenleg nem rendelkezik regisztrált valódi e-mail feladóval, a valódi e-mail feladó konfigurálásához lásd <a href="https://aka.ms/aspaccountconf">ezt a dokumentumot</a> az konfiguráláshoz.
+    Normális esetben ez e-mailben érkezik: <a id="confirm-link" href="@Model.EmailConfirmationUrl">Kattintson ide a fiókja megerősítéséhez</a>
+</p>
+    }
+    else
+    {
+<p>
+        Kérjük, ellenőrizze e-mailjét a fiók megerősítéséhez.
+</p>
+    }
+}
+

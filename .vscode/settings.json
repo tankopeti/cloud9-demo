@@ -1,0 +1,22 @@
+{
+    "sqltools.connections": [
+        {
+            "connectionTimeout": 15,
+            "mssqlOptions": {
+                "appName": "SQLTools",
+                "useUTC": true,
+                "encrypt": true,
+                "trustServerCertificate": false
+            },
+            "previewLimit": 50,
+            "server": "127.0.0.1",
+            "driver": "MSSQL",
+            "name": "Cloud9.2",
+            "database": "Cloud9.2",
+            "username": "sa",
+            "password": "HUmmer512!!!",
+            "connectString": "Server=127.0.0.1,1433;Database=Cloud9.2;User Id=sa;Password=HUmmer512!!!;TrustServerCertificate=True;"
+        }
+    ],
+    "DockerRun.DisableDockerrc": true
+}

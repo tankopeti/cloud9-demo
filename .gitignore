@@ -1,0 +1,25 @@
+# .NET / Visual Studio
+.vs/
+bin/
+obj/
+*.user
+*.suo
+
+# Node
+node_modules/
+
+# Logs / temp
+*.log
+
+# Certificates / secrets
+*.pfx
+
+# Uploads (demohoz ne menjenek fel)
+wwwroot/uploads/
+
+# (opcionális) ha van külön belső repo
+ERP-Document-Management/
+
+appsettings.Development.json
+*.pfx
+

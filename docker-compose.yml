@@ -1,0 +1,41 @@
+version: "3.7"
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - SA_PASSWORD=HUmmer512!!!
+      - ACCEPT_EULA=Y
+    ports:
+      - "1433:1433"
+    networks:
+      - app-network
+  app:
+    build:
+      context: ./Cloud9.2
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/src
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=Cloud9.2;User Id=sa;Password=HUmmer512!!!;TrustServerCertificate=True;
+      - Email__Smtp__Host=smtp.gmail.com
+      - Email__Smtp__Port=587
+      - Email__Smtp__Username=tankopeti@gmail.com
+      - Email__Smtp__Password=HUmmer513
+      - EmailSender__SmtpServer=mail.maxer.hu
+      - EmailSender__SmtpPort=587
+      - EmailSender__SenderName=Cloud9.2
+      - EmailSender__SenderEmail=peter.tanko@Cloud9.hu
+      - EmailSender__SmtpUser=peter.tanko@Cloud9.hu
+      - EmailSender__SmtpPass=HUmmer512!!!
+      - EmailSender__UseSsl=false
+    depends_on:
+      - sqlserver
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge

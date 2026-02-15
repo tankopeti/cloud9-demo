@@ -1,0 +1,257 @@
+﻿@page
+@model LoginModel
+@{
+    Layout = "~/Pages/Shared/_LoginLayout.cshtml";
+    ViewData["Title"] = "Cloud9";
+}
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .login-section {
+        height: 100vh;
+        background-color: #eff0f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .card {
+        border-radius: 1rem;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    /* Night mode overrides */
+    [data-theme="dark"] .login-section {
+        background-color: #1a1a1a;
+    }
+
+    [data-theme="dark"] .card {
+        background-color: #2a2a2a;
+        border: 1px solid #444;
+        color: #e0e0e0;
+    }
+
+    [data-theme="dark"] .card-body {
+        background-color: #2a2a2a;
+        color: #e0e0e0;
+    }
+
+    [data-theme="dark"] .text-black {
+        color: #e0e0e0 !important;
+    }
+
+    [data-theme="dark"] .text-muted {
+        color: #888 !important;
+    }
+
+    [data-theme="dark"] .form-control {
+        background-color: #333333 !important;
+        border-color: #666 !important;
+        color: #e0e0e0 !important;
+    }
+
+    [data-theme="dark"] .form-control:focus {
+        background-color: #333333 !important;
+        border-color: #888 !important;
+        color: #e0e0e0 !important;
+        box-shadow: 0 0 0 0.2rem rgba(100, 100, 100, 0.25);
+    }
+
+    [data-theme="dark"] .form-control::placeholder {
+        color: #aaaaaa !important;
+    }
+
+    [data-theme="dark"] .form-label {
+        color: #e0e0e0 !important;
+    }
+
+    [data-theme="dark"] .btn-dark {
+        background-color: #357abd !important;
+        border-color: #357abd !important;
+        color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .btn-dark:hover {
+        background-color: #2a6099 !important;
+        border-color: #2a6099 !important;
+    }
+
+    [data-theme="dark"] .modal-content {
+        background-color: #2a2a2a !important;
+        border: 1px solid #444 !important;
+        color: #e0e0e0 !important;
+    }
+
+    [data-theme="dark"] .modal-header {
+        background-color: #2a2a2a !important;
+        border-bottom: 1px solid #444 !important;
+    }
+
+    [data-theme="dark"] .modal-title {
+        color: #e0e0e0 !important;
+    }
+
+    [data-theme="dark"] .modal-body {
+        background-color: #2a2a2a !important;
+        color: #e0e0e0 !important;
+    }
+
+    [data-theme="dark"] .modal-footer {
+        background-color: #2a2a2a !important;
+        border-top: 1px solid #444 !important;
+    }
+
+    [data-theme="dark"] .btn-secondary {
+        background-color: #666 !important;
+        border-color: #666 !important;
+        color: #e0e0e0 !important;
+    }
+
+    [data-theme="dark"] .btn-secondary:hover {
+        background-color: #777 !important;
+        border-color: #777 !important;
+    }
+</style>
+
+<section class="login-section">
+    <div class="container">
+        <div class="row d-flex justify-content-center align-items-center">
+            <div class="col col-xl-10">
+                <div class="card">
+                    <div class="row g-0">
+                        <div class="col-md-6 col-lg-5 d-none d-md-block">
+                            <img src="/Images/pexels-asadphoto-3250614.jpg" alt="login form" class="img-fluid" style="border-radius: 1rem 0 0 1rem;" />
+                        </div>
+                        <div class="col-md-6 col-lg-7 d-flex align-items-center">
+                            <div class="card-body p-4 p-lg-5 text-black">
+                                <form id="account" method="post">
+                                    <div class="d-flex align-items-center mb-3 pb-1">
+                                        <i class="fas fa-cubes fa-2x me-3" style="color: #ff6219;"></i>
+                                        <span class="h1 fw-bold mb-0">@ViewData["Title"]</span>
+                                    </div>
+
+                                    <h5 class="fw-normal mb-3 pb-3" style="letter-spacing: 1px;">Használja a rendszerhez kapott felhasználónevet.</h5>
+
+                                    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
+                                    <div data-mdb-input-init class="form-outline mb-4">
+                                        <input asp-for="Input.Username" class="form-control form-control-lg" autocomplete="username" aria-required="true" placeholder="felhasználónév" id="Input_Username" />
+                                        <label asp-for="Input.Username" class="form-label">Felhasználónév</label>
+                                        <span asp-validation-for="Input.Username" class="text-danger"></span>
+                                    </div>
+
+                                    <div data-mdb-input-init class="form-outline mb-4">
+                                        <input asp-for="Input.Password" class="form-control form-control-lg" autocomplete="current-password" aria-required="true" placeholder="jelszó" />
+                                        <label asp-for="Input.Password" class="form-label">Jelszó</label>
+                                        <span asp-validation-for="Input.Password" class="text-danger"></span>
+                                    </div>
+
+                                    <div class="checkbox mb-4">
+                                        <label asp-for="Input.RememberMe" class="form-label">
+                                            <input class="form-check-input" asp-for="Input.RememberMe" />
+                                            @Html.DisplayNameFor(m => m.Input.RememberMe)
+                                        </label>
+                                    </div>
+
+                                    <div class="pt-1 mb-4">
+                                        <button id="login-submit" type="submit" data-mdb-button-init data-mdb-ripple-init class="btn btn-dark btn-lg btn-block">Belépés</button>
+                                    </div>
+
+                                    <a class="small text-muted" id="forgot-password" asp-page="./ForgotPassword">Elfelejtette a jelszavát?</a>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalTitle" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalTitle">Request Sent</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="confirmationModalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function showConfirmationModal(message, isSuccess) {
+            const modalElement = document.getElementById('confirmationModal');
+            const modalBody = document.getElementById('confirmationModalBody');
+            const modalTitle = document.getElementById('confirmationModalTitle');
+
+            if (modalElement && modalBody) {
+                modalBody.textContent = message;
+                if (modalTitle) {
+                    modalTitle.textContent = isSuccess ? 'Request Sent' : 'Error';
+                }
+                const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                modal.show();
+            } else {
+                alert(message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const forgotPasswordLink = document.getElementById('forgot-password');
+            const usernameInput = document.getElementById('Input_Username');
+
+            if (forgotPasswordLink && usernameInput) {
+                forgotPasswordLink.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const username = usernameInput.value;
+                    const antiforgeryToken = '@Xsrf.GetAndStoreTokens(HttpContext).RequestToken';
+
+                    if (username && username.trim() !== '') {
+                        const payload = { Username: username };
+                        fetch(forgotPasswordLink.getAttribute('href') + '?handler=InitiateResetFromLogin', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': antiforgeryToken
+                            },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                console.error('HTTP error:', response.status, response.statusText);
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            showConfirmationModal(data.message, data.success);
+                        })
+                        .catch(error => {
+                            console.error('Fetch error:', error);
+                            showConfirmationModal('An unexpected error occurred. Please check your connection and try again.', false);
+                        });
+                    } else {
+                        showConfirmationModal('Please enter your username first.', false);
+                    }
+                });
+            } else {
+                if (!forgotPasswordLink) console.error("Forgot password link not found.");
+                if (!usernameInput) console.error("Username input field not found.");
+            }
+        });
+    </script>
+}

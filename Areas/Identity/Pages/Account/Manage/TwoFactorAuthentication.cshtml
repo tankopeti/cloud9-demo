@@ -1,0 +1,72 @@
+﻿@page
+@using Microsoft.AspNetCore.Http.Features
+@model TwoFactorAuthenticationModel
+@{
+    Layout = null; // Ensure it loads properly inside a modal
+    ViewData["Title"] = "Two-factor authentication (2FA)";
+    ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
+}
+
+<partial name="_StatusMessage" for="StatusMessage" />
+<h3>@ViewData["Title"]</h3>
+@{
+    var consentFeature = HttpContext.Features.Get<ITrackingConsentFeature>();
+    @if (consentFeature?.CanTrack ?? true)
+    {
+        @if (Model.Is2faEnabled)
+        {
+            if (Model.RecoveryCodesLeft == 0)
+            {
+                <div class="alert alert-danger">
+                    <strong>Nincs több helyreállítási kódja.</strong>
+                    <p>You must <a asp-page="./GenerateRecoveryCodes">kódokat kell generálnia</a> mielőtt bejelentkezhetne helyreállítási kóddal..</p>
+                </div>
+            }
+            else if (Model.RecoveryCodesLeft == 1)
+            {
+                <div class="alert alert-danger">
+                    <strong>1 helyreállítási kódja maradt.</strong>
+                    <p>Generálhat <a asp-page="./GenerateRecoveryCodes">generate a new set of recovery codes</a>.</p>
+                </div>
+            }
+            else if (Model.RecoveryCodesLeft <= 3)
+            {
+                <div class="alert alert-warning">
+                    <strong>You have @Model.RecoveryCodesLeft recovery codes left.</strong>
+                    <p>You should <a asp-page="./GenerateRecoveryCodes">új helyreállítási kódkészletet</a>.</p>
+                </div>
+            }
+
+            if (Model.IsMachineRemembered)
+            {
+                <form method="post" style="display: inline-block">
+                    <button type="submit" class="btn btn-primary">Felejtse el ezt a böngészőt</button>
+                </form>
+            }
+            <a asp-page="./Disable2fa" class="btn btn-primary">2FA kikapcsolása</a>
+            <a asp-page="./GenerateRecoveryCodes" class="btn btn-primary">Helyreállítási kódok visszaállítása</a>
+        }
+
+        <h4>Hitelesítő alkalmazás</h4>
+        @if (!Model.HasAuthenticator)
+        {
+            <a id="enable-authenticator" asp-page="./EnableAuthenticator" class="btn btn-primary">Hitelesítő alkalmazás hozzáadása</a>
+        }
+        else
+        {
+            <a id="enable-authenticator" asp-page="./EnableAuthenticator" class="btn btn-primary">Hitelesítő alkalmazás beállítása</a>
+            <a id="reset-authenticator" asp-page="./ResetAuthenticator" class="btn btn-primary">Hitelesítő alkalmazás visszaállítása</a>
+        }
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            <strong>Az adatvédelmi és cookie-szabályzatot nem fogadták el.</strong>
+            <p>A házirendet el kell fogadnia a kétfaktoros hitelesítés engedélyezése előtt..</p>
+        </div>
+    }
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

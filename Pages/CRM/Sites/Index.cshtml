@@ -1,0 +1,136 @@
+@page
+@model Cloud9_2.Pages.CRM.Sites.IndexModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Telephelyek";
+}
+
+@await Html.PartialAsync("_CRMSidebar")
+
+<div class="right-content">
+    <!-- Üzenet Modal (pl. sikeres művelethez) -->
+    <div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header py-2 bg-info text-white">
+                    <h5 class="modal-title fs-5 fw-semibold" id="messageModalLabel">
+                        <i class="bi bi-info-circle me-2"></i> Értesítés
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+                </div>
+                <div class="modal-body py-4" id="messageModalBody">
+                    <!-- JS tölt be tartalmat -->
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i> Bezárás
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-header-fixed-top">
+        <!-- Breadcrumb -->
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-body-tertiary rounded-3 p-2 mb-0">
+                    <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
+                    <li class="breadcrumb-item"><a href="../">CRM Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Telephelyek</li>
+<li class="breadcrumb-item active" aria-current="page">
+  <span id="sitesCountText" class="text-muted">Betöltés...</span>
+</li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Fejléc gombokkal és kereséssel -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-primary px-4" data-bs-toggle="modal" data-bs-target="#createSiteModal">
+                    <i class="bi bi-plus-circle me-1"></i> Új Telephely
+                </button>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+<form id="siteSearchForm" class="input-group input-group-sm" style="width: 250px;" autocomplete="off">
+    <input id="siteSearchInput" type="text" class="form-control"
+           placeholder="Keresés telephely/partner..." />
+    <button class="btn btn-outline-secondary" type="submit">
+        <i class="bi bi-search"></i>
+    </button>
+    <button type="button" id="clearSiteSearchBtn" class="btn btn-outline-danger btn-sm d-none">
+        <i class="bi bi-x"></i>
+    </button>
+</form>
+
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-funnel me-1"></i> Szűrő
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" data-filter="all">Összes Telephely</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="primary">Elsődleges Telephelyek</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tábla -->
+    <div class="table-responsive table-dynamic-height" data-page-size="@Model.PageSize">
+        <table class="table table-striped table-hover">
+            <thead class="sticky-top custom-thead table-blur">
+                <tr>
+                    <th class="text-nowrap">Telephely neve</th>
+                    <th class="text-nowrap">Partner</th>
+                    <th class="text-nowrap">Cím 1</th>
+                    <th class="text-nowrap">Cím 2</th>
+                    <th class="text-nowrap">Város</th>
+                    <th class="text-nowrap">Irányítószám</th>
+                    <th class="text-nowrap">Kapcsolattartó 1</th>
+                    <th class="text-nowrap">Kapcsolattartó 2</th>
+                    <th class="text-nowrap">Kapcsolattartó 3</th>
+                    <th class="text-nowrap">Telephely típusa</th>
+                    <th class="text-nowrap">Státusz</th>
+                    <th class="text-nowrap">Elsődleges</th>
+                    <th class="text-nowrap">Műveletek</th>
+                </tr>
+            </thead>
+
+            <tbody id="sitesTableBody">
+                <tr>
+                    <td colspan="13" class="text-center py-5 text-muted">Betöltés...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+    <!-- Load More -->
+    <div id="loadMoreContainer" class="text-center my-3 d-none">
+        <button id="loadMoreBtn" class="btn btn-outline-secondary btn-sm">
+            Több betöltése
+        </button>
+
+        <div id="loadMoreSpinner" class="spinner-border spinner-border-sm ms-2 text-secondary d-none"
+            role="status" aria-hidden="true"></div>
+    </div>
+
+
+
+@await Html.PartialAsync("_Modals")
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/Site/siteFilter.js"></script>
+    <script src="~/js/Site/siteTomSelect.js"></script>
+    <script src="~/js/Site/createSite.js"></script>
+    <script src="~/js/Site/viewSite.js"></script>
+    <script src="~/js/Site/editSite.js"></script>
+    <script src="~/js/Site/deleteSite.js"></script>
+}
+
+
+

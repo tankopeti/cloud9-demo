@@ -1,0 +1,163 @@
+@page
+@model Cloud9_2.Pages.HR.WorkGroup.JobTitlesModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Job Titles";
+}
+
+@await Html.PartialAsync("_HRSidebar")
+
+<!-- Main Content -->
+<div class="right-content">
+    <!-- Success/Error Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Page Header -->
+    <div class="page-header-fixed-top">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-body-tertiary rounded-3 p-2 mb-0">
+                    <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
+                    <li class="breadcrumb-item"><a href="../">HR</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Munkakörök</li>
+                </ol>
+            </nav>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createJobTitleModal">
+                <i class="bi bi-plus-circle me-1"></i> Új munkakör
+            </button>
+        </div>
+    </div>
+
+    <!-- Job Titles Table -->
+    <div class="card">
+        <div class="card-body">
+            @if (Model.JobTitles.Any())
+            {
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Munkakör neve</th>
+                            <th>Létrehozva</th>
+                            <th>Módosítva</th>
+                            <th>Műveletek</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var jobTitle in Model.JobTitles)
+                        {
+                            <tr>
+                                <td>@jobTitle.TitleName</td>
+                                <td>@jobTitle.CreatedAt?.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@(jobTitle.UpdatedAt?.ToString("yyyy-MM-dd HH:mm") ?? "N/A")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editJobTitleModal_@jobTitle.JobTitleId">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteJobTitleModal_@jobTitle.JobTitleId">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p>Nincs munkakör.</p>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Create Job Title Modal -->
+<div class="modal fade" id="createJobTitleModal" tabindex="-1" aria-labelledby="createJobTitleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-page-handler="Create" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createJobTitleModalLabel">Munkakör létrehozása</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label asp-for="JobTitleCreate.TitleName" class="form-label">Név</label>
+                        <input asp-for="JobTitleCreate.TitleName" class="form-control" required />
+                        <span asp-validation-for="JobTitleCreate.TitleName" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bezárás</button>
+                    <button type="submit" class="btn btn-primary">Létrehozás</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Job Title Modals -->
+@foreach (var jobTitle in Model.JobTitles)
+{
+    <div class="modal fade" id="editJobTitleModal_@jobTitle.JobTitleId" tabindex="-1" aria-labelledby="editJobTitleModalLabel_@jobTitle.JobTitleId" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-page-handler="Update" asp-route-id="@jobTitle.JobTitleId" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editJobTitleModalLabel_@jobTitle.JobTitleId">Munkakör szerkesztése</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="JobTitleUpdate.JobTitleId" value="@jobTitle.JobTitleId" />
+                        <div class="mb-3">
+                            <label for="TitleName_@jobTitle.JobTitleId" class="form-label">Név</label>
+                            <input type="text" name="JobTitleUpdate.TitleName" class="form-control" value="@jobTitle.TitleName" required />
+                            <span asp-validation-for="JobTitleUpdate.TitleName" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bezárás</button>
+                        <button type="submit" class="btn btn-primary">Mentés</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Job Title Modals -->
+    <div class="modal fade" id="deleteJobTitleModal_@jobTitle.JobTitleId" tabindex="-1" aria-labelledby="deleteJobTitleModalLabel_@jobTitle.JobTitleId" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-page-handler="Delete" asp-route-id="@jobTitle.JobTitleId" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteJobTitleModalLabel_@jobTitle.JobTitleId">Munkakör törlése</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Biztos benne, hogy törölni akarja? <strong>@jobTitle.TitleName</strong>? A műveletet nem lehet visszavonni.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mégsem</button>
+                        <button type="submit" class="btn btn-danger">Törlés</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

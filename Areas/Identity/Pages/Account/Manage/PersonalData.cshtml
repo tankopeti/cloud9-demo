@@ -1,0 +1,28 @@
+﻿@page
+@model PersonalDataModel
+@{
+    Layout = null; // Ensure it loads properly inside a modal
+    ViewData["Title"] = "Personal Data";
+    ViewData["ActivePage"] = ManageNavPages.PersonalData;
+}
+
+<h3>@ViewData["Title"]</h3>
+
+<div class="row">
+    <div class="col-md-6">
+        <p>Az Ön fiókja az Ön által megadott személyes adatokat tartalmazza. Ezen az oldalon letöltheti vagy törölheti ezeket az adatokat..</p>
+        <p>
+            <strong>Ezen adatok törlése véglegesen eltávolítja a fiókját, és ez nem állítható vissza.</strong>
+        </p>
+        <form id="download-data" asp-page="DownloadPersonalData" method="post">
+            <button class="btn btn-primary" type="submit">Letöltés</button>
+        </form>
+        <p>
+            <a id="delete" asp-page="DeletePersonalData" class="btn btn-danger">Törlés</a>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

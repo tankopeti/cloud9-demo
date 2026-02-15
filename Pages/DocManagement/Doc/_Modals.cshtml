@@ -1,0 +1,481 @@
+@* /Pages/DocManagement/Doc/_Modals.cshtml
+   Dokumentum modals: CREATE + VIEW + EDIT
+   ✅ Model-független partial (NINCS @model), hogy ne dobjon типushibát az IndexModel miatt.
+   ✅ Minden listát (DocumentType, Partner, Site, Status) JS tölthet.
+*@
+
+<!-- =========================
+     CREATE DOCUMENT MODAL
+========================= -->
+<div class="modal fade" id="createDocumentModal" tabindex="-1" aria-labelledby="createDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createDocumentModalLabel">Új dokumentum</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="createDocumentForm" class="needs-validation" novalidate enctype="multipart/form-data">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="docFileName" class="form-label">Fájlnév</label>
+                            <input type="text" class="form-control" id="docFileName" name="fileName" required maxlength="255" />
+                            <div class="invalid-feedback">A fájlnév megadása kötelező.</div>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="docFile" class="form-label">Fájl</label>
+                            <input type="file" class="form-control" id="docFile" name="file" required />
+                            <div class="invalid-feedback">Fájl kiválasztása kötelező.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="docDocumentTypeId" class="form-label">Dokumentum típusa</label>
+                            <select class="form-select" id="docDocumentTypeId" name="documentTypeId">
+                                <option value="">— Válassz —</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="docStatus" class="form-label">Státusz</label>
+                            <select class="form-select" id="docStatus" name="status" required>
+                                <option value="">— Válassz —</option>
+                            </select>
+                            <div class="invalid-feedback">Státusz kiválasztása kötelező.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="docPartnerId" class="form-label">Partner</label>
+                            <select class="form-select" id="docPartnerId" name="partnerId">
+                                <option value="">— Válassz —</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="docSiteId" class="form-label">Telephely</label>
+                            <select class="form-select" id="docSiteId" name="siteId" disabled>
+                                <option value="">— Előbb válassz partnert —</option>
+                            </select>
+                        </div>
+
+                        <!-- Custom metadata (opcionális) -->
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label mb-0">Egyedi metaadatok (opcionális)</label>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="addDocMetaRowBtn">
+                                    + Sor
+                                </button>
+                            </div>
+
+                        <div class="border rounded p-2 mt-2">
+                            <div id="docMetaRows">
+                                <div class="row g-2 align-items-center mb-2 doc-meta-row" data-index="0">
+                                    <div class="col-md-5">
+                                        <input type="text" class="form-control" name="customMetadata[0].key" placeholder="Kulcs" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control" name="customMetadata[0].value" placeholder="Érték" />
+                                    </div>
+                                    <div class="col-md-1 d-grid">
+                                        <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-meta" disabled>&times;</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <small class="text-muted">Ha nem kell metaadat, hagyd üresen.</small>
+                        </div>
+
+                        </div>
+
+                        <div class="col-12 d-none" id="createDocErrorBox">
+                            <div class="alert alert-danger mb-0" role="alert" id="createDocErrorText">
+                                Hiba történt a mentés közben.
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Mégse</button>
+                <button type="button" class="btn btn-primary" id="saveNewDocumentBtn">Mentés</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- =========================
+     VIEW DOCUMENT MODAL
+     (1 db újrahasznosítható modal, JS tölti be docId alapján)
+========================= -->
+<div class="modal fade" id="viewDocumentModal" tabindex="-1" aria-labelledby="viewDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewDocumentModalLabel">Dokumentum megtekintése</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <div class="text-muted small">Dokumentum ID</div>
+                        <div class="fw-semibold" id="viewDocId">—</div>
+                    </div>
+                    <div class="text-end">
+                        <a class="btn btn-outline-primary btn-sm d-none" id="viewDocOpenFileLink" href="#" target="_blank">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>Megnyitás
+                        </a>
+                    </div>
+                </div>
+
+                <hr class="my-3" />
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="text-muted small">Fájlnév</div>
+                        <div class="fw-semibold" id="viewDocFileName">—</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="text-muted small">Típus</div>
+                        <div class="fw-semibold" id="viewDocType">—</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="text-muted small">Partner</div>
+                        <div class="fw-semibold" id="viewDocPartner">—</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="text-muted small">Telephely</div>
+                        <div class="fw-semibold" id="viewDocSite">—</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="text-muted small">Státusz</div>
+                        <div class="fw-semibold" id="viewDocStatus">—</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="text-muted small">Feltöltés dátuma</div>
+                        <div class="fw-semibold" id="viewDocUploadDate">—</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="text-muted small">Feltöltötte</div>
+                        <div class="fw-semibold" id="viewDocUploadedBy">—</div>
+                    </div>
+                </div>
+
+                <hr class="my-3" />
+
+                <div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-2">Metaadatok</h6>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Kulcs</th>
+                                    <th>Érték</th>
+                                </tr>
+                            </thead>
+                            <tbody id="viewDocMetadataTbody">
+                                <tr>
+                                    <td colspan="2" class="text-muted text-center py-3">Nincs metaadat</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="d-none mt-3" id="viewDocErrorBox">
+                    <div class="alert alert-danger mb-0" id="viewDocErrorText">Hiba történt.</div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Bezárás</button>
+                <button type="button" class="btn btn-outline-primary" id="openEditDocumentBtn" data-document-id="">
+                    Szerkesztés
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- =========================
+     EDIT DOCUMENT MODAL
+     (JS tölti fel docId alapján, mentés: PUT)
+========================= -->
+<div class="modal fade" id="editDocumentModal" tabindex="-1" aria-labelledby="editDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editDocumentModalLabel">Dokumentum szerkesztése</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="editDocumentForm" class="needs-validation" novalidate>
+                    <input type="hidden" id="editDocId" name="documentId" value="" />
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="editDocFileName" class="form-label">Fájlnév</label>
+                            <input type="text" class="form-control" id="editDocFileName" name="fileName" required maxlength="255" />
+                            <div class="invalid-feedback">A fájlnév megadása kötelező.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="editDocDocumentTypeId" class="form-label">Dokumentum típusa</label>
+                            <select class="form-select" id="editDocDocumentTypeId" name="documentTypeId">
+                                <option value="">— Válassz —</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="editDocStatus" class="form-label">Státusz</label>
+                            <select class="form-select" id="editDocStatus" name="status" required>
+                                <option value="">— Válassz —</option>
+                            </select>
+                            <div class="invalid-feedback">Státusz kiválasztása kötelező.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="editDocPartnerId" class="form-label">Partner</label>
+                            <select class="form-select" id="editDocPartnerId" name="partnerId">
+                                <option value="">— Válassz —</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="editDocSiteId" class="form-label">Telephely</label>
+                            <select class="form-select" id="editDocSiteId" name="siteId" disabled>
+                                <option value="">— Előbb válassz partnert —</option>
+                            </select>
+                        </div>
+
+                        <!-- Metadata edit (egyszerű, ugyanaz a row UI) -->
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label mb-0">Egyedi metaadatok</label>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    id="addEditDocMetaRowBtn">
+                                    + Sor
+                                </button>
+                            </div>
+
+                            <div class="border rounded p-2 mt-2">
+                                <!-- 🔴 FONTOS: EZ a konténer -->
+                                <div id="editDocMetaRows">
+                                    <!-- JS tölti fel openEdit-kor -->
+                                </div>
+
+                                <small class="text-muted">
+                                    Mentéskor csak a kitöltött sorok kerülnek elküldésre.
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-12 d-none" id="editDocErrorBox">
+                            <div class="alert alert-danger mb-0" role="alert" id="editDocErrorText">
+                                Hiba történt a mentés közben.
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Mégse</button>
+                <button type="button" class="btn btn-primary" id="saveEditDocumentBtn">Mentés</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Document HISTORY modal -->
+<div class="modal fade" id="documentHistoryModal" tabindex="-1" aria-labelledby="documentHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content shadow-lg border-0">
+      <div class="modal-header">
+        <h5 class="modal-title" id="documentHistoryModalLabel">
+          Dokumentum előzmények
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="text-muted">
+            Dokumentum ID: <span class="fw-semibold" id="historyDocIdLabel">—</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshDocHistoryBtn">
+            <i class="bi bi-arrow-clockwise me-1"></i>Frissítés
+          </button>
+        </div>
+
+        <div id="docHistoryErrorBox" class="alert alert-danger d-none mb-2" role="alert">
+          Nem sikerült betölteni az előzményeket.
+        </div>
+
+        <div id="docHistoryLoading" class="text-center text-muted py-4 d-none">
+          Betöltés...
+        </div>
+
+        <div id="docHistoryEmpty" class="text-center text-muted py-4 d-none">
+          Nincs előzmény.
+        </div>
+
+        <div class="list-group" id="docHistoryList">
+          <!-- JS tölti -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Bezárás</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+@{
+    var modalVm = ViewData["ModalViewModel"] as Cloud9_2.Models.DocumentModalViewModel;
+    var documentTypes = modalVm?.DocumentTypes ?? new List<SelectListItem>();
+}
+
+<!-- Document Filter Modal -->
+<div class="modal fade" id="docFilterModal" tabindex="-1" aria-labelledby="docFilterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="docFilterModalLabel">
+          <i class="bi bi-funnel me-2"></i>Dokumentum szűrők
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="docFilterForm" autocomplete="off">
+          <div class="row g-3">
+
+            <!-- Search -->
+            <div class="col-12">
+              <label class="form-label" for="filterSearch">Keresés</label>
+              <input type="text" class="form-control" id="filterSearch" name="searchTerm"
+                     placeholder="Fájlnév, feltöltő, partner, típus...">
+              <div class="form-text">Legalább 2 karakter javasolt.</div>
+            </div>
+
+            <!-- Status -->
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="filterStatus">Státusz</label>
+              <select class="form-select" id="filterStatus" name="statusFilter">
+                <option value="all">Összes</option>
+                <option value="Beérkezett">Beérkezett</option>
+                <option value="Függőben">Függőben</option>
+                <option value="Elfogadott">Elfogadott</option>
+                <option value="Lezárt">Lezárt</option>
+                <option value="Jóváhagyandó">Jóváhagyandó</option>
+              </select>
+            </div>
+
+            <!-- Include inactive -->
+            <div class="col-12 col-md-6 d-flex align-items-end">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="filterIncludeInactive" name="includeInactive">
+                <label class="form-check-label" for="filterIncludeInactive">
+                  Inaktív (soft delete) tételek is
+                </label>
+              </div>
+            </div>
+
+            <!-- DocumentType (SIMA SELECT) -->
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="filterDocumentTypeId">Dokumentum típus</label>
+              <select id="filterDocumentTypeId" name="documentTypeId" class="form-select">
+                <option value="">— Összes típus —</option>
+                @foreach (var dt in documentTypes)
+                {
+                    <option value="@dt.Value">@dt.Text</option>
+                }
+              </select>
+            </div>
+
+            <!-- Partner (TomSelect remote) -->
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="filterPartnerId">Partner</label>
+              <select id="filterPartnerId" name="partnerId" class="form-select">
+                <option value="">— Összes partner —</option>
+              </select>
+              <div class="form-text">Partner kiválasztása után töltjük a Site listát.</div>
+            </div>
+
+            <!-- Site (TomSelect options partner alapján) -->
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="filterSiteId">Site</label>
+              <select id="filterSiteId" name="siteId" class="form-select">
+                <option value="">— Összes site —</option>
+              </select>
+            </div>
+
+            <!-- Date range -->
+            <div class="col-12 col-md-3">
+              <label class="form-label" for="filterDateFrom">Létrehozás dátumtól</label>
+              <input type="date" class="form-control" id="filterDateFrom" name="dateFrom">
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label" for="filterDateTo">Létrehozás dátumig</label>
+              <input type="date" class="form-control" id="filterDateTo" name="dateTo">
+            </div>
+
+            <!-- Sorting -->
+            <div class="col-12 col-md-4">
+              <label class="form-label" for="filterSortBy">Rendezés</label>
+              <select class="form-select" id="filterSortBy" name="sortBy">
+                <option value="uploaddate">Létrehozás dátuma</option>
+                <option value="filename">Fájlnév</option>
+                <option value="status">Státusz</option>
+                <option value="documentid">Azonosító</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-2">
+              <label class="form-label" for="filterSortDir">Irány</label>
+              <select class="form-select" id="filterSortDir" name="sortDir">
+                <option value="desc">Csökkenő</option>
+                <option value="asc">Növekvő</option>
+              </select>
+            </div>
+
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" id="filterResetBtn">
+          <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+        </button>
+
+        <div>
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Mégse</button>
+          <button type="button" class="btn btn-primary" id="filterApplyBtn">
+            <i class="bi bi-check2 me-2"></i>Alkalmaz
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
