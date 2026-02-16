@@ -347,4 +347,10 @@ if (app.Environment.IsDevelopment())
         logger.LogError(ex, "An error occurred while seeding the database.");
     }
 }
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await db.Database.MigrateAsync();
+}
+
 app.Run();
