@@ -16,6 +16,40 @@ using Microsoft.AspNetCore.DataProtection;
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
+// ===== DataProtection konfiguráció =====
+
+var dpPath = builder.Environment.IsDevelopment()
+    ? Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Cloud9Demo",
+        "dpkeys")
+    : "/var/dpkeys";
+
+// biztosítsuk, hogy a mappa létezik
+Directory.CreateDirectory(dpPath);
+
+// productionban inkább álljon le, ha nem írható
+if (!builder.Environment.IsDevelopment())
+{
+    try
+    {
+        var testFile = Path.Combine(dpPath, ".__write_test");
+        File.WriteAllText(testFile, "test");
+        File.Delete(testFile);
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException(
+            $"DataProtection path '{dpPath}' nem írható. Ellenőrizd a Docker volume mountot.",
+            ex);
+    }
+}
+
+builder.Services
+    .AddDataProtection()
+    .SetApplicationName("Cloud9Demo")
+    .PersistKeysToFileSystem(new DirectoryInfo(dpPath));
+
 builder.Services.AddControllers()
   .AddJsonOptions(o =>
   {
@@ -124,20 +158,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultUI()
 .AddDefaultTokenProviders();
 
-if (builder.Environment.IsDevelopment())
-{
-    var dpDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Cloud9Demo", "dpkeys");
-    builder.Services.AddDataProtection()
-        .PersistKeysToFileSystem(new DirectoryInfo(dpDir))
-        .SetApplicationName("Cloud9Demo");
-}
-else
-{
-    // Dockerben volume-on keresztül
-    builder.Services.AddDataProtection()
-        .PersistKeysToFileSystem(new DirectoryInfo("/var/dpkeys"))
-        .SetApplicationName("Cloud9Demo");
-}
+
 
 
 builder.Services.ConfigureApplicationCookie(options =>
@@ -148,9 +169,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LogoutPath = "/Identity/Account/Logout";
     options.AccessDeniedPath = "/Identity/Account/AccessDenied";
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
-                                    ? CookieSecurePolicy.SameAsRequest
-                                    : CookieSecurePolicy.Always;
+options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+options.Cookie.SameSite = SameSiteMode.Lax;
 
     var cookieName = builder.Configuration["Cookie:Name"];
     if (!string.IsNullOrWhiteSpace(cookieName))
@@ -182,7 +202,7 @@ else
 }
 
 app.MapHub<ChatHub>("/chathub");
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRequestLocalization();
 app.UseRouting();

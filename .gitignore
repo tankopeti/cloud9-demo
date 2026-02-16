@@ -1,25 +1,42 @@
+####################################
 # .NET / Visual Studio
+####################################
 .vs/
 bin/
 obj/
 *.user
 *.suo
+*.userosscache
+*.sln.docstates
 
+####################################
 # Node
+####################################
 node_modules/
 
-# Logs / temp
+####################################
+# Logs
+####################################
 *.log
 
-# Certificates / secrets
+####################################
+# Certificates / Secrets
+####################################
 *.pfx
-
-# Uploads (demohoz ne menjenek fel)
-wwwroot/uploads/
-
-# (opcionális) ha van külön belső repo
-ERP-Document-Management/
-
 appsettings.Development.json
-*.pfx
 
+####################################
+# Local uploads / storage
+####################################
+wwwroot/uploads/
+fileok/
+
+####################################
+# OS
+####################################
+.DS_Store
+
+cert.pfx
+*.pfx
+Dockerfile.dev
+.vscode/
