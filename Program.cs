@@ -200,6 +200,24 @@ else
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
+// ✅ DB migráció – Productionban is fusson (különben nincs DB/tábla)
+try
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    logger.LogWarning(">>> Running EF migrations...");
+    await db.Database.MigrateAsync();
+    logger.LogWarning(">>> EF migrations completed.");
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, ">>> EF migrations FAILED.");
+    throw;
+}
+
 
 app.MapHub<ChatHub>("/chathub");
 // app.UseHttpsRedirection();
@@ -225,7 +243,7 @@ if (app.Environment.IsDevelopment())
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
             var context = services.GetRequiredService<ApplicationDbContext>();
-            await context.Database.MigrateAsync();
+            // await context.Database.MigrateAsync();=
             //   var openSearchService = services.GetRequiredService<OpenSearchService>();
             var logger = services.GetRequiredService<ILogger<Program>>();
 
@@ -347,10 +365,4 @@ if (app.Environment.IsDevelopment())
         logger.LogError(ex, "An error occurred while seeding the database.");
     }
 }
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await db.Database.MigrateAsync();
-}
-
 app.Run();
