@@ -9,6 +9,9 @@ using Microsoft.AspNetCore.Localization;
 using System.Globalization;
 using System.Text.Json.Serialization;
 using Cloud9_2.Interceptors;
+using System.IO;
+using Microsoft.AspNetCore.DataProtection;
+
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
@@ -121,6 +124,22 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultUI()
 .AddDefaultTokenProviders();
 
+if (builder.Environment.IsDevelopment())
+{
+    var dpDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Cloud9Demo", "dpkeys");
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(dpDir))
+        .SetApplicationName("Cloud9Demo");
+}
+else
+{
+    // Dockerben volume-on keresztül
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo("/var/dpkeys"))
+        .SetApplicationName("Cloud9Demo");
+}
+
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.ExpireTimeSpan = TimeSpan.FromMinutes(450);
@@ -132,6 +151,10 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
                                     ? CookieSecurePolicy.SameAsRequest
                                     : CookieSecurePolicy.Always;
+
+    var cookieName = builder.Configuration["Cookie:Name"];
+    if (!string.IsNullOrWhiteSpace(cookieName))
+        options.Cookie.Name = cookieName;
 });
 
 builder.Services.AddScoped<UserManager<ApplicationUser>>();
@@ -174,134 +197,134 @@ app.MapHub<UserActivityHub>("/userActivityHub");
 
 if (app.Environment.IsDevelopment())
 {
-try
-{
-    using (var scope = app.Services.CreateScope())
+    try
     {
-        var services = scope.ServiceProvider;
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        await context.Database.MigrateAsync();
-        //   var openSearchService = services.GetRequiredService<OpenSearchService>();
-        var logger = services.GetRequiredService<ILogger<Program>>();
-
-
-
-        // Initialize OpenSearch
-        //   await openSearchService.InitializeAsync();
-
-        // Seed Roles and Users (unchanged)
-        string[] roleNames = { "SuperAdmin", "Admin" };
-        foreach (var roleName in roleNames)
+        using (var scope = app.Services.CreateScope())
         {
-            if (!await roleManager.RoleExistsAsync(roleName))
+            var services = scope.ServiceProvider;
+            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
+            await context.Database.MigrateAsync();
+            //   var openSearchService = services.GetRequiredService<OpenSearchService>();
+            var logger = services.GetRequiredService<ILogger<Program>>();
+
+
+
+            // Initialize OpenSearch
+            //   await openSearchService.InitializeAsync();
+
+            // Seed Roles and Users (unchanged)
+            string[] roleNames = { "SuperAdmin", "Admin" };
+            foreach (var roleName in roleNames)
             {
-                var roleResult = await roleManager.CreateAsync(new IdentityRole(roleName));
-                if (roleResult.Succeeded)
+                if (!await roleManager.RoleExistsAsync(roleName))
                 {
-                    logger.LogInformation("Role '{RoleName}' created successfully.", roleName);
+                    var roleResult = await roleManager.CreateAsync(new IdentityRole(roleName));
+                    if (roleResult.Succeeded)
+                    {
+                        logger.LogInformation("Role '{RoleName}' created successfully.", roleName);
+                    }
+                    else
+                    {
+                        logger.LogError("Failed to create role '{RoleName}': {Errors}", roleName, string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+                    }
+                }
+            }
+
+
+
+            var superAdminEmail = "superadmin@example.com";
+            var superAdmin = await userManager.FindByEmailAsync(superAdminEmail);
+            if (superAdmin == null)
+            {
+                superAdmin = new ApplicationUser
+                {
+                    UserName = superAdminEmail,
+                    Email = superAdminEmail,
+                    EmailConfirmed = true,
+                    MustChangePassword = false
+                };
+                var superAdminPassword = builder.Configuration["SeedAdminPasswords:SuperAdmin"] ?? "SuperAdmin@123";
+                var createResult = await userManager.CreateAsync(superAdmin, superAdminPassword);
+                if (createResult.Succeeded)
+                {
+                    logger.LogInformation("User '{Email}' created successfully.", superAdminEmail);
+                    var addToRoleResult = await userManager.AddToRoleAsync(superAdmin, "SuperAdmin");
+                    if (addToRoleResult.Succeeded)
+                    {
+                        logger.LogInformation("User '{Email}' added to role 'SuperAdmin'.", superAdminEmail);
+                    }
+                    else
+                    {
+                        logger.LogError("Failed to add user '{Email}' to role 'SuperAdmin': {Errors}", superAdminEmail, string.Join(", ", addToRoleResult.Errors.Select(e => e.Description)));
+                    }
                 }
                 else
                 {
-                    logger.LogError("Failed to create role '{RoleName}': {Errors}", roleName, string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+                    logger.LogError("Failed to create user '{Email}': {Errors}", superAdminEmail, string.Join(", ", createResult.Errors.Select(e => e.Description)));
                 }
             }
-        }
 
-
-
-        var superAdminEmail = "superadmin@example.com";
-        var superAdmin = await userManager.FindByEmailAsync(superAdminEmail);
-        if (superAdmin == null)
-        {
-            superAdmin = new ApplicationUser
+            var adminEmail = "admin@example.com";
+            var admin = await userManager.FindByEmailAsync(adminEmail);
+            if (admin == null)
             {
-                UserName = superAdminEmail,
-                Email = superAdminEmail,
-                EmailConfirmed = true,
-                MustChangePassword = false
-            };
-            var superAdminPassword = builder.Configuration["SeedAdminPasswords:SuperAdmin"] ?? "SuperAdmin@123";
-            var createResult = await userManager.CreateAsync(superAdmin, superAdminPassword);
-            if (createResult.Succeeded)
-            {
-                logger.LogInformation("User '{Email}' created successfully.", superAdminEmail);
-                var addToRoleResult = await userManager.AddToRoleAsync(superAdmin, "SuperAdmin");
-                if (addToRoleResult.Succeeded)
+                admin = new ApplicationUser
                 {
-                    logger.LogInformation("User '{Email}' added to role 'SuperAdmin'.", superAdminEmail);
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    EmailConfirmed = true,
+                    MustChangePassword = false
+                };
+                var adminPassword = builder.Configuration["SeedAdminPasswords:Admin"] ?? "Admin@123";
+                var createResult = await userManager.CreateAsync(admin, adminPassword);
+                if (createResult.Succeeded)
+                {
+                    logger.LogInformation("User '{Email}' created successfully.", adminEmail);
+                    var addToRoleResult = await userManager.AddToRoleAsync(admin, "Admin");
+                    if (addToRoleResult.Succeeded)
+                    {
+                        logger.LogInformation("User '{Email}' added to role 'Admin'.", adminEmail);
+                    }
+                    else
+                    {
+                        logger.LogError("Failed to add user '{Email}' to role 'Admin': {Errors}", adminEmail, string.Join(", ", addToRoleResult.Errors.Select(e => e.Description)));
+                    }
                 }
                 else
                 {
-                    logger.LogError("Failed to add user '{Email}' to role 'SuperAdmin': {Errors}", superAdminEmail, string.Join(", ", addToRoleResult.Errors.Select(e => e.Description)));
+                    logger.LogError("Failed to create user '{Email}': {Errors}", adminEmail, string.Join(", ", createResult.Errors.Select(e => e.Description)));
                 }
             }
-            else
-            {
-                logger.LogError("Failed to create user '{Email}': {Errors}", superAdminEmail, string.Join(", ", createResult.Errors.Select(e => e.Description)));
-            }
-        }
 
-        var adminEmail = "admin@example.com";
-        var admin = await userManager.FindByEmailAsync(adminEmail);
-        if (admin == null)
-        {
-            admin = new ApplicationUser
+            // Seed DocumentTypes with proper async handling
+            if (!context.DocumentTypes.Any())
             {
-                UserName = adminEmail,
-                Email = adminEmail,
-                EmailConfirmed = true,
-                MustChangePassword = false
-            };
-            var adminPassword = builder.Configuration["SeedAdminPasswords:Admin"] ?? "Admin@123";
-            var createResult = await userManager.CreateAsync(admin, adminPassword);
-            if (createResult.Succeeded)
-            {
-                logger.LogInformation("User '{Email}' created successfully.", adminEmail);
-                var addToRoleResult = await userManager.AddToRoleAsync(admin, "Admin");
-                if (addToRoleResult.Succeeded)
+                var types = new[]
                 {
-                    logger.LogInformation("User '{Email}' added to role 'Admin'.", adminEmail);
-                }
-                else
-                {
-                    logger.LogError("Failed to add user '{Email}' to role 'Admin': {Errors}", adminEmail, string.Join(", ", addToRoleResult.Errors.Select(e => e.Description)));
-                }
-            }
-            else
-            {
-                logger.LogError("Failed to create user '{Email}': {Errors}", adminEmail, string.Join(", ", createResult.Errors.Select(e => e.Description)));
-            }
-        }
-
-        // Seed DocumentTypes with proper async handling
-        if (!context.DocumentTypes.Any())
-        {
-            var types = new[]
-            {
                   new DocumentType { Name = "Invoice" },
                   new DocumentType { Name = "Contract" },
                   new DocumentType { Name = "DeliveryNote" },
                   new DocumentType { Name = "Unknown" }
               };
-            context.DocumentTypes.AddRange(types);
-            try
-            {
-                await context.SaveChangesAsync();
-                logger.LogInformation("DocumentTypes seeded successfully: {Types}", string.Join(", ", types.Select(t => t.Name)));
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to seed DocumentTypes.");
+                context.DocumentTypes.AddRange(types);
+                try
+                {
+                    await context.SaveChangesAsync();
+                    logger.LogInformation("DocumentTypes seeded successfully: {Types}", string.Join(", ", types.Select(t => t.Name)));
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to seed DocumentTypes.");
+                }
             }
         }
     }
-}
-catch (Exception ex)
-{
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogError(ex, "An error occurred while seeding the database.");
-}
+    catch (Exception ex)
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
 }
 app.Run();
