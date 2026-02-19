@@ -1,0 +1,128 @@
+@page
+@using Cloud9_2.Models
+@model Cloud9_2.Pages.BusinessDocument.Contract.IndexModel
+@using System.Globalization
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Szerződések";
+}
+
+@await Html.PartialAsync("~/Pages/DocManagement/_DocManSidebar.cshtml")
+
+<div class="right-content">
+    <div class="page-header-fixed-top">
+
+        <!-- Breadcrumb -->
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-body-tertiary rounded-3 p-2 mb-0">
+                    <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
+                    <li class="breadcrumb-item"><a href="../">CRM Dashboard</a></li>
+                    <li class="breadcrumb-item active">Szerződések</li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Header actions -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createContractModal">
+                    + Új Szerződés
+                </button>
+
+                <button class="btn btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#contractFilterModal">
+                    <i class="bi bi-funnel me-2"></i>Szűrő
+                </button>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <form method="get" asp-page="./Index"
+                      class="input-group input-group-sm"
+                      style="width: 280px;">
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Szerződések keresése..."
+                           name="SearchTerm"
+                           value="@Model.SearchTerm">
+                    <input type="hidden" name="PageSize" value="@Model.PageSize" />
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </form>
+
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                            type="button"
+                            data-bs-toggle="dropdown">
+                        <i class="bi bi-funnel me-1"></i>Rendezés / Szűrés
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="?SortBy=date_desc">Legújabb elöl</a></li>
+                        <li><a class="dropdown-item" href="?SortBy=date_asc">Legrégebbi elöl</a></li>
+                        <li><a class="dropdown-item" href="?SortBy=status">Státusz</a></li>
+                        <li><a class="dropdown-item" href="?SortBy=partner">Partner</a></li>
+                        <li><hr class="dropdown-divider"></li>
+
+                        <!-- ha a státuszok nálad lookupból jönnek, ezeket később akár dinamikusan is lehet -->
+                        <li><a class="dropdown-item" href="?StatusFilter=DRAFT">Piszkozat</a></li>
+                        <li><a class="dropdown-item" href="?StatusFilter=APPROVED">Jóváhagyva</a></li>
+                        <li><a class="dropdown-item" href="?StatusFilter=SIGNED">Aláírva</a></li>
+                        <li><a class="dropdown-item" href="?StatusFilter=CANCELLED">Törölve</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <div id="contractsTableWrap" class="table-dynamic-height" data-page-size="@Model.PageSize" data-search="@Model.SearchTerm" data-contract-type-id="6">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="sticky-top custom-thead table-blur">
+                    <tr>
+                        <th>Szerződés típus</th>
+                        <th>Megbízó</th>
+                        <th>Telephely (site)</th>
+                        <th>Partner</th>
+                        <th>Megbízott</th>
+                        <th>Szerződés tárgya</th>
+                        <th>Dátuma</th>
+                        <th>Státusz</th>
+                        <th class="text-center">Műveletek</th>
+                    </tr>
+                </thead>
+
+                <!-- JS IDE TÖLT -->
+                <tbody id="contractsTableBody">
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            Betöltés...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- INFO -->
+<div id="contractsLoadInfo" class="small text-muted text-center py-2"></div>
+
+        <!-- LOAD MORE -->
+        <div id="loadMoreContractsContainer" class="text-center py-2">
+            <button id="loadMoreContractsBtn" class="btn btn-outline-primary btn-sm">
+                Több betöltése
+            </button>
+        </div>
+
+    </div>
+
+    <!-- CREATE / VIEW / EDIT modals -->
+    @await Html.PartialAsync("_ContractModals")
+
+    @section Scripts {
+<script src="~/js/BusinessDoc/contractLoadMore.js"></script>
+
+    }
+</div>

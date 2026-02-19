@@ -2,15 +2,26 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Cloud9_2.Models;
 using Microsoft.AspNetCore.Identity;
+using Cloud9_2.Services.Tenancy;
 
 namespace Cloud9_2.Data
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityRole, string>
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        private readonly ITenantProvider? _tenantProvider;
+
+    // EF filter ezt fogja használni
+    public int? CurrentTenantId { get; private set; }
+
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options,
+        ITenantProvider? tenantProvider = null)
         : base(options)
-        {
-        }
+    {
+        _tenantProvider = tenantProvider;
+        CurrentTenantId = _tenantProvider?.GetTenantId();
+    }
+
 
         public DbSet<Partner> Partners { get; set; }
         public DbSet<Site> Sites { get; set; }
@@ -91,10 +102,72 @@ namespace Cloud9_2.Data
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
         public DbSet<GFO> GFOs { get; set; } = null!;
 
+        public DbSet<BusinessDocument> BusinessDocuments { get; set; }
+        public DbSet<BusinessDocumentLine> BusinessDocumentLines { get; set; }
+        public DbSet<BusinessDocumentParty> BusinessDocumentParties { get; set; }
+        public DbSet<BusinessDocumentPartyRole> BusinessDocumentPartyRoles { get; set; }
+        public DbSet<BusinessDocumentType> BusinessDocumentTypes { get; set; }
+        public DbSet<BusinessDocumentStatus> BusinessDocumentStatuses { get; set; }
+        public DbSet<BusinessDocumentRelation> BusinessDocumentRelations { get; set; }
+        public DbSet<BusinessDocumentRelationType> BusinessDocumentRelationTypes { get; set; }
+        public DbSet<BusinessDocumentAttachment> BusinessDocumentAttachments { get; set; }
+        public DbSet<AttachmentCategoryLookup> AttachmentCategories { get; set; }
+        public DbSet<BusinessDocumentStatusHistory> BusinessDocumentStatusHistories { get; set; }
+        public DbSet<ElectronicDocument> ElectronicDocuments { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+
+            var tenantId = _tenantProvider?.GetTenantId();
+
+            // Csak runtime-ban legyen filter.
+            // Migráció készítésnél tenantId == null lehet -> akkor nem szűrünk.
+            if (tenantId != null)
+            {
+                modelBuilder.Entity<BusinessDocument>()
+                    .HasQueryFilter(x => !x.IsDeleted && x.TenantId == tenantId.Value);
+
+                modelBuilder.Entity<BusinessDocumentLine>()
+                    .HasQueryFilter(x => x.TenantId == tenantId.Value);
+
+                modelBuilder.Entity<BusinessDocumentParty>()
+                    .HasQueryFilter(x => x.TenantId == tenantId.Value);
+
+                modelBuilder.Entity<BusinessDocumentRelation>()
+                    .HasQueryFilter(x => x.TenantId == tenantId.Value);
+
+                modelBuilder.Entity<BusinessDocumentAttachment>()
+                    .HasQueryFilter(x => x.TenantId == tenantId.Value);
+
+                modelBuilder.Entity<BusinessDocumentStatusHistory>()
+                    .HasQueryFilter(x => x.TenantId == tenantId.Value);
+
+                // Lookup tábláknál általában nincs tenant (globális).
+                // Ha nálad tenant-specifikusak lesznek, akkor oda is mehet.
+            }
+
+            modelBuilder.Entity<BusinessDocumentRelation>(entity =>
+{
+    entity.HasKey(x => x.BusinessDocumentRelationId);
+
+    entity.HasOne(x => x.FromBusinessDocument)
+          .WithMany(d => d.FromRelations)
+          .HasForeignKey(x => x.FromBusinessDocumentId)
+          .OnDelete(DeleteBehavior.Restrict);
+
+    entity.HasOne(x => x.ToBusinessDocument)
+          .WithMany(d => d.ToRelations)
+          .HasForeignKey(x => x.ToBusinessDocumentId)
+          .OnDelete(DeleteBehavior.Restrict);
+
+    entity.HasIndex(x => new { x.TenantId, x.FromBusinessDocumentId, x.ToBusinessDocumentId, x.BusinessDocumentRelationTypeId })
+          .IsUnique();
+});
+
+
 
             modelBuilder.Entity<Partner>().ToTable("Partners");
 
@@ -177,24 +250,24 @@ namespace Cloud9_2.Data
             });
 
             modelBuilder.Entity<TaskDocumentLink>(entity =>
-    {
-        entity.HasKey(e => e.Id);
+            {
+                entity.HasKey(e => e.Id);
 
-        entity.HasOne(e => e.Task)
-              .WithMany(t => t.TaskDocuments)
-              .HasForeignKey(e => e.TaskId)
-              .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Task)
+                    .WithMany(t => t.TaskDocuments)
+                    .HasForeignKey(e => e.TaskId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-        entity.HasOne(e => e.Document)
-              .WithMany(d => d.TaskDocuments)
-              .HasForeignKey(e => e.DocumentId)
-              .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Document)
+                    .WithMany(d => d.TaskDocuments)
+                    .HasForeignKey(e => e.DocumentId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-        entity.HasOne(e => e.LinkedBy)
-              .WithMany()
-              .HasForeignKey(e => e.LinkedById)
-              .OnDelete(DeleteBehavior.SetNull);
-    });
+                entity.HasOne(e => e.LinkedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.LinkedById)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
 
             modelBuilder.Entity<Partner>()
             .HasMany(p => p.Sites)
@@ -1252,5 +1325,40 @@ namespace Cloud9_2.Data
                 .HasForeignKey(c => c.LastModifiedBy)
                 .OnDelete(DeleteBehavior.NoAction);
         }
+
+        public override int SaveChanges()
+{
+    ApplyTenantId();
+    return base.SaveChanges();
+}
+
+public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+{
+    ApplyTenantId();
+    return base.SaveChangesAsync(cancellationToken);
+}
+
+private void ApplyTenantId()
+{
+    if (_tenantProvider == null) return;
+
+    int? tenantId = _tenantProvider.GetTenantId();
+    if (tenantId == null) return; // nincs tenant (pl. migráció/model build), ne írjunk semmit
+
+    foreach (var entry in ChangeTracker.Entries<ITenantEntity>())
+    {
+        if (entry.State == EntityState.Added)
+        {
+            // UI ne tudjon "más tenant"-et beadni
+            entry.Entity.TenantId = tenantId.Value;
+        }
+        else if (entry.State == EntityState.Modified)
+        {
+            // Extra védelem: ne lehessen TenantId-t átírni
+            entry.Property(nameof(ITenantEntity.TenantId)).IsModified = false;
+        }
+    }
+}
+
     }
 }
