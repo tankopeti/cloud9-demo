@@ -26,7 +26,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
       ASPNETCORE_URLS: "http://0.0.0.0:8080"
-      ConnectionStrings__DefaultConnection: "Server=mssql;Database=Cloud9.2;User Id=sa;Password=HUmmer512!!!;TrustServerCertificate=True;"
+      ConnectionStrings__DefaultConnection: "Server=mssql;Database=Cloud9_Nyugalom;User Id=sa;Password=HUmmer512!!!;TrustServerCertificate=True;"
     ports:
       - "8080:8080"
     volumes:
