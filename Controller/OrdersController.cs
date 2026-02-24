@@ -28,53 +28,6 @@ namespace Cloud9_2.Controllers
             _logger = logger;
         }
 
-        // POST: api/Orders
-        [HttpPost]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<OrderDTO>> CreateOrder([FromBody] OrderCreateDTO orderDto)
-        {
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Érvénytelen modell állapot a rendelés létrehozásakor: {Errors}", string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
-                return BadRequest(new
-                {
-                    Message = "Érvénytelen adatok.",
-                    Errors = ModelState.ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
-                    )
-                });
-            }
-
-            try
-            {
-                var user = await _userManager.GetUserAsync(User);
-                if (user == null)
-                {
-                    _logger.LogWarning("Felhasználó nem található a jogosultságokban");
-                    return Unauthorized(new { Message = "Felhasználó nincs hitelesítve" });
-                }
-
-                var order = await _orderService.CreateOrderAsync(orderDto, user.Id);
-                var orderDtoResponse = MapToOrderDTO(order);
-                _logger.LogInformation("Sikeresen létrehozva a rendelés, ID: {OrderId}", order.OrderId);
-                return CreatedAtAction(nameof(GetOrder), new { orderId = order.OrderId }, orderDtoResponse);
-            }
-            catch (ValidationException ex)
-            {
-                _logger.LogWarning(ex, "Érvénytelen adat a rendelés létrehozásakor");
-                return BadRequest(new { Message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Váratlan hiba a rendelés létrehozása során");
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "Belső szerverhiba" });
-            }
-        }
-
         // GET: api/Orders/{orderId}
         [HttpGet("{orderId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -306,34 +259,12 @@ return new OrderDTO
                 PaymentTermName = order.PaymentTerm?.TermName,
                 ContactId = order.ContactId,
                 ContactName = order.Contact?.FirstName,
-                OrderType = order.OrderType,
                 ReferenceNumber = order.ReferenceNumber,
                 QuoteId = order.QuoteId,
                 IsDeleted = order.IsDeleted,
                 OrderStatusTypes = order.OrderStatusTypes,
                 OrderStatusTypeName = order.OrderStatusType?.StatusName ?? "N/A",
                 OrderStatusTypeColor = order.OrderStatusType?.Color ?? "#6c757d",
-                OrderItems = order.OrderItems?.Select(oi => new OrderItemDTO
-                {
-                    OrderItemId = oi.OrderItemId,
-                    OrderId = oi.OrderId,
-                    Description = oi.Description,
-                    Quantity = oi.Quantity,
-                    UnitPrice = oi.UnitPrice,
-                    DiscountAmount = oi.DiscountAmount,
-                    CreatedBy = oi.CreatedBy,
-                    CreatedDate = oi.CreatedDate,
-                    ModifiedBy = oi.ModifiedBy,
-                    ModifiedDate = oi.ModifiedDate,
-                    DiscountType = oi.DiscountType,
-                    ProductId = oi.ProductId,
-                    ProductName = oi.Product?.Name,
-                    VatTypeId = oi.VatTypeId,
-                    VatRate = oi.VatType?.Rate,
-                    LineTotal = oi.LineTotal,
-                    VATvalue = oi.VATvalue,
-                    Gross = oi.Gross
-                }).ToList() ?? new List<OrderItemDTO>()
             };
         }
     }

@@ -20,6 +20,5 @@ namespace Cloud9_2.Models
 
         // Navigation properties
         public Quote Quote { get; set; }
-        public QuoteItem? QuoteItem { get; set; }
     }
 }

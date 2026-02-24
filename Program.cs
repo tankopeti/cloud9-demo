@@ -118,9 +118,7 @@ builder.Services.AddScoped<QuoteService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<CustomerCommunicationService>();
 builder.Services.AddScoped<PartnerService>();
-builder.Services.AddScoped<ProductPriceService>();
 builder.Services.AddScoped<ContactService>();
-builder.Services.AddScoped<PartnerProductPriceService>();
 builder.Services.AddScoped<BusinessDocumentService>();
 
 builder.Services.AddMemoryCache();
@@ -132,6 +130,8 @@ builder.Services.AddHttpClient();
 //   builder.Services.AddAutoMapper(typeof(OrderProfile));
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.AddAutoMapper(typeof(Cloud9_2.Mapping.BusinessDocumentProfile).Assembly);
+
 builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");

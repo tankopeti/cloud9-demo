@@ -40,7 +40,6 @@ namespace Cloud9_2.Models
 
         public ApplicationUser Creator { get; set; }
         public ApplicationUser LastModifier { get; set; }
-        public List<WarehouseStock> Stocks { get; set; } = new List<WarehouseStock>();
     }
 }
 

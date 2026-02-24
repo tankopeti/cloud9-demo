@@ -1,13 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Cloud9_2.Models
 {
-    // =========================================================
-    // 2) Bizonylat tételek (Lines)
-    // =========================================================
     [Table("BusinessDocumentLines")]
     public class BusinessDocumentLine
     {
@@ -28,18 +24,48 @@ namespace Cloud9_2.Models
 
         public int LineNo { get; set; } = 1;
 
-        public int? ItemId { get; set; }
+        // =========================
+        // ITEM (kötelező)
+        // =========================
+        [Required]
+        public int ItemId { get; set; }
 
+        [ForeignKey(nameof(ItemId))]
+        public Item Item { get; set; } = null!;
+
+        // =========================
+        // SNAPSHOT mezők (kötelező)
+        // =========================
+        [Required, MaxLength(100)]
+        public string ItemCodeSnapshot { get; set; } = null!;
+
+        [Required, MaxLength(200)]
+        public string ItemNameSnapshot { get; set; } = null!;
+
+        [Required, MaxLength(50)]
+        public string UomSnapshot { get; set; } = null!;
+
+        // Ha TaxCode-ban nem "rate" van, hanem csak kód, akkor ez maradhat TaxCodeSnapshot is.
+        [Column(TypeName = "decimal(9,4)")]
+        public decimal VatRateSnapshot { get; set; }
+
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal UnitPriceSnapshot { get; set; }
+
+        // =========================
+        // Sor saját mezők
+        // =========================
         [MaxLength(500)]
-        public string? Description { get; set; }
+        public string? Description { get; set; }   // szabad szöveg, de snapshot ettől még él
 
         [Column(TypeName = "decimal(18,4)")]
         public decimal Quantity { get; set; } = 1;
 
+        // Ha később kell mégis, maradhatnak, de a snapshot az igazság.
         public int? UnitId { get; set; }
 
         [Column(TypeName = "decimal(18,4)")]
-        public decimal? UnitPrice { get; set; }
+        public decimal? UnitPrice { get; set; } // legacy / override (opcionális)
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal? DiscountAmount { get; set; }
@@ -58,101 +84,80 @@ namespace Cloud9_2.Models
         public int? WarehouseId { get; set; }
     }
 
-    // =========================================================
-    // DTO-k (ugyanebben a fájlban)
-    // =========================================================
+public class BusinessDocumentLineDto
+{
+    public int BusinessDocumentLineId { get; set; }
+    public int TenantId { get; set; }
+    public int BusinessDocumentId { get; set; }
+    public int LineNo { get; set; }
 
-    /// <summary>
-    /// Lista / detail DTO (gridhez vagy bizonylat részletezéshez).
-    /// </summary>
-    public class BusinessDocumentLineDto
-    {
-        public int BusinessDocumentLineId { get; set; }
+    public int ItemId { get; set; }
 
-        public int TenantId { get; set; }
+    public string ItemCodeSnapshot { get; set; } = null!;
+    public string ItemNameSnapshot { get; set; } = null!;
+    public string UomSnapshot { get; set; } = null!;
+    public decimal VatRateSnapshot { get; set; }
+    public decimal UnitPriceSnapshot { get; set; }
 
-        public int BusinessDocumentId { get; set; }
+    public string? Description { get; set; }
+    public decimal Quantity { get; set; }
 
-        public int LineNo { get; set; }
+    public int? UnitId { get; set; }
+    public decimal? UnitPrice { get; set; }
+    public decimal? DiscountAmount { get; set; }
+    public decimal? NetAmount { get; set; }
+    public int? TaxCodeId { get; set; }
+    public decimal? TaxAmount { get; set; }
+    public decimal? GrossAmount { get; set; }
+    public int? WarehouseId { get; set; }
+}
 
-        public int? ItemId { get; set; }
+public class BusinessDocumentLineCreateDto
+{
+    [Required]
+    public int TenantId { get; set; }
 
-        public string? Description { get; set; }
+    [Required]
+    public int BusinessDocumentId { get; set; }
 
-        public decimal Quantity { get; set; }
+    public int LineNo { get; set; } = 1;
 
-        public int? UnitId { get; set; }
+    [Required]
+    public int ItemId { get; set; }
 
-        public decimal? UnitPrice { get; set; }
+    [MaxLength(500)]
+    public string? Description { get; set; }
 
-        public decimal? DiscountAmount { get; set; }
+    public decimal Quantity { get; set; } = 1;
 
-        public decimal? NetAmount { get; set; }
+    public int? UnitId { get; set; }
+    public decimal? UnitPrice { get; set; } // opcionális override
+    public decimal? DiscountAmount { get; set; }
+    public int? TaxCodeId { get; set; }
+    public int? WarehouseId { get; set; }
+}
 
-        public int? TaxCodeId { get; set; }
+public class BusinessDocumentLineUpdateDto
+{
+    public int LineNo { get; set; }
 
-        public decimal? TaxAmount { get; set; }
+    public int ItemId { get; set; }  // ha nem akarod engedni, vedd ki
 
-        public decimal? GrossAmount { get; set; }
+    [MaxLength(500)]
+    public string? Description { get; set; }
 
-        public int? WarehouseId { get; set; }
-    }
+    public decimal Quantity { get; set; }
+    public int? UnitId { get; set; }
+    public decimal? UnitPrice { get; set; }
+    public decimal? DiscountAmount { get; set; }
+    public int? TaxCodeId { get; set; }
+    public int? WarehouseId { get; set; }
+}
 
-    /// <summary>
-    /// Create DTO – új tétel hozzáadásához.
-    /// TenantId és BusinessDocumentId kötelező.
-    /// </summary>
-    public class BusinessDocumentLineCreateDto
-    {
-        [Required]
-        public int TenantId { get; set; }
 
-        [Required]
-        public int BusinessDocumentId { get; set; }
 
-        public int LineNo { get; set; } = 1;
 
-        public int? ItemId { get; set; }
 
-        [MaxLength(500)]
-        public string? Description { get; set; }
 
-        public decimal Quantity { get; set; } = 1;
 
-        public int? UnitId { get; set; }
-
-        public decimal? UnitPrice { get; set; }
-
-        public decimal? DiscountAmount { get; set; }
-
-        public int? TaxCodeId { get; set; }
-
-        public int? WarehouseId { get; set; }
-    }
-
-    /// <summary>
-    /// Update DTO – tétel szerkesztéséhez.
-    /// Általában nem engedjük a TenantId és BusinessDocumentId módosítását.
-    /// </summary>
-    public class BusinessDocumentLineUpdateDto
-    {
-        public int LineNo { get; set; }
-
-        public int? ItemId { get; set; }
-
-        [MaxLength(500)]
-        public string? Description { get; set; }
-
-        public decimal Quantity { get; set; }
-
-        public int? UnitId { get; set; }
-
-        public decimal? UnitPrice { get; set; }
-
-        public decimal? DiscountAmount { get; set; }
-
-        public int? TaxCodeId { get; set; }
-
-        public int? WarehouseId { get; set; }
-    }
 }

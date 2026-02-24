@@ -42,9 +42,6 @@ namespace Cloud9_2.Models
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Listaár")]
         public decimal? ListPrice { get; set; } // Added by migration
-
-        [ForeignKey("OrderItemId")]
-        public OrderItem? OrderItem { get; set; }
     }
 
     public class OrderItemDiscountDTO

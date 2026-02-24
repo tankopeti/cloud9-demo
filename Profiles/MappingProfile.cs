@@ -12,23 +12,11 @@ using Cloud9_2.Models;
                 .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.ModifiedBy, opt => opt.MapFrom(src => "System"))
                 .ForMember(dest => dest.ModifiedDate, opt => opt.MapFrom(src => DateTime.UtcNow))
-                .ForMember(dest => dest.QuoteItems, opt => opt.MapFrom(src => src.QuoteItems));
-
-            CreateMap<CreateQuoteItemDto, QuoteItem>()
-                .ForMember(dest => dest.DiscountTypeId, opt => opt.MapFrom(src => src.DiscountTypeId))
-                .ForMember(dest => dest.DiscountAmount, opt => opt.MapFrom(src => src.DiscountAmount))
-                .ForMember(dest => dest.PartnerPrice, opt => opt.MapFrom(src => src.PartnerPrice))
-                .ForMember(dest => dest.VolumePrice, opt => opt.MapFrom(src => src.VolumePrice));
+;
 
             CreateMap<UpdateQuoteDto, Quote>()
                 .ForMember(dest => dest.ModifiedBy, opt => opt.MapFrom(src => src.ModifiedBy ?? "System"))
                 .ForMember(dest => dest.ModifiedDate, opt => opt.MapFrom(src => DateTime.UtcNow))
-                .ForMember(dest => dest.QuoteItems, opt => opt.MapFrom(src => src.QuoteItems));
-
-            CreateMap<UpdateQuoteItemDto, QuoteItem>()
-                .ForMember(dest => dest.DiscountTypeId, opt => opt.MapFrom(src => src.DiscountTypeId))
-                .ForMember(dest => dest.DiscountAmount, opt => opt.MapFrom(src => src.DiscountAmount))
-                .ForMember(dest => dest.PartnerPrice, opt => opt.MapFrom(src => src.PartnerPrice))
-                .ForMember(dest => dest.VolumePrice, opt => opt.MapFrom(src => src.VolumePrice));
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null)); // Csak nem null
         }
     }

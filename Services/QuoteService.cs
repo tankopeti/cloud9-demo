@@ -43,10 +43,7 @@ namespace Cloud9_2.Services
                 {
                     foreach (var item in createQuoteDto.QuoteItems)
                     {
-                        if (item.ProductId > 0 && !await _context.Products.AnyAsync(pr => pr.ProductId == item.ProductId))
-                        {
-                            throw new InvalidOperationException($"Product with ID {item.ProductId} not found.");
-                        }
+
 
                         if (item.VatTypeId > 0 && !await _context.VatTypes.AnyAsync(v => v.VatTypeId == item.VatTypeId))
                         {
@@ -80,19 +77,7 @@ namespace Cloud9_2.Services
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Quote created with ID {QuoteId} by {CreatedBy}", quote.QuoteId, createdBy);
 
-                // Map and save QuoteItems
-                if (createQuoteDto.QuoteItems != null && createQuoteDto.QuoteItems.Any())
-                {
-                    quote.QuoteItems = _mapper.Map<List<QuoteItem>>(createQuoteDto.QuoteItems);
-                    foreach (var item in quote.QuoteItems)
-                    {
-                        item.QuoteId = quote.QuoteId;
-                        _context.QuoteItems.Add(item);
-                    }
-                    await _context.SaveChangesAsync();
-                }
 
-                _logger.LogInformation("Quote {QuoteId} with {ItemCount} items saved successfully", quote.QuoteId, quote.QuoteItems?.Count ?? 0);
                 return quote;
             }
             catch (DbUpdateException dbEx)
@@ -120,7 +105,6 @@ namespace Cloud9_2.Services
             try
             {
                 var quote = await _context.Quotes
-                    .Include(q => q.QuoteItems)
                     .FirstOrDefaultAsync(q => q.QuoteId == updateQuoteDto.QuoteId);
 
                 if (quote == null)
@@ -138,8 +122,6 @@ namespace Cloud9_2.Services
                 {
                     foreach (var item in updateQuoteDto.QuoteItems)
                     {
-                        if (!await _context.Products.AnyAsync(p => p.ProductId == item.ProductId))
-                            throw new ArgumentException($"Invalid ProductId: {item.ProductId}");
                         if (!await _context.VatTypes.AnyAsync(v => v.VatTypeId == item.VatTypeId))
                             throw new ArgumentException($"Invalid VatTypeId: {item.VatTypeId}");
                     }
@@ -164,45 +146,6 @@ namespace Cloud9_2.Services
                 quote.QuoteDate = updateQuoteDto.QuoteDate ?? quote.QuoteDate;
                 quote.ModifiedBy = updateQuoteDto.ModifiedBy ?? "System";
 
-                // Handle QuoteItems
-                if (updateQuoteDto.QuoteItems != null)
-                {
-                    // Remove items not in the DTO
-                    var existingItemIds = updateQuoteDto.QuoteItems
-                        .Where(i => i.QuoteItemId > 0)
-                        .Select(i => i.QuoteItemId)
-                        .ToList();
-                    var itemsToRemove = quote.QuoteItems
-                        .Where(i => !existingItemIds.Contains(i.QuoteItemId))
-                        .ToList();
-                    foreach (var item in itemsToRemove)
-                    {
-                        _context.QuoteItems.Remove(item);
-                    }
-
-                    // Add or update items
-                    foreach (var itemDto in updateQuoteDto.QuoteItems)
-                    {
-                        var item = quote.QuoteItems.FirstOrDefault(i => i.QuoteItemId == itemDto.QuoteItemId);
-                        if (item == null)
-                        {
-                            item = new QuoteItem { QuoteId = quote.QuoteId };
-                            _context.QuoteItems.Add(item);
-                            quote.QuoteItems.Add(item);
-                        }
-                        item.ProductId = itemDto.ProductId;
-                        item.Quantity = itemDto.Quantity;
-                        item.ListPrice = itemDto.ListPrice;
-                        item.NetDiscountedPrice = itemDto.NetDiscountedPrice;
-                        item.TotalPrice = itemDto.TotalPrice;
-                        item.VatTypeId = itemDto.VatTypeId;
-                        item.DiscountTypeId = itemDto.DiscountTypeId ?? 1;
-                        item.DiscountAmount = itemDto.DiscountAmount ?? 0;
-                        item.PartnerPrice = itemDto.PartnerPrice;
-                        item.VolumePrice = itemDto.VolumePrice;
-                        item.ItemDescription = itemDto.ItemDescription;
-                    }
-                }
 
                 await _context.SaveChangesAsync();
 
@@ -223,7 +166,6 @@ namespace Cloud9_2.Services
             {
                 var quote = await _context.Quotes
                 .Where(q => q.IsActive)
-                    .Include(q => q.QuoteItems)
                     .Include(q => q.Partner)
                     .Include(q => q.Currency)
                     .FirstOrDefaultAsync(q => q.QuoteId == quoteId);
@@ -249,12 +191,10 @@ namespace Cloud9_2.Services
             {
                 var quotes = await _context.Quotes
                     .Where(q => q.IsActive)
-                    .Include(q => q.QuoteItems)
                     .Include(q => q.Partner)
                     .Include(q => q.Currency)
                     .ToListAsync();
 
-                _logger.LogInformation("Retrieved {Count} quotes", quotes.Count);
                 return quotes;
             }
             catch (Exception ex)

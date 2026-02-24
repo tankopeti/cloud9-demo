@@ -1,8 +1,10 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Cloud9_2.Models
 {
+    [Table("Currencies")]
     public class Currency
     {
         [Key]
@@ -33,6 +35,7 @@ namespace Cloud9_2.Models
         public ApplicationUser Creator { get; set; }
         public ApplicationUser LastModifier { get; set; }
         public ICollection<Order> Orders { get; set; }
+        public ICollection<ItemPrice> ItemPrices { get; set; } = new List<ItemPrice>();
 
     }
 }
