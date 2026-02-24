@@ -98,9 +98,6 @@ namespace Cloud9_2.Models
         [ForeignKey("CurrencyId")]
         public Currency? Currency { get; set; }
 
-        [Display(Name = "Tételek")]
-        public List<QuoteItem>? QuoteItems { get; set; } = new List<QuoteItem>();
-
         public List<QuoteHistory>? QuoteHistories { get; set; }
 
         public ICollection<Order>? Orders { get; set; } = new List<Order>();

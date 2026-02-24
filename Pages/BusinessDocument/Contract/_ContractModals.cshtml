@@ -1,0 +1,569 @@
+
+
+<!-- ====================== CREATE CONTRACT MODAL ====================== -->
+@using Cloud9_2.Models
+
+@{
+    // Lookups
+    var statuses = ViewData["BusinessDocumentStatuses"] as List<BusinessDocumentStatusDto> ?? new();
+    var partners = ViewData["Partners"] as List<Partner> ?? new();
+
+    // Contract type id
+    var contractTypeId = (ViewData["ContractTypeId"] as int?) ?? 6;
+
+    // Tenant
+    var tenantId = (ViewData["TenantId"] as int?) ?? 1;
+}
+
+
+<!-- ====================== CREATE CONTRACT MODAL ====================== -->
+<div class="modal fade" id="createContractModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content shadow-lg border-0 overflow-hidden">
+
+            <form id="createContractForm" autocomplete="off">
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header py-2 bg-success text-white">
+                    <h5 class="modal-title fs-5 fw-semibold">
+                        <i class="bi bi-plus-circle me-2"></i> Új szerződés
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body py-4">
+
+                    <input type="hidden" name="TenantId" value="@tenantId" />
+                    <input type="hidden" name="BusinessDocumentTypeId" value="@contractTypeId" />
+
+                    <!-- ====================== HEADER ====================== -->
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Státusz *</label>
+                            <select class="form-select" name="BusinessDocumentStatusId" required>
+                                <option value="">-- Válasszon --</option>
+                                @foreach (var s in statuses)
+                                {
+                                    <option value="@s.BusinessDocumentStatusId">@s.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Szerződésszám</label>
+                            <input type="text" class="form-control" name="DocumentNo" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Kelte</label>
+                            <input type="date" class="form-control" name="IssueDate" />
+                        </div>
+                    </div>
+
+                    <!-- ====================== TOTALS ====================== -->
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Nettó</label>
+                            <input type="number" class="form-control" name="NetTotal" readonly />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Áfa</label>
+                            <input type="number" class="form-control" name="TaxTotal" readonly />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Bruttó</label>
+                            <input type="number" class="form-control" name="GrossTotal" readonly />
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label">Megjegyzés</label>
+                        <textarea class="form-control" name="Notes" rows="3"></textarea>
+                    </div>
+
+                    <!-- ====================== LINES ====================== -->
+                    <hr class="my-4" />
+                    <h6 class="mb-2"><i class="bi bi-list-check me-2"></i>Tételek</h6>
+
+                    <!-- Label row -->
+                    <div class="d-flex flex-nowrap gap-2 mb-1 small text-muted fw-medium">
+                        <div style="min-width:420px;">Termék *</div>
+                        <div style="width:120px;">Qty</div>
+                        <div style="width:150px;">Egységár</div>
+                        <div style="width:100px;">ÁFA%</div>
+                        <div style="width:100px;"></div>
+                    </div>
+
+                    <!-- Input row -->
+                    <div id="contractLineAdder" class="d-flex flex-nowrap gap-2 align-items-center">
+                        <div style="min-width:420px;">
+                            <select class="form-select" id="lineItemSelect">
+                                <option value="">-- Válasszon --</option>
+                            </select>
+                        </div>
+
+                        <div style="width:120px;">
+                            <input type="number" class="form-control" id="lineQty" value="1" />
+                        </div>
+
+                        <div style="width:150px;">
+                            <input type="number" class="form-control" id="lineUnitPrice" />
+                        </div>
+
+                        <div style="width:100px;">
+                            <input type="number" class="form-control" id="lineVatRate" value="27" />
+                        </div>
+
+<div class="d-flex gap-1" style="width:150px;">
+    <!-- Megjegyzés -->
+    <button type="button"
+            class="btn btn-outline-secondary"
+            id="openLineNoteBtn"
+            title="Tétel megjegyzés">
+        <i class="bi bi-chat-left-text"></i>
+    </button>
+
+    <!-- Új Item -->
+    <button type="button"
+            class="btn btn-outline-success"
+            id="openQuickCreateItemBtn"
+            title="Új Item létrehozása">
+        <i class="bi bi-box-seam"></i>
+    </button>
+
+    <!-- Hozzáadás -->
+    <button type="button"
+            class="btn btn-outline-primary"
+            id="addLineBtn"
+            title="Tétel hozzáadása">
+        <i class="bi bi-plus-lg"></i>
+    </button>
+</div>
+                    </div>
+
+                    <div class="form-text mt-1">
+                        Egységár üresen: rendszerár. ÁFA% tételenként módosítható.
+                    </div>
+
+                    <!-- TABLE -->
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Item</th>
+                                    <th class="text-end">Qty</th>
+                                    <th class="text-end">Unit</th>
+                                    <th class="text-end">VAT%</th>
+                                    <th class="text-end">Net</th>
+                                    <th class="text-end">VAT</th>
+                                    <th class="text-end">Gross</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="contractLinesTbody">
+                                <tr class="text-muted" id="noLinesRow">
+                                    <td colspan="9" class="text-center">Nincs tétel.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="contractLinesHidden"></div>
+
+                    <!-- ====================== PARTNER ====================== -->
+                    <hr class="my-4" />
+                    <h6><i class="bi bi-people me-2"></i>Partner</h6>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small">Buyer</label>
+                            <select class="form-select" name="BuyerPartnerId" id="createBuyerPartnerId">
+                                <option value="">-- Válasszon --</option>
+                                @foreach (var p in partners)
+                                {
+                                    <option value="@p.PartnerId">@p.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small">Buyer telephely</label>
+                            <select class="form-select" name="BuyerSiteId" id="createBuyerSiteId" disabled>
+                                <option value="">-- Előbb válassz partnert --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer py-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2 me-1"></i> Létrehozás
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ====================== LINE NOTE MODAL ====================== -->
+<div class="modal fade" id="lineNoteModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">Tétel megjegyzés</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea id="lineNoteTextarea" class="form-control" rows="4" maxlength="500"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Mégse</button>
+                <button type="button" class="btn btn-primary btn-sm" id="saveLineNoteBtn">Mentés</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================== QUICK CREATE ITEM MODAL ====================== -->
+<div class="modal fade" id="quickCreateItemModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content shadow">
+
+      <div class="modal-header py-2">
+        <h6 class="modal-title"><i class="bi bi-box-seam me-2"></i>Új Item létrehozása</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="qcTenantId" value="" />
+
+        <div class="row g-2">
+          <div class="col-md-4">
+            <label class="form-label small">Kód *</label>
+            <input type="text" class="form-control" id="qcCode" maxlength="100" />
+          </div>
+
+          <div class="col-md-8">
+            <label class="form-label small">Név *</label>
+            <input type="text" class="form-control" id="qcName" maxlength="200" />
+          </div>
+
+          <div class="col-md-12">
+            <label class="form-label small">Leírás</label>
+            <textarea class="form-control" id="qcDescription" rows="2" maxlength="1000"></textarea>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label small">Típus *</label>
+            <select class="form-select" id="qcItemTypeId">
+              <!-- töltsd JS-ből vagy serverből -->
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label small">Default SALES ár</label>
+            <input type="number" class="form-control" id="qcSalesPrice" step="0.0001" min="0" />
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-check mt-4">
+              <input class="form-check-input" type="checkbox" id="qcIsStockManaged" checked />
+              <label class="form-check-label small" for="qcIsStockManaged">Készlet kezelt</label>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-check mt-4">
+              <input class="form-check-input" type="checkbox" id="qcIsManufactured" />
+              <label class="form-check-label small" for="qcIsManufactured">Gyártott</label>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="alert alert-info small mt-3 mb-0">
+          Mentés után az új Item azonnal megjelenik a tétel listában és ki lesz választva.
+        </div>
+      </div>
+
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Mégse</button>
+        <button type="button" class="btn btn-primary btn-sm" id="qcSaveItemBtn">
+          <span class="me-1"><i class="bi bi-check2"></i></span> Mentés
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ====================== 2) VIEW CONTRACT MODAL ====================== -->
+<div class="modal fade" id="contractViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header py-2 bg-success text-white">
+                <h5 class="modal-title fs-5 fw-semibold" id="contractViewTitle">
+                    <i class="bi bi-eye me-2"></i> Szerződés részletei
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+            </div>
+
+            <div class="modal-body py-4" id="contractViewBody">
+                <!-- JS tölti -->
+                <div class="text-center py-5 text-muted">
+                    <div class="spinner-border" role="status"></div>
+                    <div class="mt-3">Betöltés...</div>
+                </div>
+            </div>
+
+            <div class="modal-footer py-3">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Bezárás</button>
+                <button type="button" class="btn btn-primary px-4" id="openEditContractBtn">
+                    <i class="bi bi-pencil me-1"></i> Szerkesztés
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================== 3) EDIT CONTRACT MODAL ====================== -->
+<div class="modal fade" id="editContractModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content shadow-lg border-0 overflow-hidden">
+            <form id="editContractForm" autocomplete="off">
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header py-2 bg-success text-white">
+                    <h5 class="modal-title fs-5 fw-semibold">
+                        <i class="bi bi-pencil-square me-2"></i> Szerződés szerkesztése
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+                </div>
+
+                <div class="modal-body py-4">
+                    <input type="hidden" name="BusinessDocumentId" id="editBusinessDocumentId" value="" />
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Státusz <span class="text-danger">*</span></label>
+                            <select class="form-select" name="BusinessDocumentStatusId" id="editStatusId" required>
+                                <option value="">-- Válasszon --</option>
+                                @foreach (var s in statuses)
+                                {
+                                    <option value="@s.BusinessDocumentStatusId">@s.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Szerződésszám</label>
+                            <input type="text" class="form-control" name="DocumentNo" id="editDocumentNo" maxlength="50" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Deviza</label>
+                            <input type="number" class="form-control" name="CurrencyId" id="editCurrencyId" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Kelte</label>
+                            <input type="date" class="form-control" name="IssueDate" id="editIssueDate" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Teljesítés</label>
+                            <input type="date" class="form-control" name="FulfillmentDate" id="editFulfillmentDate" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Fizetési határidő</label>
+                            <input type="date" class="form-control" name="DueDate" id="editDueDate" />
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label">Tárgy</label>
+                            <input type="text" class="form-control" name="Subject" id="editSubject" maxlength="200" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Árfolyam</label>
+                            <input type="number" class="form-control" name="ExchangeRate" id="editExchangeRate" step="0.000001" />
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-4">
+                            <label class="form-label">Nettó</label>
+                            <input type="number" class="form-control" name="NetTotal" id="editNetTotal" step="0.01" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Áfa</label>
+                            <input type="number" class="form-control" name="TaxTotal" id="editTaxTotal" step="0.01" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Bruttó</label>
+                            <input type="number" class="form-control" name="GrossTotal" id="editGrossTotal" step="0.01" />
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label">Megjegyzés</label>
+                        <textarea class="form-control" name="Notes" id="editNotes" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer py-3">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Mégse</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check2 me-1"></i> Mentés
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ====================== 4) DELETE CONFIRM MODAL ====================== -->
+<div class="modal fade" id="deleteContractModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header py-2 bg-danger text-white">
+                <h5 class="modal-title fs-5 fw-semibold">
+                    <i class="bi bi-trash me-2"></i> Törlés megerősítése
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body py-4">
+                <input type="hidden" id="deleteContractId" value="" />
+                <p class="mb-2">Biztosan törli ezt a szerződést?</p>
+                <p class="text-muted small mb-0">Ez a művelet <strong>soft delete</strong> (IsDeleted = true).</p>
+            </div>
+
+            <div class="modal-footer py-3">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Mégse</button>
+                <button type="button" class="btn btn-danger px-4" id="confirmDeleteContractBtn">
+                    <i class="bi bi-trash me-1"></i> Törlés
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================== 5) CHANGE STATUS MODAL ====================== -->
+<div class="modal fade" id="changeContractStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header py-2 bg-success text-white">
+                <h6 class="modal-title fs-5 fw-semibold">
+                    <i class="bi bi-arrow-left-right me-2"></i> Státusz módosítása
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body py-4">
+                <input type="hidden" id="statusContractId" value="" />
+
+                <div class="text-center mb-4">
+                    <span class="badge fs-5 px-4 py-2" id="currentContractStatusBadge" style="min-width:150px;">
+                        Jelenlegi
+                    </span>
+                </div>
+
+                <label class="form-label small fw-medium text-muted">Új státusz</label>
+                <select class="form-select" id="newContractStatusSelect">
+                    @foreach (var s in statuses)
+                    {
+                        <option value="@s.BusinessDocumentStatusId" data-color="@(s.Color ?? "#6c757d")">@s.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="modal-footer py-3">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Mégse</button>
+                <button type="button" class="btn btn-primary px-4" id="saveContractStatusBtn">
+                    <i class="bi bi-check2 me-1"></i> Mentés
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================== 6) ADVANCED FILTER MODAL ====================== -->
+<div class="modal fade" id="contractFilterModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header py-2 bg-success text-white">
+                <h5 class="modal-title fs-5 fw-semibold">
+                    <i class="bi bi-funnel-fill me-2"></i> Szerződés szűrő
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body py-4">
+                <form id="contractAdvancedFilterForm" method="get" asp-page="./Index">
+                    <input type="hidden" name="page" value="1" />
+                    <input type="hidden" name="pageSize" value="@((ViewData["PageSize"] as int?) ?? 20)" />
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium text-muted">Státusz</label>
+                            <select class="form-select" name="statusId">
+                                <option value="">-- Minden --</option>
+                                @foreach (var s in statuses)
+                                {
+                                    <option value="@s.BusinessDocumentStatusId">@s.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium text-muted">Szerződésszám</label>
+                            <input type="text" class="form-control" name="docNo" placeholder="pl. CTR-..." />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium text-muted">Kelte tól</label>
+                            <input type="date" class="form-control" name="issueFrom" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium text-muted">Kelte ig</label>
+                            <input type="date" class="form-control" name="issueTo" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium text-muted">Tárgy tartalmazza</label>
+                            <input type="text" class="form-control" name="subject" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium text-muted">Buyer Partner</label>
+                            <select class="form-select" name="buyerPartnerId" id="contractBuyerFilterSelect">
+                                <option value="">-- Minden --</option>
+                                @foreach (var p in partners)
+                                {
+                                    <option value="@p.PartnerId">@p.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer py-3 px-0">
+                        <a href="@Url.Page("./Index")" class="btn btn-outline-danger px-4">Szűrők törlése</a>
+                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Mégse</button>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-funnel me-1"></i> Szűrés
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>

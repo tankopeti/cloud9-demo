@@ -1,0 +1,243 @@
+# CLOUD9.2 TELJES DEPLOY GUIDE
+# 1️⃣ HETZNER VPS BEÁLLÍTÁS
+# 1.1 VPS létrehozás
+
+# Hetzner Cloud:
+
+# Ubuntu 24.04
+
+# 4GB RAM minimum
+
+# Public IPv4
+
+# 1.2 SSH belépés
+
+# Mac:
+
+# ssh root@SERVER_IP
+
+# 1.3 Docker telepítés
+# apt update && apt upgrade -y
+
+# curl -fsSL https://get.docker.com | sh
+
+# apt install docker-compose-plugin -y
+
+# docker --version
+# docker compose version
+
+# 2️⃣ PROJEKT STRUKTÚRA A VPS-EN
+# mkdir -p /srv/cloud9
+# cd /srv/cloud9
+
+# 3️⃣ GITHUB INTEGRÁCIÓ
+# 3.1 Repository létrehozása GitHubon
+
+# private repo
+
+# Cloud9.2
+
+# 3.2 Mac-en feltöltés
+# git init
+# git remote add origin https://github.com/USERNAME/cloud9.git
+# git add .
+# git commit -m "Initial version"
+# git push -u origin main
+
+# 3.3 VPS-en klónozás
+# cd /srv/cloud9
+# git clone https://github.com/USERNAME/cloud9.git src
+# cd src
+
+# 4️⃣ DOCKER COMPOSE (PRODUCTION READY)
+
+# /srv/cloud9/src/docker-compose.yml
+
+# services:
+#   sqlserver:
+#     image: mcr.microsoft.com/mssql/server:2019-latest
+#     environment:
+#       ACCEPT_EULA: "Y"
+#       MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+#       MSSQL_PID: "Express"
+#     volumes:
+#       - mssql_data:/var/opt/mssql
+#     networks:
+#       - app-network
+#     restart: unless-stopped
+
+#   app:
+#     build:
+#       context: .
+#       dockerfile: dockerfile
+#     ports:
+#       - "8080:8080"
+#     environment:
+#       ASPNETCORE_ENVIRONMENT: "Production"
+#       ASPNETCORE_URLS: "http://+:8080"
+#       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=Cloud9_Nyugalom;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;"
+#     volumes:
+#       - dpkeys:/var/dpkeys
+#       - taskdocs:/data/taskdocs
+#     depends_on:
+#       - sqlserver
+#     networks:
+#       - app-network
+#     restart: unless-stopped
+
+# networks:
+#   app-network:
+#     driver: bridge
+
+# volumes:
+#   mssql_data:
+#   taskdocs:
+#   dpkeys:
+
+# 5️⃣ .ENV FÁJL (NE TEGYED GITHUBRA)
+
+# /srv/cloud9/src/.env
+
+# MSSQL_SA_PASSWORD=StrongPasswordHere
+
+
+# .gitignore-ba:
+
+# .env
+
+# 6️⃣ ELSŐ INDÍTÁS
+# cd /srv/cloud9/src
+# docker compose up -d --build
+
+
+# App:
+
+# http://SERVER_IP:8080
+
+# 7️⃣ PORTAINER TELEPÍTÉS (INGYENES)
+# 7.1 VPS-en
+# docker volume create portainer_data
+
+# docker run -d \
+#   -p 9000:9000 \
+#   --name portainer \
+#   --restart=always \
+#   -v /var/run/docker.sock:/var/run/docker.sock \
+#   -v portainer_data:/data \
+#   portainer/portainer-ce:latest
+
+
+# Böngésző:
+
+# http://SERVER_IP:9000
+
+
+# Admin user létrehozás.
+
+# 8️⃣ HETZNER HOZZÁADÁSA MAC-ES PORTAINERHEZ (OPTIONAL)
+
+# VPS-en:
+
+# docker run -d \
+#   -p 9001:9001 \
+#   --name portainer_agent \
+#   --restart=always \
+#   -v /var/run/docker.sock:/var/run/docker.sock \
+#   -v /var/lib/docker/volumes:/var/lib/docker/volumes \
+#   -v /:/host \
+#   portainer/agent
+
+
+# Mac Portainer →
+# Environment → Agent → SERVER_IP:9001
+
+# 9️⃣ VERZIÓ KIADÁSI WORKFLOW (EGYSZERŰ MODELL)
+# 🔹 Fejlesztés Mac-en
+# git add .
+# git commit -m "New feature"
+# git push
+
+# 🔹 VPS-en
+# cd /srv/cloud9/src
+# git pull
+
+# 🔹 Portainerben
+
+# Hetzner → Stacks → src → Deploy
+
+# Kész.
+
+# 🔟 PROFIBB RELEASE (IMAGE ALAPÚ)
+# 10.1 Mac-en build
+# docker build -t username/cloud9:1.0.1 .
+# docker push username/cloud9:1.0.1
+
+# 10.2 Compose módosítás
+# app:
+#   image: username/cloud9:1.0.1
+
+# 10.3 Portainer → Pull image → Deploy
+
+# Nincs több SSH.
+
+# 1️⃣1️⃣ ROLLBACK
+
+# Ha gond van:
+
+# Compose-ban vissza:
+
+# image: username/cloud9:1.0.0
+
+
+# Deploy.
+
+# 1️⃣2️⃣ DB BACKUP MINDEN RELEASE ELŐTT
+# docker run --rm -it --network src_app-network mcr.microsoft.com/mssql-tools \
+# /opt/mssql-tools/bin/sqlcmd \
+# -S src-sqlserver-1 \
+# -U sa \
+# -P "$MSSQL_SA_PASSWORD" \
+# -Q "
+# BACKUP DATABASE [Cloud9_Nyugalom]
+# TO DISK='/var/opt/mssql/backup/Cloud9_$(date +%F_%H%M).bak'
+# WITH INIT, COMPRESSION"
+
+# 1️⃣3️⃣ AJÁNLOTT KÖVETKEZŐ LÉPÉSEK
+
+# Production szinthez:
+
+# Nginx reverse proxy
+
+# HTTPS (Let's Encrypt)
+
+# Port 9000 lezárása
+
+# Firewall IP whitelist
+
+# Automatikus nightly backup
+
+# Healthcheck endpoint
+
+# 🎯 ÖSSZEFOGLALÁS
+
+# Most már van:
+
+# ✔ Hetzner VPS
+# ✔ Docker
+# ✔ MSSQL container
+# ✔ ASP.NET container
+# ✔ GitHub workflow
+# ✔ Portainer GUI
+# ✔ Verzió kiadás
+# ✔ Rollback
+# ✔ Backup
+
+# Ha szeretnéd, következő szintre emeljük:
+
+# 🔒 Production security hardening
+
+# 🔄 CI/CD GitHub Actions auto deploy
+
+# 🌍 Domain + HTTPS
+
+# 📦 Zero-downtime deploy

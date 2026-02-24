@@ -11,6 +11,8 @@ using System.Text.Json.Serialization;
 using Cloud9_2.Interceptors;
 using System.IO;
 using Microsoft.AspNetCore.DataProtection;
+using Cloud9_2.Services.Tenancy;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -82,6 +84,7 @@ builder.Services.AddControllers();
 builder.Services.Configure<TwilioSettings>(builder.Configuration.GetSection("Twilio"));
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ITenantProvider, TenantProvider>();
 
 builder.Services.AddScoped<GenericAuditInterceptor>();
 
@@ -115,11 +118,8 @@ builder.Services.AddScoped<QuoteService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<CustomerCommunicationService>();
 builder.Services.AddScoped<PartnerService>();
-builder.Services.AddScoped<ProductPriceService>();
 builder.Services.AddScoped<ContactService>();
-builder.Services.AddScoped<PartnerProductPriceService>();
-
-
+builder.Services.AddScoped<BusinessDocumentService>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddResponseCaching();
@@ -130,6 +130,8 @@ builder.Services.AddHttpClient();
 //   builder.Services.AddAutoMapper(typeof(OrderProfile));
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.AddAutoMapper(typeof(Cloud9_2.Mapping.BusinessDocumentProfile).Assembly);
+
 builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
@@ -200,6 +202,37 @@ else
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
+// DB migráció – csak ha engedélyezed
+try
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+
+    bool runMigrations =
+        config.GetValue<bool>("Database:RunMigrations") ||
+        string.Equals(Environment.GetEnvironmentVariable("RUN_MIGRATIONS"), "true", StringComparison.OrdinalIgnoreCase);
+
+    if (runMigrations)
+    {
+        logger.LogWarning(">>> Running EF migrations (RUN_MIGRATIONS=true)...");
+        await db.Database.MigrateAsync();
+        logger.LogWarning(">>> EF migrations completed.");
+    }
+    else
+    {
+        logger.LogWarning(">>> Skipping EF migrations (RUN_MIGRATIONS is false).");
+    }
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, ">>> EF migrations FAILED.");
+    throw;
+}
+
+
 
 app.MapHub<ChatHub>("/chathub");
 // app.UseHttpsRedirection();
@@ -225,7 +258,7 @@ if (app.Environment.IsDevelopment())
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
             var context = services.GetRequiredService<ApplicationDbContext>();
-            await context.Database.MigrateAsync();
+            // await context.Database.MigrateAsync();=
             //   var openSearchService = services.GetRequiredService<OpenSearchService>();
             var logger = services.GetRequiredService<ILogger<Program>>();
 

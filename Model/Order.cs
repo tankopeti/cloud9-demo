@@ -123,13 +123,6 @@ namespace Cloud9_2.Models
         [ForeignKey("ContactId")]
         public Contact? Contact { get; set; }
 
-        [StringLength(50)]
-        [Display(Name = "Rendelés típusa")]
-        public string? OrderType { get; set; }
-
-        [Display(Name = "Tételek")]
-        public List<OrderItem>? OrderItems { get; set; } = new List<OrderItem>();
-
         [StringLength(100)]
         [Display(Name = "Referenciaszám")]
         public string? ReferenceNumber { get; set; }
@@ -188,8 +181,6 @@ namespace Cloud9_2.Models
         public string? PaymentTermName { get; set; } // Added for related data
         public int? ContactId { get; set; }
         public string? ContactName { get; set; } // Added for related data
-        public string? OrderType { get; set; }
-        public List<OrderItemDTO>? OrderItems { get; set; }
         public string? ReferenceNumber { get; set; }
         public int? QuoteId { get; set; }
         public bool? IsDeleted { get; set; }
@@ -259,11 +250,6 @@ namespace Cloud9_2.Models
         public int? PaymentTermId { get; set; }
 
         public int? ContactId { get; set; }
-
-        [StringLength(50)]
-        public string? OrderType { get; set; }
-
-        public List<OrderItemCreateDTO>? OrderItems { get; set; }
 
         [StringLength(100)]
         public string? ReferenceNumber { get; set; }
@@ -340,11 +326,6 @@ namespace Cloud9_2.Models
         public int? PaymentTermId { get; set; }
 
         public int? ContactId { get; set; }
-
-        [StringLength(50)]
-        public string? OrderType { get; set; }
-
-        public List<OrderItemUpdateDTO>? OrderItems { get; set; }
 
         [StringLength(100)]
         public string? ReferenceNumber { get; set; }

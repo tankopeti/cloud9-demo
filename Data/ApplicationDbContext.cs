@@ -2,15 +2,26 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Cloud9_2.Models;
 using Microsoft.AspNetCore.Identity;
+using Cloud9_2.Services.Tenancy;
 
 namespace Cloud9_2.Data
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityRole, string>
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-        : base(options)
+        private readonly ITenantProvider? _tenantProvider;
+
+        // EF filter ezt fogja használni
+        public int? CurrentTenantId { get; private set; }
+
+        public ApplicationDbContext(
+            DbContextOptions<ApplicationDbContext> options,
+            ITenantProvider? tenantProvider = null)
+            : base(options)
         {
+            _tenantProvider = tenantProvider;
+            CurrentTenantId = _tenantProvider?.GetTenantId();
         }
+
 
         public DbSet<Partner> Partners { get; set; }
         public DbSet<Site> Sites { get; set; }
@@ -25,32 +36,18 @@ namespace Cloud9_2.Data
         public DbSet<LeadSource> LeadSources { get; set; }
         public DbSet<Lead> Leads { get; set; }
         public DbSet<LeadHistory> LeadHistories { get; set; }
-        public DbSet<Product> Products { get; set; }
-        public DbSet<ProductPrice> ProductPrices { get; set; }
         public DbSet<UnitOfMeasurement> UnitsOfMeasurement { get; set; }
-        public DbSet<ProductUOM> ProductUOMs { get; set; }
         public DbSet<Warehouse> Warehouses { get; set; }
-        public DbSet<WarehouseStock> WarehouseStocks { get; set; }
-        public DbSet<Category> Categories { get; set; }
         public DbSet<Quote> Quotes { get; set; }
-        public DbSet<QuoteItem> QuoteItems { get; set; }
-        public DbSet<ProductFile> ProductFiles { get; set; }
         public DbSet<QuoteHistory> QuoteHistories { get; set; }
         public DbSet<Order> Orders { get; set; }
-        public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<CommunicationType> CommunicationTypes { get; set; }
         public DbSet<CustomerCommunication> CustomerCommunications { get; set; }
         public DbSet<CommunicationStatus> CommunicationStatuses { get; set; }
         public DbSet<CommunicationPost> CommunicationPosts { get; set; }
         public DbSet<CommunicationResponsible> CommunicationResponsibles { get; set; }
         public DbSet<VatType> VatTypes { get; set; }
-        public DbSet<VolumeDiscount> VolumeDiscounts { get; set; }
         public DbSet<PartnerGroup> PartnerGroups { get; set; }
-        public DbSet<PartnerProductPrice> PartnerProductPrice { get; set; }
-        public DbSet<ProductGroup> ProductGroups { get; set; }
-        public DbSet<ProductGroupProduct> ProductGroupProducts { get; set; }
-        public DbSet<PartnerProductGroupPrice> PartnerProductGroupPrices { get; set; }
-        public DbSet<QuoteItemDiscount> QuoteItemDiscounts { get; set; }
         public DbSet<TaskTypePM> TaskTypePMs { get; set; }
         public DbSet<TaskPM> TaskPMs { get; set; }
         public DbSet<TaskCommentPM> TaskCommentsPMs { get; set; }
@@ -91,10 +88,115 @@ namespace Cloud9_2.Data
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
         public DbSet<GFO> GFOs { get; set; } = null!;
 
+        public DbSet<BusinessDocument> BusinessDocuments { get; set; }
+        public DbSet<BusinessDocumentLine> BusinessDocumentLines { get; set; }
+        public DbSet<BusinessDocumentParty> BusinessDocumentParties { get; set; }
+        public DbSet<BusinessDocumentPartyRole> BusinessDocumentPartyRoles { get; set; }
+        public DbSet<BusinessDocumentType> BusinessDocumentTypes { get; set; }
+        public DbSet<BusinessDocumentStatus> BusinessDocumentStatuses { get; set; }
+        public DbSet<BusinessDocumentRelation> BusinessDocumentRelations { get; set; }
+        public DbSet<BusinessDocumentRelationType> BusinessDocumentRelationTypes { get; set; }
+        public DbSet<BusinessDocumentAttachment> BusinessDocumentAttachments { get; set; }
+        public DbSet<AttachmentCategoryLookup> AttachmentCategories { get; set; }
+        public DbSet<BusinessDocumentStatusHistory> BusinessDocumentStatusHistories { get; set; }
+        public DbSet<ElectronicDocument> ElectronicDocuments { get; set; }
+        public DbSet<PriceType> PriceTypes { get; set; } = null!;
+        public DbSet<ItemPrice> ItemPrices { get; set; } = null!;
+
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+
+            modelBuilder.Entity<PriceType>()
+                .HasIndex(x => x.Code)
+                .IsUnique();
+
+            modelBuilder.Entity<ItemPrice>()
+                .HasIndex(x => new { x.TenantId, x.ItemId });
+
+            modelBuilder.Entity<ItemPrice>()
+                .HasIndex(x => new { x.TenantId, x.PriceTypeId });
+
+            modelBuilder.Entity<ItemPrice>()
+                .HasIndex(x => new { x.TenantId, x.ItemId, x.PriceTypeId, x.CurrencyId, x.IsActive, x.ValidFrom, x.ValidTo });
+
+            // opcionális, de nagyon hasznos:
+            // egyszerre 1 aktív "current" ár (ValidTo IS NULL) adott item+currency+type-ra
+            modelBuilder.Entity<ItemPrice>()
+                .HasIndex(x => new { x.TenantId, x.ItemId, x.CurrencyId, x.PriceTypeId })
+                .IsUnique()
+                .HasFilter("[IsActive] = 1 AND [ValidTo] IS NULL");
+
+
+            var tenantId = _tenantProvider?.GetTenantId();
+
+            // Csak runtime-ban legyen filter.
+            // Migráció készítésnél tenantId == null lehet -> akkor nem szűrünk.
+            if (tenantId != null)
+            {
+                modelBuilder.Entity<BusinessDocument>()
+                    .HasQueryFilter(x => !x.IsDeleted && x.TenantId == tenantId.Value);
+
+                modelBuilder.Entity<BusinessDocumentLine>()
+                    .HasQueryFilter(x => x.TenantId == tenantId.Value);
+
+                modelBuilder.Entity<BusinessDocumentParty>()
+                    .HasQueryFilter(x => x.TenantId == tenantId.Value);
+
+                modelBuilder.Entity<BusinessDocumentRelation>()
+                    .HasQueryFilter(x => x.TenantId == tenantId.Value);
+
+                modelBuilder.Entity<BusinessDocumentAttachment>()
+                    .HasQueryFilter(x => x.TenantId == tenantId.Value);
+
+                modelBuilder.Entity<BusinessDocumentStatusHistory>()
+                    .HasQueryFilter(x => x.TenantId == tenantId.Value);
+
+                // Lookup tábláknál általában nincs tenant (globális).
+                // Ha nálad tenant-specifikusak lesznek, akkor oda is mehet.
+            }
+
+            modelBuilder.Entity<PriceType>()
+    .HasIndex(x => x.Code)
+    .IsUnique();
+
+            modelBuilder.Entity<ItemPrice>()
+                .HasIndex(x => new { x.TenantId, x.ItemId });
+
+            modelBuilder.Entity<ItemPrice>()
+                .HasIndex(x => new { x.TenantId, x.PriceTypeId });
+
+            modelBuilder.Entity<ItemPrice>()
+                .HasIndex(x => new { x.TenantId, x.ItemId, x.PriceTypeId, x.CurrencyId, x.IsActive, x.ValidFrom, x.ValidTo });
+
+            // opcionális: “current price” uniqueness (ValidTo IS NULL és aktív)
+            modelBuilder.Entity<ItemPrice>()
+                .HasIndex(x => new { x.TenantId, x.ItemId, x.CurrencyId, x.PriceTypeId })
+                .IsUnique()
+                .HasFilter("[IsActive] = 1 AND [ValidTo] IS NULL");
+
+            modelBuilder.Entity<BusinessDocumentRelation>(entity =>
+{
+    entity.HasKey(x => x.BusinessDocumentRelationId);
+
+    entity.HasOne(x => x.FromBusinessDocument)
+          .WithMany(d => d.FromRelations)
+          .HasForeignKey(x => x.FromBusinessDocumentId)
+          .OnDelete(DeleteBehavior.Restrict);
+
+    entity.HasOne(x => x.ToBusinessDocument)
+          .WithMany(d => d.ToRelations)
+          .HasForeignKey(x => x.ToBusinessDocumentId)
+          .OnDelete(DeleteBehavior.Restrict);
+
+    entity.HasIndex(x => new { x.TenantId, x.FromBusinessDocumentId, x.ToBusinessDocumentId, x.BusinessDocumentRelationTypeId })
+          .IsUnique();
+});
+
+
 
             modelBuilder.Entity<Partner>().ToTable("Partners");
 
@@ -177,24 +279,24 @@ namespace Cloud9_2.Data
             });
 
             modelBuilder.Entity<TaskDocumentLink>(entity =>
-    {
-        entity.HasKey(e => e.Id);
+            {
+                entity.HasKey(e => e.Id);
 
-        entity.HasOne(e => e.Task)
-              .WithMany(t => t.TaskDocuments)
-              .HasForeignKey(e => e.TaskId)
-              .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Task)
+                    .WithMany(t => t.TaskDocuments)
+                    .HasForeignKey(e => e.TaskId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-        entity.HasOne(e => e.Document)
-              .WithMany(d => d.TaskDocuments)
-              .HasForeignKey(e => e.DocumentId)
-              .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Document)
+                    .WithMany(d => d.TaskDocuments)
+                    .HasForeignKey(e => e.DocumentId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-        entity.HasOne(e => e.LinkedBy)
-              .WithMany()
-              .HasForeignKey(e => e.LinkedById)
-              .OnDelete(DeleteBehavior.SetNull);
-    });
+                entity.HasOne(e => e.LinkedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.LinkedById)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
 
             modelBuilder.Entity<Partner>()
             .HasMany(p => p.Sites)
@@ -389,9 +491,6 @@ namespace Cloud9_2.Data
                             .HasMaxLength(50)
                             .HasDefaultValue("Pending");
 
-                        entity.Property(e => e.OrderType)
-                            .HasMaxLength(50);
-
                         entity.Property(e => e.ReferenceNumber)
                             .HasMaxLength(100);
 
@@ -428,56 +527,6 @@ namespace Cloud9_2.Data
 
                     });
 
-            // OrderItem configuration
-            modelBuilder.Entity<OrderItem>(entity =>
-            {
-                entity.HasKey(e => e.OrderItemId);
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(500);
-
-                entity.Property(e => e.Quantity)
-                    .HasColumnType("decimal(18,4)");
-
-                entity.Property(e => e.UnitPrice)
-                    .HasColumnType("decimal(18,2)");
-
-                entity.Property(e => e.DiscountAmount)
-                    .HasColumnType("decimal(18,2)");
-
-                entity.Property(e => e.CreatedBy)
-                    .HasMaxLength(100)
-                    .HasDefaultValue("System");
-
-                entity.Property(e => e.CreatedDate)
-                    .HasColumnType("datetime")
-                    .HasDefaultValueSql("GETUTCDATE()");
-
-                entity.Property(e => e.ModifiedBy)
-                    .HasMaxLength(100)
-                    .HasDefaultValue("System");
-
-                entity.Property(e => e.ModifiedDate)
-                    .HasColumnType("datetime")
-                    .HasDefaultValueSql("GETUTCDATE()");
-
-                // Relationships
-                entity.HasOne(e => e.Order)
-                    .WithMany(o => o.OrderItems)
-                    .HasForeignKey(e => e.OrderId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(e => e.Product)
-                    .WithMany()
-                    .HasForeignKey(e => e.ProductId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(e => e.VatType)
-                    .WithMany()
-                    .HasForeignKey(e => e.VatTypeId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-
             // OrderItemDiscount configuration
             modelBuilder.Entity<OrderItemDiscount>(entity =>
             {
@@ -501,11 +550,6 @@ namespace Cloud9_2.Data
                 entity.Property(e => e.ListPrice)
                     .HasColumnType("decimal(18,2)");
 
-                // Relationship
-                entity.HasOne(e => e.OrderItem)
-                    .WithMany()
-                    .HasForeignKey(e => e.OrderItemId)
-                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // OrderShippingMethod configuration
@@ -704,24 +748,6 @@ namespace Cloud9_2.Data
                       .HasForeignKey(ta => ta.UploadedById);
             });
 
-            // Configure QuoteItemDiscount
-            modelBuilder.Entity<QuoteItemDiscount>()
-                .ToTable("QuoteItemDiscount") // Explicitly set table name
-                .HasOne(d => d.QuoteItem)
-                .WithOne(qi => qi.Discount)
-                .HasForeignKey<QuoteItemDiscount>(d => d.QuoteItemId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Map DiscountType enum to string
-            modelBuilder.Entity<QuoteItemDiscount>()
-                .Property(d => d.DiscountType)
-                .HasConversion<string>();
-
-            // Configure PartnerProductPrice
-            modelBuilder.Entity<PartnerProductPrice>().ToTable("PartnerProductPrice");
-            modelBuilder.Entity<PartnerProductPrice>()
-                .HasIndex(p => new { p.PartnerId, p.ProductId })
-                .IsUnique();
 
             // Configure PartnerGroup relationship
             modelBuilder.Entity<Partner>()
@@ -730,33 +756,10 @@ namespace Cloud9_2.Data
                 .HasForeignKey(p => p.PartnerGroupId)
                 .OnDelete(DeleteBehavior.SetNull); // Optional: Set PartnerGroupId to null if group is deleted
 
-            // Configure composite key for ProductGroupProduct
-            modelBuilder.Entity<ProductGroupProduct>()
-                .HasKey(pgp => new { pgp.ProductId, pgp.ProductGroupId });
-
-            // Configure relationships for ProductGroupProduct
-            modelBuilder.Entity<ProductGroupProduct>()
-                .HasOne(pgp => pgp.Product)
-                .WithMany(p => p.ProductGroupProducts)
-                .HasForeignKey(pgp => pgp.ProductId);
-
-            modelBuilder.Entity<ProductGroupProduct>()
-                .HasOne(pgp => pgp.ProductGroup)
-                .WithMany(pg => pg.ProductGroupProducts)
-                .HasForeignKey(pgp => pgp.ProductGroupId);
-
 
             // Configure unique indexes
             modelBuilder.Entity<VatType>()
                 .HasIndex(v => v.TypeName)
-                .IsUnique();
-
-            modelBuilder.Entity<PartnerProductPrice>()
-                .HasIndex(cpp => new { cpp.PartnerId, cpp.ProductId })
-                .IsUnique();
-
-            modelBuilder.Entity<PartnerProductGroupPrice>()
-                .HasIndex(cpgp => new { cpgp.PartnerId, cpgp.ProductGroupId })
                 .IsUnique();
 
             //prices
@@ -766,10 +769,6 @@ namespace Cloud9_2.Data
 
             modelBuilder.Entity<PartnerGroup>().HasData(
                 new PartnerGroup { PartnerGroupId = 1, PartnerGroupName = "VIP Customers", DiscountPercentage = 5.00m }
-            );
-
-            modelBuilder.Entity<VolumeDiscount>().HasData(
-                new VolumeDiscount { VolumeDiscountId = 1, ProductId = 1, MinQuantity = 10, DiscountPercentage = 10.00m }
             );
 
             // CustomerCommunication
@@ -919,8 +918,6 @@ namespace Cloud9_2.Data
                 //     .HasMaxLength(100);
                 // entity.Property(e => e.ShippingMethod)
                 //     .HasMaxLength(100);
-                entity.Property(e => e.OrderType)
-                    .HasMaxLength(50);
 
                 // Relationships
                 entity.HasOne(e => e.Partner)
@@ -943,43 +940,8 @@ namespace Cloud9_2.Data
                     .HasForeignKey(e => e.QuoteId)
                     .OnDelete(DeleteBehavior.SetNull);
 
-                entity.HasMany(e => e.OrderItems)
-                    .WithOne(oi => oi.Order)
-                    .HasForeignKey(oi => oi.OrderId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
                 // Index
                 entity.HasIndex(e => e.OrderNumber).IsUnique();
-            });
-
-            // OrderItem configuration
-            modelBuilder.Entity<OrderItem>(entity =>
-            {
-                entity.HasKey(e => e.OrderItemId);
-                entity.Property(e => e.Description)
-                    .HasMaxLength(500);
-                entity.Property(e => e.Quantity)
-                    .HasColumnType("decimal(18,4)");
-                entity.Property(e => e.UnitPrice)
-                    .HasColumnType("decimal(18,2)");
-                entity.Property(e => e.CreatedBy)
-                    .HasMaxLength(100)
-                    .HasDefaultValue("System");
-                entity.Property(e => e.CreatedDate)
-                    .HasColumnType("datetime")
-                    .HasDefaultValueSql("GETUTCDATE()");
-                entity.Property(e => e.ModifiedBy)
-                    .HasMaxLength(100)
-                    .HasDefaultValue("System");
-                entity.Property(e => e.ModifiedDate)
-                    .HasColumnType("datetime")
-                    .HasDefaultValueSql("GETUTCDATE()");
-
-                // Relationship
-                entity.HasOne(e => e.Order)
-                    .WithMany(o => o.OrderItems)
-                    .HasForeignKey(e => e.OrderId)
-                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Configure Partner-Lead one-to-many relationship
@@ -1004,11 +966,6 @@ namespace Cloud9_2.Data
                 entity.Property(e => e.Status).IsRequired(false);
             });
 
-            modelBuilder.Entity<OrderItem>()
-                .HasOne(oi => oi.Order)
-                .WithMany(o => o.OrderItems)
-                .HasForeignKey(oi => oi.OrderId);
-
 
             modelBuilder.Entity<Quote>().HasQueryFilter(q => q.IsActive);
 
@@ -1017,18 +974,6 @@ namespace Cloud9_2.Data
             .WithOne(qi => qi.Quote)
             .HasForeignKey(qi => qi.QuoteId)
             .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Quote>()
-            .HasMany(q => q.QuoteItems)
-            .WithOne(qi => qi.Quote)
-            .HasForeignKey(qi => qi.QuoteId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<QuoteItem>()
-                .HasOne(qi => qi.Quote)
-                .WithMany(q => q.QuoteItems)
-                .HasForeignKey(qi => qi.QuoteId);
-
 
             modelBuilder.Entity<Quote>()
                 .HasIndex(q => q.QuoteNumber)
@@ -1054,72 +999,6 @@ namespace Cloud9_2.Data
 
             modelBuilder.Entity<Partner>().HasQueryFilter(p => p.IsActive);
 
-            modelBuilder.Entity<Product>()
-            .HasOne(p => p.BaseUOM)
-            .WithMany()
-            .HasForeignKey(p => p.BaseUOMId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Product>()
-            .HasOne(p => p.WeightUOM)
-            .WithMany()
-            .HasForeignKey(p => p.WeightUOMId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Product>()
-            .HasOne(p => p.DimensionUOM)
-            .WithMany()
-            .HasForeignKey(p => p.DimensionUOMId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Product>()
-            .HasMany(p => p.OrderItems)
-            .WithOne(oi => oi.Product)
-            .HasForeignKey(oi => oi.ProductId)
-            .OnDelete(DeleteBehavior.Restrict); // or Cascade, as your business logic requires
-
-            modelBuilder.Entity<Product>()
-            .HasOne(p => p.Creator)
-            .WithMany()
-            .HasForeignKey(p => p.CreatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Product>()
-            .HasOne(p => p.LastModifier)
-            .WithMany()
-            .HasForeignKey(p => p.LastModifiedBy)
-            .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<ProductPrice>()
-            .HasOne(pp => pp.Product)
-            .WithMany()
-            .HasForeignKey(pp => pp.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<ProductPrice>()
-            .HasOne(pp => pp.UnitOfMeasurement)
-            .WithMany()
-            .HasForeignKey(pp => pp.UnitOfMeasurementId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ProductPrice>()
-            .HasOne(pp => pp.Currency)
-            .WithMany()
-            .HasForeignKey(pp => pp.CurrencyId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ProductPrice>()
-            .HasOne(pp => pp.Creator)
-            .WithMany()
-            .HasForeignKey(pp => pp.CreatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ProductPrice>()
-            .HasOne(pp => pp.LastModifier)
-            .WithMany()
-            .HasForeignKey(pp => pp.LastModifiedBy)
-            .OnDelete(DeleteBehavior.NoAction);
-
             modelBuilder.Entity<UnitOfMeasurement>()
             .HasOne(u => u.Creator)
             .WithMany()
@@ -1130,30 +1009,6 @@ namespace Cloud9_2.Data
             .HasOne(u => u.LastModifier)
             .WithMany()
             .HasForeignKey(u => u.LastModifiedBy)
-            .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<ProductUOM>()
-            .HasOne(pu => pu.Product)
-            .WithMany()
-            .HasForeignKey(pu => pu.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<ProductUOM>()
-            .HasOne(pu => pu.UnitOfMeasurement)
-            .WithMany()
-            .HasForeignKey(pu => pu.UnitOfMeasurementId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ProductUOM>()
-            .HasOne(pu => pu.Creator)
-            .WithMany()
-            .HasForeignKey(pu => pu.CreatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ProductUOM>()
-            .HasOne(pu => pu.LastModifier)
-            .WithMany()
-            .HasForeignKey(pu => pu.LastModifiedBy)
             .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Currency>()
@@ -1179,78 +1034,41 @@ namespace Cloud9_2.Data
             .WithMany()
             .HasForeignKey(w => w.LastModifiedBy)
             .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<WarehouseStock>()
-            .HasOne(ws => ws.Warehouse)
-            .WithMany(w => w.Stocks)
-            .HasForeignKey(ws => ws.WarehouseId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<WarehouseStock>()
-            .HasOne(ws => ws.Product)
-            .WithMany()
-            .HasForeignKey(ws => ws.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<WarehouseStock>()
-            .HasOne(ws => ws.UnitOfMeasurement)
-            .WithMany()
-            .HasForeignKey(ws => ws.UnitOfMeasurementId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<WarehouseStock>()
-            .HasOne(ws => ws.Creator)
-            .WithMany()
-            .HasForeignKey(ws => ws.CreatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<WarehouseStock>()
-            .HasOne(ws => ws.LastModifier)
-            .WithMany()
-            .HasForeignKey(ws => ws.LastModifiedBy)
-            .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<ProductFile>()
-            .HasOne(pf => pf.Product)
-            .WithMany(p => p.Files)
-            .HasForeignKey(pf => pf.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<ProductFile>()
-            .HasOne(pf => pf.ProductUOM)
-            .WithMany()
-            .HasForeignKey(pf => pf.ProductUOMId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ProductFile>()
-            .HasOne(pf => pf.Creator)
-            .WithMany()
-            .HasForeignKey(pf => pf.CreatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ProductFile>()
-            .HasOne(pf => pf.LastModifier)
-            .WithMany()
-            .HasForeignKey(pf => pf.LastModifiedBy)
-            .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<Category>()
-                .HasMany(c => c.Products)
-                .WithOne(p => p.Category)
-                .HasForeignKey(p => p.CategoryId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Category>()
-                .HasOne(c => c.Creator)
-                .WithMany()
-                .HasForeignKey(c => c.CreatedBy)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Category>()
-                .HasOne(c => c.LastModifier)
-                .WithMany()
-                .HasForeignKey(c => c.LastModifiedBy)
-                .OnDelete(DeleteBehavior.NoAction);
         }
+
+        public override int SaveChanges()
+        {
+            ApplyTenantId();
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            ApplyTenantId();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void ApplyTenantId()
+        {
+            if (_tenantProvider == null) return;
+
+            int? tenantId = _tenantProvider.GetTenantId();
+            if (tenantId == null) return; // nincs tenant (pl. migráció/model build), ne írjunk semmit
+
+            foreach (var entry in ChangeTracker.Entries<ITenantEntity>())
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    // UI ne tudjon "más tenant"-et beadni
+                    entry.Entity.TenantId = tenantId.Value;
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    // Extra védelem: ne lehessen TenantId-t átírni
+                    entry.Property(nameof(ITenantEntity.TenantId)).IsModified = false;
+                }
+            }
+        }
+
     }
 }
