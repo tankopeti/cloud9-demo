@@ -1,0 +1,246 @@
+Alap infrastruktúra fogalmak
+VPS (Virtual Private Server)
+
+Virtuális szerver egy szolgáltatónál (pl. Hetzner).
+Ez a “production géped” az interneten.
+
+Docker
+
+Konténerizációs platform.
+Egy alkalmazást és minden függőségét izolált környezetben futtat.
+
+Nem VM. Könnyebb, gyorsabb, reprodukálható.
+
+Container
+
+Egy futó példány (pl. cloud9-app, cloud9-mssql).
+
+Olyan, mint egy mini elszigetelt Linux környezet.
+
+Image
+
+A container “sablonja”.
+Pl:
+
+Microsoft SQL Server image
+
+ASP.NET app image
+
+Image → ebből indul container.
+
+Docker Compose
+
+Egy YAML fájl, amiben leírod:
+
+milyen service-ek futnak
+
+milyen portokon
+
+milyen volume-okkal
+
+milyen environment változókkal
+
+Egy parancs:
+
+docker compose up
+
+→ minden elindul.
+
+Service (compose-ban)
+
+Egy definíció egy containerhez.
+
+Példa:
+
+services:
+  mssql:
+  app:
+  nginx:
+Volume
+
+Perzisztens adattároló Dockerben.
+
+Ha nincs volume:
+→ container törlés = adat törlés
+
+Ha van volume:
+→ adat túléli a container újraindítást
+
+⚠️ docker compose down -v = volume törlés
+
+Bind Mount
+
+Host mappát csatolsz be a containerbe.
+
+Példa:
+
+./backup:/backup
+
+Ez már a gépeden lévő mappa.
+
+🗄 Adatbázis fogalmak
+SQL Server instance
+
+Egy futó SQL szerver példány (a konténeren belül).
+
+Database
+
+Pl:
+
+Cloud9_Nyugalom
+
+master
+
+tempdb
+
+Egy instance-en belül több DB lehet.
+
+create_date
+
+Mikor lett létrehozva az adatbázis.
+
+Ha friss dátum → új DB.
+
+__EFMigrationsHistory
+
+Tábla, amit az Entity Framework Core hoz létre.
+
+Ez tárolja:
+
+mely migrációk futottak le
+
+milyen sorrendben
+
+Ha ez létezik → migráció már lefutott.
+
+🔁 EF Core fogalmak
+Migration
+
+Adatbázis séma változás leírása C# kódban.
+
+Példa:
+
+dotnet ef migrations add AddCustomerTable
+
+Ez generál:
+
+C# migration file
+
+model snapshot
+
+Model Snapshot
+
+Az aktuális teljes adatbázis séma pillanatkép.
+
+Update-Database
+dotnet ef database update
+
+Lefuttatja az összes még nem futtatott migrációt.
+
+InitialCreate
+
+Az első migráció.
+Ez az alap séma.
+
+Seed
+
+Kezdeti adatok betöltése.
+
+Pl:
+
+Admin user
+
+Alap státuszok
+
+Default szerepkörök
+
+Fontos: idempotens legyen (ne duplikáljon).
+
+🌍 Hálózati fogalmak
+Port mapping
+1433:1433
+
+Host port : container port
+
+Connection String
+
+Az alkalmazás így csatlakozik az adatbázishoz.
+
+Példa:
+
+Server=mssql;
+Database=Cloud9_Nyugalom;
+User Id=sa;
+Password=...
+
+Fontos:
+A Database= NEM hoz létre DB-t.
+Ha nem létezik → migráció hozza létre.
+
+🧩 Verziózás fogalmak
+Git
+
+Verziókezelő rendszer.
+
+Repository
+
+A projekt verziózott mappája.
+
+Commit
+
+Változások mentése történetbe.
+
+Branch
+
+Párhuzamos fejlesztési ág.
+
+Baseline
+
+Az első stabil állapot, amitől kezdve minden verziózva van.
+
+🧯 Kritikus parancsok (és mit jelentenek)
+docker compose down
+
+Leállítja a container-eket.
+
+docker compose down -v
+
+Leállítja + törli a volume-okat is.
+
+⚠️ Ez adatvesztést okozhat.
+
+docker volume prune
+
+Törli az összes nem használt volume-ot.
+
+docker inspect
+
+Megnézheted, hova mutat egy volume fizikailag.
+
+🏗 Architektúra fogalmak
+x86_64
+
+Normál PC / szerver architektúra.
+
+ARM
+
+Apple Silicon / Raspberry Pi architektúra.
+
+Nem minden image kompatibilis.
+
+🛡 Backup fogalmak
+Dump
+
+Adatbázis teljes exportja (pl .bak fájl).
+
+Restore
+
+Backup visszatöltése.
+
+Cold backup
+
+Leállított DB-ről mentés.
+
+Hot backup
+
+Futó DB-ről mentés.

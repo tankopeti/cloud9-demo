@@ -40,3 +40,4 @@ cert.pfx
 *.pfx
 Dockerfile.dev
 .vscode/
+.DS_Store
