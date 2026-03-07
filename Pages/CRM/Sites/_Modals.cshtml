@@ -183,6 +183,17 @@
                             </div>
                         </div>
 
+                        <!-- Alapértelmezett kommunikációs mód -->
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Alapértelmezett kommunikációs mód</label>
+                                <select id="createDefaultCommunicationTypeId" name="defaultCommunicationTypeId"
+                                        class="form-select">
+                                    <option value="">-- Válassz kommunikációs módot --</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <hr class="my-5">
 
                         <h6 class="mb-3 text-primary fw-semibold">
@@ -422,6 +433,16 @@
                                         </div>
                                     </div>
 
+                                    <!-- Alapértelmezett kommunikációs mód -->
+                                    <div class="row g-3 mt-1">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-medium">Alapértelmezett kommunikációs mód</label>
+                                            <select id="editDefaultCommunicationTypeId" name="defaultCommunicationTypeId"
+                                                    class="form-select">
+                                                <option value="">-- Válassz kommunikációs módot --</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                     <hr class="my-5">
                                     <h6 class="mb-3 text-primary fw-semibold"><i class="bi bi-chat-square-text me-2"></i> Megjegyzések
                                     </h6>
@@ -507,3 +528,121 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- SITE -> EMPLOYEES assignment modal -->
+                    <div class="modal fade" id="siteEmployeesModal" tabindex="-1">
+                        <div class="modal-dialog modal-xl">
+                            <div class="modal-content">
+
+                                <div class="modal-header bg-primary text-white">
+                                    <h5 class="modal-title">
+                                        <i class="bi bi-people me-2"></i> Dolgozók hozzárendelése telephelyhez
+                                    </h5>
+                                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+
+                                <div class="modal-body">
+
+                                    <div class="mb-3">
+                                        Telephely: <strong id="site-employees-site-name"></strong>
+                                    </div>
+
+                                    <div class="row g-2">
+
+                                        <div class="col-md-9">
+                                            <select id="site-employee-picker"></select>
+                                        </div>
+
+                                        <div class="col-md-3 d-grid">
+                                            <button class="btn btn-primary" id="site-employee-add">
+                                                <i class="bi bi-plus-lg"></i> Hozzáadás
+                                            </button>
+                                        </div>
+
+                                    </div>
+
+                                    <hr>
+
+                                    <h6>Kiválasztott dolgozók</h6>
+
+                                    <ul class="list-group" id="site-employees-list"></ul>
+
+                                    <div class="text-muted small mt-2" id="site-employees-empty">
+                                        Nincs hozzárendelt dolgozó
+                                    </div>
+
+                                    <div class="alert alert-danger d-none mt-3" id="site-employees-error"></div>
+
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+                                    <button class="btn btn-primary" id="site-employees-save">Mentés</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+<!-- SITE -> PARTNERS assignment modal -->
+<div class="modal fade" id="sitePartnersModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-diagram-3 me-2"></i> Partnerek hozzárendelése telephelyhez
+                </h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="mb-3">
+                    Telephely: <strong id="site-partners-site-name"></strong>
+                </div>
+
+                <div class="row g-2 align-items-end">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Partner</label>
+                        <select id="site-partner-picker"></select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Partner típus</label>
+                        <select id="site-partner-type-picker" class="form-select">
+                            <option value="">Válassz partner típust...</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 d-grid">
+                        <button class="btn btn-primary" id="site-partner-add">
+                            <i class="bi bi-plus-lg"></i> Hozzáadás
+                        </button>
+                    </div>
+
+                </div>
+
+                <hr>
+
+                <h6>Kiválasztott partnerek</h6>
+
+                <ul class="list-group" id="site-partners-list"></ul>
+
+                <div class="text-muted small mt-2" id="site-partners-empty">
+                    Nincs hozzárendelt partner
+                </div>
+
+                <div class="alert alert-danger d-none mt-3" id="site-partners-error"></div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+                <button class="btn btn-primary" id="site-partners-save">Mentés</button>
+            </div>
+
+        </div>
+    </div>
+</div>

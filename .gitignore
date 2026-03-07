@@ -41,3 +41,10 @@ cert.pfx
 Dockerfile.dev
 .vscode/
 .DS_Store
+
+.env*
+!/.env.example
+
+_data/mssql/data/
+*.mdf
+*.ldf

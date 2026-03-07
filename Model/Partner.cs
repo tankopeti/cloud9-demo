@@ -159,6 +159,8 @@ namespace Cloud9_2.Models
 
         // Kapcsolt partner / közvetítő szerepben
         public ICollection<TaskPM> TasksAsRelatedPartner { get; set; } = new List<TaskPM>();
+        public ICollection<Employees> Employees { get; set; } = new List<Employees>();
+        public ICollection<PartnerSiteLink> PartnerSiteLinks { get; set; } = new List<PartnerSiteLink>();
 
 
         [Column("CompanyNameTrim")]

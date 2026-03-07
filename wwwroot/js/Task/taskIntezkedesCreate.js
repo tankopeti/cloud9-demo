@@ -17,7 +17,9 @@
     if (!formEl) return;
 
     var submitBtn = formEl.querySelector('button[type="submit"]');
-    var assignedEl = formEl.querySelector('#AssignedToId, [name="AssignedToId"]');
+    var siteEl = formEl.querySelector('#SiteId, [name="SiteId"]');
+    var assignedEl = formEl.querySelector('#AssignedToId, [name="AssignedToId"]'); // taskért felelős user
+    var relatedEmployeeEl = formEl.querySelector('#RelatedEmployeeId, [name="RelatedEmployeeId"]'); // site-hoz kapcsolt érintett dolgozó
     var commMethodEl = formEl.querySelector('#TaskPMcomMethodID, [name="TaskPMcomMethodID"]');
     var taskTypeEl = formEl.querySelector('#TaskTypePMId, [name="TaskTypePMId"]');
     var taskStatusEl = formEl.querySelector('#TaskStatusPMId, [name="TaskStatusPMId"]');
@@ -96,6 +98,13 @@
       return d + 'T' + t;
     }
 
+    function resetRelatedEmployeeSelect() {
+      if (!relatedEmployeeEl) return;
+      relatedEmployeeEl.innerHTML = '<option value="">-- Előbb válassz telephelyet --</option>';
+      relatedEmployeeEl.value = '';
+      relatedEmployeeEl.disabled = true;
+    }
+
     async function loadCommMethodsSelect(selectEl, selectedId) {
       if (!selectEl) return;
 
@@ -160,6 +169,65 @@
       } catch (e) {
         console.error('[taskIntezkedesCreate] assignees load failed', e);
         selectEl.innerHTML = '<option value="">-- Nem sikerült betölteni --</option>';
+      } finally {
+        selectEl.disabled = false;
+      }
+    }
+
+    async function loadSiteEmployeesSelect(selectEl, siteId, selectedId) {
+      if (!selectEl) return;
+
+      if (!siteId) {
+        selectEl.innerHTML = '<option value="">-- Előbb válassz telephelyet --</option>';
+        selectEl.value = '';
+        selectEl.disabled = true;
+        return;
+      }
+
+      selectEl.disabled = true;
+      selectEl.innerHTML = '<option value="">Betöltés...</option>';
+
+      try {
+        var res = await fetch('/api/sites/' + encodeURIComponent(siteId) + '/employees', {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+          credentials: 'same-origin'
+        });
+
+        if (!res.ok) {
+          var txt = await res.text().catch(function () { return ''; });
+          throw new Error('HTTP ' + res.status + ' :: ' + txt);
+        }
+
+        var items = await res.json();
+        if (!Array.isArray(items)) items = [];
+
+        if (items.length === 0) {
+          selectEl.innerHTML = '<option value="">-- Nincs a telephelyhez kapcsolt dolgozó --</option>';
+          selectEl.value = '';
+          selectEl.disabled = false;
+          return;
+        }
+
+        selectEl.innerHTML =
+          '<option value="">-- Válasszon --</option>' +
+          items.map(function (x) {
+            var id = x.employeeId || '';
+            var text = x.fullName || x.employeeName || 'Névtelen dolgozó';
+
+            if (x.partnerName) {
+              text += ' (' + x.partnerName + ')';
+            }
+
+            return '<option value="' + String(id) + '">' + text + '</option>';
+          }).join('');
+
+        selectEl.value = selectedId != null ? String(selectedId) : '';
+
+        try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { }
+      } catch (e) {
+        console.error('[taskIntezkedesCreate] site employees load failed', e);
+        selectEl.innerHTML = '<option value="">-- Nem sikerült betölteni a kapcsolt személyeket --</option>';
       } finally {
         selectEl.disabled = false;
       }
@@ -230,6 +298,22 @@
     }
 
     // ------------------------------------------------------------
+    // Site -> related employee refresh
+    // ------------------------------------------------------------
+    if (siteEl && relatedEmployeeEl) {
+      if (!siteEl.value) {
+        resetRelatedEmployeeSelect();
+      }
+
+      siteEl.addEventListener('change', async function () {
+        var siteId = toInt(siteEl.value);
+
+        relatedEmployeeEl.value = '';
+        await loadSiteEmployeesSelect(relatedEmployeeEl, siteId, '');
+      });
+    }
+
+    // ------------------------------------------------------------
     // Create modal lifecycle
     // ------------------------------------------------------------
     modalEl.addEventListener('hidden.bs.modal', function () {
@@ -238,6 +322,8 @@
 
       try { formEl.reset(); } catch (e) { }
       formEl.classList.remove('was-validated');
+
+      resetRelatedEmployeeSelect();
     });
 
     modalEl.addEventListener('shown.bs.modal', async function () {
@@ -255,6 +341,11 @@
 
       if (commMethodEl && (!commMethodEl.options || commMethodEl.options.length <= 1)) {
         await loadCommMethodsSelect(commMethodEl, commMethodEl.value || '');
+      }
+
+      if (relatedEmployeeEl) {
+        var currentSiteId = siteEl ? toInt(siteEl.value) : null;
+        await loadSiteEmployeesSelect(relatedEmployeeEl, currentSiteId, relatedEmployeeEl.value || '');
       }
     });
 
@@ -278,24 +369,27 @@
       var scheduledTimeStr = fd.get('ScheduledTime');
       var scheduledIso = combineDateTime(scheduledDateStr, scheduledTimeStr);
 
-var payload = {
-  Title: String(fd.get('Title') || '').trim(),
-  Description: String(fd.get('Description') || '').trim() || null,
+      var payload = {
+        Title: String(fd.get('Title') || '').trim(),
+        Description: String(fd.get('Description') || '').trim() || null,
 
-  TaskPMcomMethodID: toInt(fd.get('TaskPMcomMethodID')),
-  CommunicationDescription: String(fd.get('CommunicationDescription') || '').trim() || null,
+        TaskPMcomMethodID: toInt(fd.get('TaskPMcomMethodID')),
+        CommunicationDescription: String(fd.get('CommunicationDescription') || '').trim() || null,
 
-  PartnerId: toInt(fd.get('PartnerId')),
-  RelatedPartnerId: toInt(fd.get('RelatedPartnerId')),   // ✅ ÚJ
-  SiteId: toInt(fd.get('SiteId')),
-  TaskTypePMId: toInt(fd.get('TaskTypePMId')),
+        PartnerId: toInt(fd.get('PartnerId')),
+        RelatedPartnerId: toInt(fd.get('RelatedPartnerId')) || null,
+        SiteId: toInt(fd.get('SiteId')),
+        TaskTypePMId: toInt(fd.get('TaskTypePMId')),
 
-  TaskPriorityPMId: toInt(fd.get('TaskPriorityPMId')),
-  TaskStatusPMId: toInt(fd.get('TaskStatusPMId')),
-  AssignedToId: String(fd.get('AssignedToId') || '').trim() || null,
+        TaskPriorityPMId: toInt(fd.get('TaskPriorityPMId')),
+        TaskStatusPMId: toInt(fd.get('TaskStatusPMId')),
+        AssignedToId: String(fd.get('AssignedToId') || '').trim() || null,
 
-  ScheduledDate: scheduledIso
-};
+        // ✅ ÚJ: site-hoz kapcsolt érintett dolgozó
+        RelatedEmployeeId: toInt(fd.get('RelatedEmployeeId')),
+
+        ScheduledDate: scheduledIso
+      };
 
       // Guards
       if (!payload.Title) { toast('A tárgy megadása kötelező!', 'danger'); return; }

@@ -1,0 +1,177 @@
+🥇 PRIORITY 1 – ADATVESZTÉS ELLENI VÉDELEM (KRITIKUS)
+
+Ez a legfontosabb. Minden más csak utána számít.
+
+1️⃣ Automatikus napi SQL FULL backup (kötelező)
+
+✔ Napi 1 teljes backup
+✔ Minden tenant DB-ről külön
+✔ Verziózott fájlnév (timestamp)
+✔ Minimum 14–30 nap retention
+
+Ha nincs backup → nincs production rendszer.
+
+2️⃣ Offsite backup (ugyanolyan fontos)
+
+Backup nem backup, ha:
+
+ugyanazon a VPS-en van
+
+ugyanazon a disk-en van
+
+Minimum:
+
+Heti automatikus feltöltés S3 / Backblaze / Wasabi
+
+Vagy manuális rendszeres letöltés
+
+Ez véd:
+
+VPS törlés
+
+ransomware
+
+véletlen volume törlés
+
+3️⃣ Restore teszt (legtöbbet elfelejtett pont)
+
+Legalább egyszer:
+
+restore külön test DB-be
+
+app csatlakoztatása
+
+validálás
+
+Ha restore nincs tesztelve → a backup csak illúzió.
+
+🥈 PRIORITY 2 – VÉLETLEN TÖRLÉS ELLENI VÉDELEM
+4️⃣ Soha ne használd productionben:
+docker compose down -v
+docker volume rm
+rm -rf /var/lib/docker/volumes
+
+A -v = adatvesztés.
+
+5️⃣ Soft Delete stratégia az ERP-ben
+
+ERP rendszerben fizikailag törölni:
+
+❌ veszélyes
+❌ auditálhatatlan
+
+Minden fontos entitás:
+
+public bool IsDeleted { get; set; }
+
+DELETE helyett flag.
+
+6️⃣ SQL permission minimalizálás
+
+Az alkalmazás user:
+
+❌ ne legyen db_owner
+❌ ne tudjon DROP TABLE-t
+
+Csak:
+
+db_datareader
+
+db_datawriter
+
+SA account csak admin célra.
+
+🥉 PRIORITY 3 – INFRASTRUKTÚRA BIZTONSÁG
+7️⃣ UFW aktív (most még nem volt)
+
+Engedélyezett portok:
+
+22
+
+80
+
+443
+
+Minden más deny.
+
+8️⃣ SQL port ne legyen publikálva
+
+NEM lehet ilyen:
+
+0.0.0.0:1433->1433/tcp
+
+Nálad jelenleg jó.
+
+9️⃣ SA jelszó rotáció
+
+Publikus jelszó = azonnali csere.
+
+🔟 Restart policy minden containeren
+restart: always
+
+Reboot után ERP automatikusan induljon.
+
+🏅 PRIORITY 4 – OPERÁCIÓS STABILITÁS
+11️⃣ Kernel update utáni reboot
+
+Most:
+
+*** System restart required ***
+
+Productionban:
+
+csak restart policy ellenőrzés után
+
+12️⃣ Disk monitoring
+
+Ha / betelik:
+
+SQL megáll
+
+app leáll
+
+Minimum:
+
+df -h heti ellenőrzés
+
+backup mappa méret figyelés
+
+13️⃣ Dokumentum storage quota
+
+Tenant-specifikus mappák:
+
+/opt/cloud9/_data/docs/nyugalom
+
+Ha egy tenant feltölti a disket → mindenki leáll.
+
+🏆 PRIORITY 5 – STRUKTURÁLT PRODUCTION MATURITY
+14️⃣ CI/CD pipeline
+
+Manuális deploy = emberi hiba lehetősége.
+
+Cél:
+
+git push → build → push image → auto deploy
+15️⃣ Tenant provisioning automatizálás
+
+Új tenant:
+
+DB create
+
+migrate
+
+docs folder create
+
+seed admin
+
+Automatikusan.
+
+16️⃣ Monitoring stack
+
+Minimum:
+
+disk alert
+
+container restart alert
+
+SSL expiry alert

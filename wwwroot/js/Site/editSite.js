@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const partnerSelectEl = document.getElementById("editPartnerId");
   const statusSelectEl = document.getElementById("editStatusId");
+  const communicationTypeSelectEl = document.getElementById("editDefaultCommunicationTypeId");
 
   let partnerTS = null;
 
@@ -69,27 +70,48 @@ document.addEventListener("DOMContentLoaded", () => {
     ts.setValue(id, true);
   }
 
-async function loadStatusesIntoSelect(selectEl, selectedId) {
-  const res = await fetch('/api/SitesIndex/meta/statuses', {
-    credentials: 'same-origin',
-    headers: { 'Accept': 'application/json' }
-  });
-  if (!res.ok) throw new Error('Failed to load statuses');
+  async function loadStatusesIntoSelect(selectEl, selectedId) {
+    const res = await fetch("/api/SitesIndex/meta/statuses", {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" }
+    });
+    if (!res.ok) throw new Error("Failed to load statuses");
 
-  const data = await res.json();
+    const data = await res.json();
+    selectEl.innerHTML = '<option value="">— válassz státuszt —</option>';
 
-  selectEl.innerHTML = '<option value="">— válassz státuszt —</option>';
+    data.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = s.name;
+      if (selectedId != null && String(selectedId) === String(s.id)) opt.selected = true;
+      selectEl.appendChild(opt);
+    });
+  }
 
-  data.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.id;
-    opt.textContent = s.name;
-    if (selectedId != null && String(selectedId) === String(s.id)) opt.selected = true;
-    selectEl.appendChild(opt);
-  });
-}
+  async function loadCommunicationTypesIntoSelect(selectEl, selectedId = null) {
+    if (!selectEl) return;
 
+    const res = await fetch("/api/SitesIndex/meta/communication-types", {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" }
+    });
+    if (!res.ok) throw new Error("Failed to load communication types");
 
+    const data = await res.json();
+
+    selectEl.innerHTML = '<option value="">-- Válassz kommunikációs módot --</option>';
+
+    data.forEach(x => {
+      const opt = document.createElement("option");
+      opt.value = x.id;
+      opt.textContent = x.name ?? "";
+      if (selectedId != null && String(selectedId) === String(x.id)) {
+        opt.selected = true;
+      }
+      selectEl.appendChild(opt);
+    });
+  }
 
   modalEl.addEventListener("shown.bs.modal", ensurePartnerTomSelect);
 
@@ -107,7 +129,11 @@ async function loadStatusesIntoSelect(selectEl, selectedId) {
     resetForm();
 
     try {
-      const res = await fetch(`/api/SitesIndex/${siteId}`);
+      const res = await fetch(`/api/SitesIndex/${siteId}`, {
+        credentials: "same-origin",
+        headers: { Accept: "application/json" }
+      });
+
       if (!res.ok) throw new Error("Telephely nem található");
       const d = await res.json();
 
@@ -144,10 +170,16 @@ async function loadStatusesIntoSelect(selectEl, selectedId) {
       set("editComment1", d.comment1);
       set("editComment2", d.comment2);
 
-// status select feltöltés + kiválasztás
-if (statusSelectEl) {
-  await loadStatusesIntoSelect(statusSelectEl, d.statusId);
-}
+      if (statusSelectEl) {
+        await loadStatusesIntoSelect(statusSelectEl, d.statusId);
+      }
+
+      if (communicationTypeSelectEl) {
+        await loadCommunicationTypesIntoSelect(
+          communicationTypeSelectEl,
+          d.defaultCommunicationTypeId
+        );
+      }
 
       setChecked("editIsPrimary", d.isPrimary === true);
       setChecked("editIsActive", d.isActive !== false);
@@ -209,20 +241,23 @@ if (statusSelectEl) {
         Comment2: get("editComment2") || null,
 
         StatusId: get("editStatusId") ? Number(get("editStatusId")) : null,
+        DefaultCommunicationTypeId: get("editDefaultCommunicationTypeId")
+          ? Number(get("editDefaultCommunicationTypeId"))
+          : null,
+
         IsPrimary: isChecked("editIsPrimary"),
         IsActive: isChecked("editIsActive")
       };
 
-const res = await fetch(`/api/SitesIndex/${siteId}`, {
-  method: "PUT",
-  credentials: "same-origin",
-  headers: {
-    "Content-Type": "application/json",
-    "Accept": "application/json"
-  },
-  body: JSON.stringify(dto)
-});
-
+      const res = await fetch(`/api/SitesIndex/${siteId}`, {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(dto)
+      });
 
       if (!res.ok) {
         window.c92?.showToast?.("error", "Mentés sikertelen");
@@ -272,7 +307,8 @@ const res = await fetch(`/api/SitesIndex/${siteId}`, {
       "editMobilePhone1", "editMobilePhone2", "editMobilePhone3",
       "editMessagingApp1", "editMessagingApp2", "editMessagingApp3",
       "editeMail1", "editeMail2",
-      "editComment1", "editComment2", "editStatusId"
+      "editComment1", "editComment2", "editStatusId",
+      "editDefaultCommunicationTypeId"
     ].forEach(id => set(id, ""));
 
     setChecked("editIsPrimary", false);
@@ -284,13 +320,16 @@ const res = await fetch(`/api/SitesIndex/${siteId}`, {
     const el = document.getElementById(id);
     if (el) el.value = val ?? "";
   }
+
   function get(id) {
     return document.getElementById(id)?.value?.trim() || "";
   }
+
   function setChecked(id, val) {
     const el = document.getElementById(id);
     if (el) el.checked = val === true;
   }
+
   function isChecked(id) {
     return document.getElementById(id)?.checked === true;
   }

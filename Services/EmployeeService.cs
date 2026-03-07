@@ -22,450 +22,1152 @@ namespace Cloud9_2.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // GET: All active employees
-        public async Task<IEnumerable<Employees>> GetAllEmployeesAsync()
+        private IQueryable<Employees> ApplyEmployeeIndexFilters(
+            IQueryable<Employees> q,
+            EmployeeIndexQueryDto f)
         {
-            try
+            // 1) Top search (existing)
+            if (!string.IsNullOrWhiteSpace(f.SearchTerm))
             {
-                return await _context.Employees
-                    .Where(e => e.IsActive)
-                    .Include(e => e.JobTitle)
-                    .Include(e => e.Status)
-                    .AsNoTracking()
-                    .ToListAsync();
+                var st = f.SearchTerm.Trim();
+                q = q.Where(e =>
+                    (e.FirstName != null && EF.Functions.Like(e.FirstName, $"%{st}%")) ||
+                    (e.LastName != null && EF.Functions.Like(e.LastName, $"%{st}%")) ||
+                    (e.Email != null && EF.Functions.Like(e.Email, $"%{st}%")) ||
+                    (e.PhoneNumber != null && EF.Functions.Like(e.PhoneNumber, $"%{st}%")) ||
+                    (e.TaxId != null && EF.Functions.Like(e.TaxId, $"%{st}%")) ||
+                    (e.TajNumber != null && EF.Functions.Like(e.TajNumber, $"%{st}%"))
+                );
             }
-            catch (Exception ex)
+
+            // 2) Quick filter (existing)
+            switch ((f.QuickFilter ?? "all").ToLowerInvariant())
             {
-                _logger.LogError(ex, "Error retrieving all active employees.");
-                throw;
+                case "active":
+                    q = q.Where(e => e.IsActive);
+                    break;
+                case "internal":
+                    q = q.Where(e => e.WorkerTypeId == 1);
+                    break;
+                case "external":
+                    q = q.Where(e => e.WorkerTypeId == 2);
+                    break;
             }
+
+            // 3) Advanced text (Name/Email)
+            if (!string.IsNullOrWhiteSpace(f.Text))
+            {
+                var t = f.Text.Trim();
+                q = q.Where(e =>
+                    (e.FirstName != null && EF.Functions.Like(e.FirstName, $"%{t}%")) ||
+                    (e.LastName != null && EF.Functions.Like(e.LastName, $"%{t}%")) ||
+                    (e.Email != null && EF.Functions.Like(e.Email, $"%{t}%"))
+                );
+            }
+
+            // 4) Phone contains
+            if (!string.IsNullOrWhiteSpace(f.Phone))
+            {
+                var p = f.Phone.Trim();
+                q = q.Where(e => e.PhoneNumber != null && EF.Functions.Like(e.PhoneNumber, $"%{p}%"));
+            }
+
+            // 5) WorkerType / Partner
+            if (f.WorkerTypeId.HasValue)
+                q = q.Where(e => e.WorkerTypeId == f.WorkerTypeId.Value);
+
+            if (f.PartnerId.HasValue)
+                q = q.Where(e => e.PartnerId == f.PartnerId.Value);
+
+            // 6) ActiveOnly (modal) – ha true, akkor IsActive
+            if (f.ActiveOnly == true)
+                q = q.Where(e => e.IsActive);
+
+            // 7) Status filter (EXISTS)
+            if (f.StatusId.HasValue)
+            {
+                var sid = f.StatusId.Value;
+                q = q.Where(e =>
+                    _context.EmployeeEmploymentStatuses.Any(x =>
+                        x.EmployeeId == e.EmployeeId &&
+                        x.IsCurrent &&
+                        x.StatusId == sid
+                    )
+                );
+            }
+
+            // 8) Site filter (EXISTS)
+            if (f.SiteId.HasValue)
+            {
+                var siteId = f.SiteId.Value;
+                q = q.Where(e =>
+                    _context.EmployeeSites.Any(x =>
+                        x.EmployeeId == e.EmployeeId &&
+                        x.SiteId == siteId
+                    )
+                );
+            }
+
+            return q;
         }
-
-        // GET: Employee by ID (only active employees)
-        public async Task<Employees?> GetEmployeeByIdAsync(int id)
+        // -----------------------------
+        // AJAX index (pagination + search + quick filter)
+        // -----------------------------
+        public async Task<EmployeeIndexResult> GetEmployeesIndexAsync(
+            int page,
+            int pageSize,
+            string? searchTerm,
+            string? quickFilter // all | active | internal | external
+        )
         {
-            if (id <= 0)
-                throw new ArgumentException("Employee ID must be greater than zero.", nameof(id));
+            if (page < 1) page = 1;
+            if (pageSize < 10) pageSize = 30;
+            if (pageSize > 200) pageSize = 200;
 
-            try
+            // 1) Alap query (csak Employees tábla)
+            IQueryable<Employees> baseQ = _context.Employees.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                return await _context.Employees
-                    .Where(e => e.IsActive)
-                    .Include(e => e.JobTitle)
-                    .Include(e => e.Status)
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(e => e.EmployeeId == id);
+                var st = searchTerm.Trim();
+                baseQ = baseQ.Where(e =>
+                    (e.FirstName != null && EF.Functions.Like(e.FirstName, $"%{st}%")) ||
+                    (e.LastName != null && EF.Functions.Like(e.LastName, $"%{st}%")) ||
+                    (e.Email != null && EF.Functions.Like(e.Email, $"%{st}%")) ||
+                    (e.PhoneNumber != null && EF.Functions.Like(e.PhoneNumber, $"%{st}%")) ||
+                    (e.TaxId != null && EF.Functions.Like(e.TaxId, $"%{st}%")) ||
+                    (e.TajNumber != null && EF.Functions.Like(e.TajNumber, $"%{st}%"))
+                );
             }
-            catch (Exception ex)
+
+            switch ((quickFilter ?? "all").ToLowerInvariant())
             {
-                _logger.LogError(ex, "Error retrieving employee with ID {EmployeeId}.", id);
-                throw;
+                case "active":
+                    baseQ = baseQ.Where(e => e.IsActive);
+                    break;
+                case "internal":
+                    baseQ = baseQ.Where(e => e.WorkerTypeId == 1);
+                    break;
+                case "external":
+                    baseQ = baseQ.Where(e => e.WorkerTypeId == 2);
+                    break;
+                case "all":
+                default:
+                    break;
             }
-        }
 
-        // GET: Employee by ID including soft-deleted (for admin operations)
-        public async Task<Employees?> GetEmployeeByIdIncludingDeletedAsync(int id)
-        {
-            if (id <= 0)
-                throw new ArgumentException("Employee ID must be greater than zero.", nameof(id));
+            var total = await baseQ.CountAsync();
 
-            try
+            // 2) Oldalnyi employee alapadat + név mezők JOIN-nal (nem Include)
+            var pageItems = await (
+            from e in baseQ
+                .OrderByDescending(x => x.CreatedAt ?? DateTime.MinValue)
+                .ThenByDescending(x => x.EmployeeId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+
+            join wt in _context.WorkerTypes.AsNoTracking()
+                on e.WorkerTypeId equals wt.WorkerTypeId into wtj
+            from wt in wtj.DefaultIfEmpty()
+
+            join p in _context.Partners.AsNoTracking()
+                on e.PartnerId equals p.PartnerId into pj
+            from p in pj.DefaultIfEmpty()
+
+            join jt in _context.JobTitles.AsNoTracking()
+                on e.JobTitleId equals jt.JobTitleId into jtj
+            from jt in jtj.DefaultIfEmpty()
+
+            join ds in _context.Sites.AsNoTracking()
+                on e.DefaultSiteId equals ds.SiteId into dsj
+            from ds in dsj.DefaultIfEmpty()
+
+            select new
             {
-                return await _context.Employees
-                    .Include(e => e.JobTitle)
-                    .Include(e => e.Status)
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(e => e.EmployeeId == id);
+                e.EmployeeId,
+                e.FirstName,
+                e.LastName,
+                e.Email,
+                e.PhoneNumber,
+                e.WorkerTypeId,
+                e.DefaultSiteId,
+                DefaultSiteName = ds != null ? ds.SiteName : null,
+                WorkerTypeName = wt != null ? wt.Name : null,
+                e.PartnerId,
+                PartnerName = p != null ? p.Name : null,
+                e.JobTitleId,
+                JobTitleName = jt != null ? jt.TitleName : null,
+                e.IsActive
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving employee (including deleted) with ID {EmployeeId}.", id);
-                throw;
-            }
-        }
+            ).ToListAsync();
 
-        // CREATE: From EmployeesCreateDto
-        public async Task<Employees> CreateEmployeeAsync(EmployeesCreateDto createDto)
-        {
-            if (createDto == null)
-                throw new ArgumentNullException(nameof(createDto));
+            var employeeIds = pageItems.Select(x => x.EmployeeId).ToList();
 
-            try
+            if (employeeIds.Count == 0)
             {
-                var employee = new Employees
+                return new EmployeeIndexResult
                 {
-                    FirstName = createDto.FirstName,
-                    LastName = createDto.LastName,
-                    Email = createDto.Email,
-                    Email2 = createDto.Email2,
-                    PhoneNumber = createDto.PhoneNumber,
-                    PhoneNumber2 = createDto.PhoneNumber2,
-                    DateOfBirth = createDto.DateOfBirth,
-                    Address = createDto.Address,
-                    HireDate = createDto.HireDate,
-                    DepartmentId = createDto.DepartmentId,
-                    JobTitleId = createDto.JobTitleId,
-                    StatusId = createDto.StatusId,
-                    DefaultSiteId = createDto.DefaultSiteId,
-                    WorkingTime = createDto.WorkingTime ?? 8.00m,
-                    IsContracted = createDto.IsContracted ?? 0,
-                    FamilyData = createDto.FamilyData,
-                    Comment1 = createDto.Comment1,
-                    Comment2 = createDto.Comment2,
-                    VacationDays = createDto.VacationDays,
-                    FullVacationDays = createDto.FullVacationDays,
-                    IsActive = true, // Explicitly set for clarity
+                    Items = new List<EmployeeIndexRowDto>(),
+                    TotalRecords = total,
+                    CurrentPage = page,
+                    PageSize = pageSize
+                };
+            }
+
+            // 3) Státusz nevek
+            var statusByEmployee = await (
+                from ees in _context.EmployeeEmploymentStatuses.AsNoTracking()
+                join s in _context.EmploymentStatuses.AsNoTracking()
+                    on ees.StatusId equals s.StatusId
+                where employeeIds.Contains(ees.EmployeeId) && ees.IsCurrent
+                orderby ees.AssignedAt descending
+                select new
+                {
+                    ees.EmployeeId,
+                    StatusName = s.StatusName
+                }
+            )
+            .ToListAsync();
+
+            var statusDict = statusByEmployee
+                .GroupBy(x => x.EmployeeId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.StatusName).Distinct().ToList()
+                );
+
+            // 4) Site nevek
+            var siteByEmployee = await (
+                from es in _context.EmployeeSites.AsNoTracking()
+                join s in _context.Sites.AsNoTracking()
+                    on es.SiteId equals s.SiteId
+                where employeeIds.Contains(es.EmployeeId)
+                orderby es.IsPrimary descending
+                select new
+                {
+                    es.EmployeeId,
+                    SiteName = s.SiteName
+                }
+            )
+            .ToListAsync();
+
+            var siteDict = siteByEmployee
+                .GroupBy(x => x.EmployeeId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.SiteName).Distinct().ToList()
+                );
+
+            // 5) DTO összeállítás
+            var items = pageItems.Select(x => new EmployeeIndexRowDto
+            {
+                EmployeeId = x.EmployeeId,
+                FullName = ((x.LastName ?? "") + " " + (x.FirstName ?? "")).Trim(),
+                Email = x.Email,
+                PhoneNumber = x.PhoneNumber,
+                WorkerTypeId = x.WorkerTypeId,
+                WorkerTypeName = x.WorkerTypeName,
+                PartnerId = x.PartnerId,
+                PartnerName = x.PartnerName,
+                JobTitleId = x.JobTitleId,
+                JobTitleName = x.JobTitleName,
+                IsActive = x.IsActive,
+                StatusNames = statusDict.TryGetValue(x.EmployeeId, out var st) ? st : new List<string>(),
+                SiteNames = siteDict.TryGetValue(x.EmployeeId, out var si) ? si : new List<string>(),
+                DefaultSiteId = x.DefaultSiteId,
+                DefaultSiteName = x.DefaultSiteName
+            }).ToList();
+
+            return new EmployeeIndexResult
+            {
+                Items = items,
+                TotalRecords = total,
+                CurrentPage = page,
+                PageSize = pageSize
+            };
+        }
+
+        private IQueryable<Employees> ApplyAdvancedFilters(
+    IQueryable<Employees> q,
+    EmployeeAdvancedFilterDto f)
+        {
+            if (f == null) return q;
+
+            if (!string.IsNullOrWhiteSpace(f.Text))
+            {
+                var t = f.Text.Trim();
+                q = q.Where(e =>
+                    (e.FirstName != null && EF.Functions.Like(e.FirstName, $"%{t}%")) ||
+                    (e.LastName != null && EF.Functions.Like(e.LastName, $"%{t}%")) ||
+                    (e.Email != null && EF.Functions.Like(e.Email, $"%{t}%"))
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(f.Phone))
+            {
+                var p = f.Phone.Trim();
+                q = q.Where(e => e.PhoneNumber != null && EF.Functions.Like(e.PhoneNumber, $"%{p}%"));
+            }
+
+            if (f.WorkerTypeId.HasValue)
+                q = q.Where(e => e.WorkerTypeId == f.WorkerTypeId.Value);
+
+            if (f.PartnerId.HasValue)
+                q = q.Where(e => e.PartnerId == f.PartnerId.Value);
+
+            if (f.ActiveOnly == true)
+                q = q.Where(e => e.IsActive);
+
+            // Státusz filter: EXISTS az EmployeeEmploymentStatuses-ra (IsCurrent)
+            if (f.StatusId.HasValue)
+            {
+                var sid = f.StatusId.Value;
+                q = q.Where(e =>
+                    _context.EmployeeEmploymentStatuses.Any(x =>
+                        x.EmployeeId == e.EmployeeId &&
+                        x.IsCurrent &&
+                        x.StatusId == sid
+                    )
+                );
+            }
+
+            // Telephely filter: EXISTS az EmployeeSites-ra
+            if (f.SiteId.HasValue)
+            {
+                var siteId = f.SiteId.Value;
+                q = q.Where(e =>
+                    _context.EmployeeSites.Any(x =>
+                        x.EmployeeId == e.EmployeeId &&
+                        x.SiteId == siteId
+                    )
+                );
+            }
+
+            return q;
+        }
+
+        public async Task<EmployeeIndexResult> GetEmployeesIndexAdvancedAsync(
+            int page,
+            int pageSize,
+            string? searchTerm,
+            string? quickFilter,
+            EmployeeAdvancedFilterDto advanced
+        )
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 10) pageSize = 30;
+            if (pageSize > 200) pageSize = 200;
+
+            // 1) Alap query (csak Employees tábla)
+            IQueryable<Employees> baseQ = _context.Employees.AsNoTracking();
+
+            // --- ugyanaz a keresés, mint a régi metódusban
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var st = searchTerm.Trim();
+                baseQ = baseQ.Where(e =>
+                    (e.FirstName != null && EF.Functions.Like(e.FirstName, $"%{st}%")) ||
+                    (e.LastName != null && EF.Functions.Like(e.LastName, $"%{st}%")) ||
+                    (e.Email != null && EF.Functions.Like(e.Email, $"%{st}%")) ||
+                    (e.PhoneNumber != null && EF.Functions.Like(e.PhoneNumber, $"%{st}%")) ||
+                    (e.TaxId != null && EF.Functions.Like(e.TaxId, $"%{st}%")) ||
+                    (e.TajNumber != null && EF.Functions.Like(e.TajNumber, $"%{st}%"))
+                );
+            }
+
+            // --- ugyanaz a quick filter, mint a régi metódusban
+            switch ((quickFilter ?? "all").ToLowerInvariant())
+            {
+                case "active":
+                    baseQ = baseQ.Where(e => e.IsActive);
+                    break;
+                case "internal":
+                    baseQ = baseQ.Where(e => e.WorkerTypeId == 1);
+                    break;
+                case "external":
+                    baseQ = baseQ.Where(e => e.WorkerTypeId == 2);
+                    break;
+                case "all":
+                default:
+                    break;
+            }
+
+            // --- ADVANCED FILTER (új)
+            baseQ = ApplyAdvancedFilters(baseQ, advanced);
+
+            var total = await baseQ.CountAsync();
+
+            // 2) Oldalnyi employee alapadat + név mezők JOIN-nal (nem Include)
+            var pageItems = await (
+                from e in baseQ
+                    .OrderByDescending(x => x.CreatedAt ?? DateTime.MinValue)
+                    .ThenByDescending(x => x.EmployeeId)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+
+                join wt in _context.WorkerTypes.AsNoTracking()
+                    on e.WorkerTypeId equals wt.WorkerTypeId into wtj
+                from wt in wtj.DefaultIfEmpty()
+
+                join p in _context.Partners.AsNoTracking()
+                    on e.PartnerId equals p.PartnerId into pj
+                from p in pj.DefaultIfEmpty()
+
+                join jt in _context.JobTitles.AsNoTracking()
+                    on e.JobTitleId equals jt.JobTitleId into jtj
+                from jt in jtj.DefaultIfEmpty()
+
+                join ds in _context.Sites.AsNoTracking()
+                    on e.DefaultSiteId equals ds.SiteId into dsj
+                from ds in dsj.DefaultIfEmpty()
+
+                select new
+                {
+                    e.EmployeeId,
+                    e.FirstName,
+                    e.LastName,
+                    e.Email,
+                    e.PhoneNumber,
+                    e.WorkerTypeId,
+                    e.DefaultSiteId,
+                    DefaultSiteName = ds != null ? ds.SiteName : null,
+                    WorkerTypeName = wt != null ? wt.Name : null,
+                    e.PartnerId,
+                    PartnerName = p != null ? p.Name : null,
+                    e.JobTitleId,
+                    JobTitleName = jt != null ? jt.TitleName : null,
+                    e.IsActive
+                }
+            ).ToListAsync();
+
+            var employeeIds = pageItems.Select(x => x.EmployeeId).ToList();
+
+            if (employeeIds.Count == 0)
+            {
+                return new EmployeeIndexResult
+                {
+                    Items = new System.Collections.Generic.List<EmployeeIndexRowDto>(),
+                    TotalRecords = total,
+                    CurrentPage = page,
+                    PageSize = pageSize
+                };
+            }
+
+            // 3) Státusz nevek (ugyanaz)
+            var statusByEmployee = await (
+                from ees in _context.EmployeeEmploymentStatuses.AsNoTracking()
+                join s in _context.EmploymentStatuses.AsNoTracking()
+                    on ees.StatusId equals s.StatusId
+                where employeeIds.Contains(ees.EmployeeId) && ees.IsCurrent
+                orderby ees.AssignedAt descending
+                select new
+                {
+                    ees.EmployeeId,
+                    StatusName = s.StatusName
+                }
+            ).ToListAsync();
+
+            var statusDict = statusByEmployee
+                .GroupBy(x => x.EmployeeId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.StatusName).Distinct().ToList()
+                );
+
+            // 4) Site nevek (ugyanaz)
+            var siteByEmployee = await (
+                from es in _context.EmployeeSites.AsNoTracking()
+                join s in _context.Sites.AsNoTracking()
+                    on es.SiteId equals s.SiteId
+                where employeeIds.Contains(es.EmployeeId)
+                orderby es.IsPrimary descending
+                select new
+                {
+                    es.EmployeeId,
+                    SiteName = s.SiteName
+                }
+            ).ToListAsync();
+
+            var siteDict = siteByEmployee
+                .GroupBy(x => x.EmployeeId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.SiteName).Distinct().ToList()
+                );
+
+            // 5) DTO összeállítás (ugyanaz)
+            var items = pageItems.Select(x => new EmployeeIndexRowDto
+            {
+                EmployeeId = x.EmployeeId,
+                FullName = ((x.LastName ?? "") + " " + (x.FirstName ?? "")).Trim(),
+                Email = x.Email,
+                PhoneNumber = x.PhoneNumber,
+                WorkerTypeId = x.WorkerTypeId,
+                WorkerTypeName = x.WorkerTypeName,
+                PartnerId = x.PartnerId,
+                PartnerName = x.PartnerName,
+                JobTitleId = x.JobTitleId,
+                JobTitleName = x.JobTitleName,
+                IsActive = x.IsActive,
+                StatusNames = statusDict.TryGetValue(x.EmployeeId, out var st) ? st : new System.Collections.Generic.List<string>(),
+                SiteNames = siteDict.TryGetValue(x.EmployeeId, out var si) ? si : new System.Collections.Generic.List<string>(),
+                DefaultSiteId = x.DefaultSiteId,
+                DefaultSiteName = x.DefaultSiteName
+            }).ToList();
+
+            return new EmployeeIndexResult
+            {
+                Items = items,
+                TotalRecords = total,
+                CurrentPage = page,
+                PageSize = pageSize
+            };
+        }
+
+        // -----------------------------
+        // READ (view modal) - MINDEN CREATE mező + MINDENHEZ NÉV (nem csak ID)
+        // -----------------------------
+        public async Task<EmployeeDetailsDto?> GetByIdAsync(int employeeId)
+        {
+            // 1) Alap employee + name mezők (WorkerType, Partner, JobTitle, DefaultSite)
+            var dto = await (
+                from e in _context.Employees.AsNoTracking()
+                where e.EmployeeId == employeeId
+
+                join wt in _context.WorkerTypes.AsNoTracking()
+                    on e.WorkerTypeId equals wt.WorkerTypeId into wtj
+                from wt in wtj.DefaultIfEmpty()
+
+                join p in _context.Partners.AsNoTracking()
+                    on e.PartnerId equals p.PartnerId into pj
+                from p in pj.DefaultIfEmpty()
+
+                join jt in _context.JobTitles.AsNoTracking()
+                    on e.JobTitleId equals jt.JobTitleId into jtj
+                from jt in jtj.DefaultIfEmpty()
+
+                join ds in _context.Sites.AsNoTracking()
+                    on e.DefaultSiteId equals ds.SiteId into dsj
+                from ds in dsj.DefaultIfEmpty()
+
+                select new EmployeeDetailsDto
+                {
+                    // ---- azonosítók
+                    EmployeeId = e.EmployeeId,
+
+                    // ---- alap adatok
+                    FirstName = e.FirstName,
+                    LastName = e.LastName,
+                    FullName = ((e.LastName ?? "") + " " + (e.FirstName ?? "")).Trim(),
+
+                    Email = e.Email,
+                    Email2 = e.Email2,
+                    PhoneNumber = e.PhoneNumber,
+                    PhoneNumber2 = e.PhoneNumber2,
+
+                    DateOfBirth = e.DateOfBirth,
+                    Address = e.Address,
+                    HireDate = e.HireDate,
+
+                    DepartmentId = e.DepartmentId,
+                    // DepartmentName: ha van Department tábla, itt joinold fel és töltsd (lásd lent a TODO-t)
+
+                    JobTitleId = e.JobTitleId,
+                    JobTitleName = jt != null ? jt.TitleName : null,
+
+                    IsActive = e.IsActive,
+
+                    DefaultSiteId = e.DefaultSiteId,
+                    DefaultSiteName = ds != null ? ds.SiteName : null,
+
+                    WorkingTime = e.WorkingTime,
+                    IsContracted = e.IsContracted,
+
+                    FamilyData = e.FamilyData,
+                    Comment1 = e.Comment1,
+                    Comment2 = e.Comment2,
+
+                    VacationDays = e.VacationDays,
+                    FullVacationDays = e.FullVacationDays,
+
+                    TaxId = e.TaxId,
+                    TajNumber = e.TajNumber,
+
+                    BirthName = e.BirthName,
+                    MotherBirthName = e.MotherBirthName,
+                    BirthPlace = e.BirthPlace,
+
+                    NationalityCode = e.NationalityCode,
+                    FeorCode = e.FeorCode,
+
+                    EmploymentEndDate = e.EmploymentEndDate,
+
+                    PermanentAddress = e.PermanentAddress,
+                    MailingAddress = e.MailingAddress,
+
+                    BankAccountIban = e.BankAccountIban,
+
+                    WorkerTypeId = e.WorkerTypeId,
+                    WorkerTypeName = wt != null ? wt.Name : null,
+
+                    PartnerId = e.PartnerId,
+                    PartnerName = p != null ? p.Name : null,
+
+                    // listák majd lent töltődnek:
+                    StatusIds = new List<int>(),
+                    StatusNames = new List<string>(),
+                    Sites = new List<EmployeeSiteDto>()
+                }
+            ).FirstOrDefaultAsync();
+
+            if (dto == null)
+                return null;
+
+            // 2) Státuszok: ID + Név + AssignedAt (mert ezt is "látni akarod")
+            var statuses = await (
+                from ees in _context.EmployeeEmploymentStatuses.AsNoTracking()
+                join s in _context.EmploymentStatuses.AsNoTracking()
+                    on ees.StatusId equals s.StatusId
+                where ees.EmployeeId == employeeId && ees.IsCurrent
+                orderby ees.AssignedAt descending
+                select new EmployeeStatusDto
+                {
+                    StatusId = ees.StatusId,
+                    StatusName = s.StatusName,
+                    AssignedAt = ees.AssignedAt
+                }
+            ).ToListAsync();
+
+            dto.StatusIds = statuses.Select(x => x.StatusId).Distinct().ToList();
+            dto.StatusNames = statuses.Select(x => x.StatusName).Distinct().ToList();
+            dto.Statuses = statuses;
+
+            // 3) Telephelyek: ID + Név + IsPrimary
+            var sites = await (
+                from es in _context.EmployeeSites.AsNoTracking()
+                join s in _context.Sites.AsNoTracking()
+                    on es.SiteId equals s.SiteId
+                where es.EmployeeId == employeeId
+                orderby es.IsPrimary descending, s.SiteName
+                select new EmployeeSiteDto
+                {
+                    SiteId = es.SiteId,
+                    SiteName = s.SiteName,
+                    IsPrimary = es.IsPrimary
+                }
+            ).ToListAsync();
+
+            dto.Sites = sites;
+
+            // convenience listák (ha frontendnek kell egyszerűen)
+            dto.SiteIds = sites.Select(x => x.SiteId).Distinct().ToList();
+            dto.SiteNames = sites.Select(x => x.SiteName).Distinct().ToList();
+
+            // 4) TODO DepartmentName (csak ha van ilyen táblád)
+            // Ha van pl. _context.Departments: joinold fel ugyanígy az 1) query-ben:
+            // join d in _context.Departments ... -> DepartmentName = d.Name
+
+            return dto;
+        }
+
+        // -----------------------------
+        // CREATE
+        // -----------------------------
+        public async Task<ServiceResult<int>> CreateAsync(EmployeesCreateDto dto)
+        {
+            try
+            {
+                // üzleti szabály: külsős => PartnerId kötelező, belsős => null
+                NormalizeWorkerTypePartner(dto.WorkerTypeId, ref dto);
+
+                var entity = new Employees
+                {
+                    FirstName = dto.FirstName?.Trim(),
+                    LastName = dto.LastName?.Trim(),
+                    Email = dto.Email?.Trim(),
+                    Email2 = dto.Email2?.Trim(),
+                    PhoneNumber = dto.PhoneNumber?.Trim(),
+                    PhoneNumber2 = dto.PhoneNumber2?.Trim(),
+                    DateOfBirth = dto.DateOfBirth,
+                    Address = dto.Address?.Trim(),
+                    HireDate = dto.HireDate,
+                    DepartmentId = dto.DepartmentId,
+                    JobTitleId = dto.JobTitleId,
+                    IsActive = dto.IsActive,
+                    DefaultSiteId = dto.DefaultSiteId,
+                    WorkingTime = dto.WorkingTime,
+                    IsContracted = dto.IsContracted ?? (byte)0,
+                    FamilyData = dto.FamilyData,
+                    Comment1 = dto.Comment1,
+                    Comment2 = dto.Comment2,
+                    VacationDays = dto.VacationDays,
+                    FullVacationDays = dto.FullVacationDays,
+                    TaxId = dto.TaxId,
+                    TajNumber = dto.TajNumber,
+                    BirthName = dto.BirthName,
+                    MotherBirthName = dto.MotherBirthName,
+                    BirthPlace = dto.BirthPlace,
+                    NationalityCode = dto.NationalityCode,
+                    FeorCode = dto.FeorCode,
+                    EmploymentEndDate = dto.EmploymentEndDate,
+                    PermanentAddress = dto.PermanentAddress,
+                    MailingAddress = dto.MailingAddress,
+                    BankAccountIban = dto.BankAccountIban,
+                    WorkerTypeId = dto.WorkerTypeId,
+                    PartnerId = dto.PartnerId,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                _context.Employees.Add(employee);
-                await _context.SaveChangesAsync();
+                _context.Employees.Add(entity);
+                await _context.SaveChangesAsync(); // EmployeeId
 
-                // Reload navigation properties
-                await _context.Entry(employee)
-                    .Reference(e => e.JobTitle).LoadAsync();
-                await _context.Entry(employee)
-                    .Reference(e => e.Status).LoadAsync();
+                // státuszok mentése (csak ha van mit)
+                if (dto.StatusIds != null && dto.StatusIds.Count > 0)
+                {
+                    await ReplaceStatusesAsync(entity.EmployeeId, dto.StatusIds);
+                    await _context.SaveChangesAsync();
+                }
 
-                _logger.LogInformation("Employee created with ID {EmployeeId}.", employee.EmployeeId);
-                return employee;
+                // telephelyek mentése (ha create-ben van SiteIds, akkor itt is érdemes)
+                if (dto.SiteIds != null && dto.SiteIds.Count > 0)
+                {
+                    await ReplaceSitesAsync(entity.EmployeeId, dto.SiteIds, dto.DefaultSiteId);
+                    await _context.SaveChangesAsync();
+                }
+
+                return ServiceResult<int>.Ok(entity.EmployeeId);
             }
             catch (DbUpdateException dbEx)
             {
-                _logger.LogError(dbEx, "Database error while creating employee.");
-                throw new InvalidOperationException("Failed to create employee due to database constraint.", dbEx);
+                _logger.LogError(dbEx, "EmployeeService.CreateAsync DbUpdateException.");
+#if DEBUG
+                return ServiceResult<int>.Fail($"DB hiba: {dbEx.InnerException?.Message ?? dbEx.Message}");
+#else
+                return ServiceResult<int>.Fail("Adatbázis hiba történt a dolgozó létrehozásakor.");
+#endif
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error while creating employee.");
-                throw;
+                _logger.LogError(ex, "EmployeeService.CreateAsync failed.");
+#if DEBUG
+                return ServiceResult<int>.Fail($"CreateAsync hiba: {ex.Message}");
+#else
+                return ServiceResult<int>.Fail("Nem sikerült a dolgozó létrehozása.");
+#endif
             }
         }
 
-        // UPDATE: From EmployeesUpdateDto
-        public async Task<Employees> UpdateEmployeeAsync(EmployeesUpdateDto updateDto)
+        // -----------------------------
+        // UPDATE
+        // -----------------------------
+        public async Task<ServiceResult> UpdateAsync(EmployeesUpdateDto dto)
         {
-            if (updateDto == null)
-                throw new ArgumentNullException(nameof(updateDto));
-
-            if (updateDto.EmployeeId <= 0)
-                throw new ArgumentException("Invalid Employee ID.", nameof(updateDto.EmployeeId));
-
             try
             {
-                var employee = await _context.Employees
-                    .IgnoreQueryFilters() // Need this to find if it's soft-deleted
-                    .FirstOrDefaultAsync(e => e.EmployeeId == updateDto.EmployeeId);
+                var entity = await _context.Employees
+                    .FirstOrDefaultAsync(e => e.EmployeeId == dto.EmployeeId);
 
-                if (employee == null)
-                    throw new KeyNotFoundException($"Employee with ID {updateDto.EmployeeId} not found.");
+                if (entity == null)
+                    return ServiceResult.Fail("A dolgozó nem található.");
 
-                // Don't allow updating if it's permanently deleted (IsActive = false AND some other flag)
-                // For now, just allow updates to soft-deleted records
-                if (!employee.IsActive)
-                {
-                    _logger.LogWarning("Updating soft-deleted employee {EmployeeId}. Consider restoring first.", updateDto.EmployeeId);
-                }
+                // üzleti szabály: külsős => PartnerId kötelező, belsős => null
+                NormalizeWorkerTypePartner(dto.WorkerTypeId, ref dto);
 
-                // Manual mapping (only update provided fields)
-                employee.FirstName = updateDto.FirstName ?? employee.FirstName;
-                employee.LastName = updateDto.LastName ?? employee.LastName;
-                employee.Email = updateDto.Email ?? employee.Email;
-                employee.Email2 = updateDto.Email2 ?? employee.Email2;
-                employee.PhoneNumber = updateDto.PhoneNumber ?? employee.PhoneNumber;
-                employee.PhoneNumber2 = updateDto.PhoneNumber2 ?? employee.PhoneNumber2;
-                employee.DateOfBirth = updateDto.DateOfBirth ?? employee.DateOfBirth;
-                employee.Address = updateDto.Address ?? employee.Address;
-                employee.HireDate = updateDto.HireDate ?? employee.HireDate;
-                employee.DepartmentId = updateDto.DepartmentId ?? employee.DepartmentId;
-                employee.JobTitleId = updateDto.JobTitleId ?? employee.JobTitleId;
-                employee.StatusId = updateDto.StatusId ?? employee.StatusId;
-                employee.DefaultSiteId = updateDto.DefaultSiteId ?? employee.DefaultSiteId;
-                employee.WorkingTime = updateDto.WorkingTime ?? employee.WorkingTime;
-                employee.IsContracted = updateDto.IsContracted ?? employee.IsContracted;
-                employee.FamilyData = updateDto.FamilyData ?? employee.FamilyData;
-                employee.Comment1 = updateDto.Comment1 ?? employee.Comment1;
-                employee.Comment2 = updateDto.Comment2 ?? employee.Comment2;
-                employee.VacationDays = updateDto.VacationDays ?? employee.VacationDays;
-                employee.FullVacationDays = updateDto.FullVacationDays ?? employee.FullVacationDays;
-                employee.UpdatedAt = DateTime.UtcNow;
+                entity.FirstName = dto.FirstName?.Trim();
+                entity.LastName = dto.LastName?.Trim();
+                entity.Email = dto.Email?.Trim();
+                entity.Email2 = dto.Email2?.Trim();
+                entity.PhoneNumber = dto.PhoneNumber?.Trim();
+                entity.PhoneNumber2 = dto.PhoneNumber2?.Trim();
+                entity.DateOfBirth = dto.DateOfBirth;
+                entity.Address = dto.Address?.Trim();
+                entity.HireDate = dto.HireDate;
+                entity.DepartmentId = dto.DepartmentId;
+                entity.JobTitleId = dto.JobTitleId;
+                entity.DefaultSiteId = dto.DefaultSiteId;
+                entity.WorkingTime = dto.WorkingTime;
+                entity.IsContracted = dto.IsContracted ?? (byte)0;
+                entity.FamilyData = dto.FamilyData;
+                entity.Comment1 = dto.Comment1;
+                entity.Comment2 = dto.Comment2;
+                entity.TaxId = dto.TaxId;
+                entity.TajNumber = dto.TajNumber;
+                entity.BirthName = dto.BirthName;
+                entity.MotherBirthName = dto.MotherBirthName;
+                entity.BirthPlace = dto.BirthPlace;
+                entity.NationalityCode = dto.NationalityCode;
+                entity.FeorCode = dto.FeorCode;
+                entity.EmploymentEndDate = dto.EmploymentEndDate;
+                entity.PermanentAddress = dto.PermanentAddress;
+                entity.MailingAddress = dto.MailingAddress;
+                entity.BankAccountIban = dto.BankAccountIban;
+                entity.VacationDays = dto.VacationDays;
+                entity.FullVacationDays = dto.FullVacationDays;
+                entity.WorkerTypeId = dto.WorkerTypeId;
+                entity.PartnerId = dto.PartnerId;
+                entity.IsActive = dto.IsActive;
+                entity.UpdatedAt = DateTime.UtcNow;
 
-                _context.Employees.Update(employee);
+                // státusz join frissítés
+                await ReplaceStatusesAsync(entity.EmployeeId, dto.StatusIds);
+
+                // telephely join frissítés (ha van dto.SiteIds)
+                if (dto.SiteIds != null)
+                    await ReplaceSitesAsync(entity.EmployeeId, dto.SiteIds, dto.DefaultSiteId);
+
                 await _context.SaveChangesAsync();
-
-                // Reload navigation properties
-                await _context.Entry(employee)
-                    .Reference(e => e.JobTitle).LoadAsync();
-                await _context.Entry(employee)
-                    .Reference(e => e.Status).LoadAsync();
-
-                _logger.LogInformation("Employee updated with ID {EmployeeId}.", employee.EmployeeId);
-                return employee;
+                return ServiceResult.Ok();
             }
             catch (DbUpdateException dbEx)
             {
-                _logger.LogError(dbEx, "Database error while updating employee ID {EmployeeId}.", updateDto.EmployeeId);
-                throw new InvalidOperationException("Failed to update employee due to database constraint.", dbEx);
+                _logger.LogError(dbEx, "EmployeeService.UpdateAsync DbUpdateException.");
+#if DEBUG
+                var inner = dbEx.InnerException?.Message;
+                return ServiceResult.Fail($"DB hiba: {inner ?? dbEx.Message}");
+#else
+    return ServiceResult.Fail("Adatbázis hiba történt a mentés során.");
+#endif
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error while updating employee ID {EmployeeId}.", updateDto.EmployeeId);
-                throw;
+                _logger.LogError(ex, "EmployeeService.UpdateAsync failed.");
+#if DEBUG
+                return ServiceResult.Fail($"UpdateAsync hiba: {ex.Message}");
+#else
+    return ServiceResult.Fail("Nem sikerült a dolgozó mentése.");
+#endif
             }
         }
 
-        // SOFT DELETE: Mark employee as inactive instead of removing from DB
-        public async Task SoftDeleteEmployeeAsync(int id)
+        // -----------------------------
+        // DELETE (soft-delete: IsActive=false)
+        // -----------------------------
+        public async Task<ServiceResult> SoftDeleteAsync(int employeeId)
         {
-            if (id <= 0)
-                throw new ArgumentException("Employee ID must be greater than zero.", nameof(id));
-
             try
             {
-                var employee = await _context.Employees
-                    .IgnoreQueryFilters() // Need this to find soft-deleted employees
-                    .FirstOrDefaultAsync(e => e.EmployeeId == id);
+                var entity = await _context.Employees
+                    .FirstOrDefaultAsync(e => e.EmployeeId == employeeId);
 
-                if (employee == null)
-                    throw new KeyNotFoundException($"Employee with ID {id} not found.");
+                if (entity == null)
+                    return ServiceResult.Fail("A dolgozó nem található.");
 
-                // Already soft-deleted? Just log and return
-                if (!employee.IsActive)
-                {
-                    _logger.LogInformation("Employee with ID {EmployeeId} is already soft-deleted.", id);
-                    return;
-                }
-
-                employee.IsActive = false;
-                employee.UpdatedAt = DateTime.UtcNow;
-                // Optional: Add DeletedAt = DateTime.UtcNow if you want to track when it was deleted
+                entity.IsActive = false;
+                entity.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Employee soft-deleted with ID {EmployeeId}.", id);
-            }
-            catch (Exception ex) when (!(ex is KeyNotFoundException))
-            {
-                _logger.LogError(ex, "Unexpected error while soft-deleting employee ID {Id}.", id);
-                throw;
-            }
-        }
-
-        // RESTORE: Bring back a soft-deleted employee
-        public async Task RestoreEmployeeAsync(int id)
-        {
-            if (id <= 0)
-                throw new ArgumentException("Employee ID must be greater than zero.", nameof(id));
-
-            try
-            {
-                var employee = await _context.Employees
-                    .IgnoreQueryFilters() // Needed to find soft-deleted records
-                    .FirstOrDefaultAsync(e => e.EmployeeId == id);
-
-                if (employee == null)
-                    throw new KeyNotFoundException($"Employee with ID {id} not found.");
-
-                // Already active? Just log and return
-                if (employee.IsActive)
-                {
-                    _logger.LogInformation("Employee with ID {EmployeeId} is already active.", id);
-                    return;
-                }
-
-                employee.IsActive = true;
-                employee.UpdatedAt = DateTime.UtcNow;
-
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Employee restored with ID {EmployeeId}.", id);
-            }
-            catch (Exception ex) when (!(ex is KeyNotFoundException))
-            {
-                _logger.LogError(ex, "Unexpected error while restoring employee ID {Id}.", id);
-                throw;
-            }
-        }
-
-        // GET: All soft-deleted employees (for admin panel)
-        public async Task<IEnumerable<Employees>> GetDeletedEmployeesAsync()
-        {
-            try
-            {
-                return await _context.Employees
-                    .IgnoreQueryFilters()
-                    .Where(e => !e.IsActive)
-                    .Include(e => e.JobTitle)
-                    .Include(e => e.Status)
-                    .AsNoTracking()
-                    .ToListAsync();
+                return ServiceResult.Ok();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving deleted employees.");
-                throw;
+                _logger.LogError(ex, "EmployeeService.SoftDeleteAsync failed.");
+                return ServiceResult.Fail("Nem sikerült a dolgozó törlése.");
             }
         }
 
-        // SEARCH: By name, email, or phone (only active employees)
-        public async Task<IEnumerable<Employees>> SearchEmployeesAsync(string? searchTerm)
+        // -----------------------------
+        // Helper: státuszok cseréje (IsCurrent=true)
+        // -----------------------------
+private async Task ReplaceStatusesAsync(int employeeId, List<int>? statusIds)
+{
+    statusIds ??= new List<int>();
+    var desired = statusIds.Distinct().ToHashSet();
+
+    // aktuális join sorok
+    var current = await _context.EmployeeEmploymentStatuses
+        .Where(x => x.EmployeeId == employeeId)
+        .ToListAsync();
+
+    var currentIds = current.Select(x => x.StatusId).ToHashSet();
+
+    // törlendők: ami most van, de nem kell
+    var toRemove = current.Where(x => !desired.Contains(x.StatusId)).ToList();
+    if (toRemove.Count > 0)
+        _context.EmployeeEmploymentStatuses.RemoveRange(toRemove);
+
+    // hozzáadandók: ami kell, de még nincs
+    var toAddIds = desired.Except(currentIds).ToList();
+    if (toAddIds.Count > 0)
+    {
+        var now = DateTime.UtcNow;
+        foreach (var statusId in toAddIds)
         {
-            try
+            _context.EmployeeEmploymentStatuses.Add(new EmployeeEmploymentStatus
             {
-                var query = _context.Employees
-                    .Where(e => e.IsActive)
-                    .Include(e => e.JobTitle)
-                    .Include(e => e.Status)
-                    .AsNoTracking();
-
-                if (!string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    searchTerm = searchTerm.Trim().ToLower();
-                    query = query.Where(e =>
-                        (e.FirstName != null && e.FirstName.ToLower().Contains(searchTerm)) ||
-                        (e.LastName != null && e.LastName.ToLower().Contains(searchTerm)) ||
-                        (e.Email != null && e.Email.ToLower().Contains(searchTerm)) ||
-                        (e.PhoneNumber != null && e.PhoneNumber.Contains(searchTerm))
-                    );
-                }
-
-                return await query.ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during employee search with term: {SearchTerm}", searchTerm);
-                throw;
-            }
+                EmployeeId = employeeId,
+                StatusId = statusId,
+                AssignedAt = now,
+                IsCurrent = true
+            });
         }
+    }
 
-        // SEARCH: Including soft-deleted employees (for admin search)
-        public async Task<IEnumerable<Employees>> SearchAllEmployeesAsync(string? searchTerm)
+    // opcionális: IsCurrent/AssignedAt frissítés, ha nálad ez tényleg számít.
+    // Ha nincs history és minden sor "current", akkor ez így oké.
+}
+        // -----------------------------
+        // Helper: telephelyek cseréje
+        // (create/update-hoz hasznos, és view-ban is ezt látod)
+        // -----------------------------
+public async Task ReplaceSitesAsync(int employeeId, List<int> siteIds, int? defaultSiteId = null)
+{
+    siteIds ??= new List<int>();
+
+    var desiredList = siteIds
+        .Where(x => x > 0)
+        .Distinct()
+        .ToList();
+
+    var desired = desiredList.ToHashSet();
+
+    var currentLinks = await _context.EmployeeSites
+        .Where(x => x.EmployeeId == employeeId)
+        .ToListAsync();
+
+    var currentSiteIds = currentLinks.Select(x => x.SiteId).ToHashSet();
+
+    // remove
+    var toRemove = currentLinks.Where(x => !desired.Contains(x.SiteId)).ToList();
+    if (toRemove.Count > 0)
+        _context.EmployeeSites.RemoveRange(toRemove);
+
+    // add
+    var toAdd = desired.Except(currentSiteIds).ToList();
+    foreach (var siteId in toAdd)
+    {
+        _context.EmployeeSites.Add(new EmployeeSite
         {
-            try
-            {
-                var query = _context.Employees
-                    .IgnoreQueryFilters()
-                    .Include(e => e.JobTitle)
-                    .Include(e => e.Status)
-                    .AsNoTracking();
+            EmployeeId = employeeId,
+            SiteId = siteId,
+            IsPrimary = false
+        });
+    }
 
-                if (!string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    searchTerm = searchTerm.Trim().ToLower();
-                    query = query.Where(e =>
-                        (e.FirstName != null && e.FirstName.ToLower().Contains(searchTerm)) ||
-                        (e.LastName != null && e.LastName.ToLower().Contains(searchTerm)) ||
-                        (e.Email != null && e.Email.ToLower().Contains(searchTerm)) ||
-                        (e.PhoneNumber != null && e.PhoneNumber.Contains(searchTerm))
-                    );
-                }
+    // primary: frissítsük az összes megmaradó/linkelt site-ra
+    // (currentLinks-ben még benne van a toRemove is, ezért újra leképezzük a "maradók" halmazát)
+    var remainingSiteIds = currentSiteIds.Intersect(desired).ToList();
+    remainingSiteIds.AddRange(toAdd);
+    remainingSiteIds = remainingSiteIds.Distinct().ToList();
 
-                return await query.ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during full employee search with term: {SearchTerm}", searchTerm);
-                throw;
-            }
-        }
+    if (remainingSiteIds.Count == 0)
+        return;
 
-        // GET: Employees by department (only active)
-        public async Task<IEnumerable<Employees>> GetEmployeesByDepartmentAsync(int departmentId)
+    int primaryId;
+
+    if (defaultSiteId.HasValue && desired.Contains(defaultSiteId.Value))
+        primaryId = defaultSiteId.Value;
+    else
+        primaryId = remainingSiteIds[0]; // fallback
+
+    // meglévők frissítése
+    foreach (var link in currentLinks.Where(x => desired.Contains(x.SiteId)))
+    {
+        link.IsPrimary = (link.SiteId == primaryId);
+    }
+
+    // frissen hozzáadott linkeknél EF még nem adja vissza objektumként, ezért külön kezeljük:
+    // (egyszerűen hozzáadjuk még egyszer a primary-t, vagy a toAdd loopban állítjuk)
+    // -> egyszerűbb: a toAdd loopban állítsuk:
+    //   IsPrimary = (siteId == primaryId)
+
+    // Ha ezt választod, akkor a fenti toAdd loopot módosítsd így:
+    // IsPrimary = (siteId == primaryId)
+}
+
+        // -----------------------------
+        // Business rule helpers
+        // -----------------------------
+        private static void NormalizeWorkerTypePartner(int workerTypeId, ref EmployeesCreateDto dto)
         {
-            if (departmentId <= 0)
-                throw new ArgumentException("Department ID must be greater than zero.", nameof(departmentId));
+            // 1=INTERNAL, 2=EXTERNAL
+            if (workerTypeId == 1)
+            {
+                dto.PartnerId = null;
+                return;
+            }
 
-            try
-            {
-                return await _context.Employees
-                    .Where(e => e.IsActive)
-                    .Where(e => e.DepartmentId == departmentId)
-                    .Include(e => e.JobTitle)
-                    .Include(e => e.Status)
-                    .AsNoTracking()
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving employees for Department ID {DepartmentId}.", departmentId);
-                throw;
-            }
+            if (workerTypeId == 2 && dto.PartnerId == null)
+                throw new InvalidOperationException("Külsős dolgozónál kötelező PartnerId.");
         }
 
-        // GET: Active employees by status
-        public async Task<IEnumerable<Employees>> GetEmployeesByStatusAsync(int statusId)
+        private static void NormalizeWorkerTypePartner(int workerTypeId, ref EmployeesUpdateDto dto)
         {
-            if (statusId <= 0)
-                throw new ArgumentException("Status ID must be greater than zero.", nameof(statusId));
+            if (workerTypeId == 1)
+            {
+                dto.PartnerId = null;
+                return;
+            }
 
-            try
-            {
-                return await _context.Employees
-                    .Where(e => e.IsActive)
-                    .Where(e => e.StatusId == statusId)
-                    .Include(e => e.JobTitle)
-                    .Include(e => e.Status)
-                    .AsNoTracking()
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving employees for Status ID {StatusId}.", statusId);
-                throw;
-            }
+            if (workerTypeId == 2 && dto.PartnerId == null)
+                throw new InvalidOperationException("Külsős dolgozónál kötelező PartnerId.");
         }
+    }
 
-        // CHECK: Does employee exist? (including soft-deleted)
-        public async Task<bool> EmployeeExistsAsync(int id)
-        {
-            if (id <= 0)
-                return false;
+    // ---------------------------------
+    // Result + DTO-k az AJAX-hoz
+    // ---------------------------------
+    public class EmployeeIndexResult
+    {
+        public List<EmployeeIndexRowDto> Items { get; set; } = new();
+        public int TotalRecords { get; set; }
+        public int CurrentPage { get; set; }
+        public int PageSize { get; set; }
+    }
 
-            try
-            {
-                return await _context.Employees
-                    .IgnoreQueryFilters()
-                    .AnyAsync(e => e.EmployeeId == id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error checking if employee {EmployeeId} exists.", id);
-                throw;
-            }
-        }
+    public class EmployeeIndexRowDto
+    {
+        public int EmployeeId { get; set; }
+        public string FullName { get; set; } = "";
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
+        public int WorkerTypeId { get; set; }
+        public string? WorkerTypeName { get; set; }
+        public int? PartnerId { get; set; }
+        public string? PartnerName { get; set; }
+        public int? JobTitleId { get; set; }
+        public string? JobTitleName { get; set; }
+        public bool IsActive { get; set; }
+        public List<string> StatusNames { get; set; } = new();
+        public List<string> SiteNames { get; set; } = new();
+        public int? DefaultSiteId { get; set; }
+        public string? DefaultSiteName { get; set; }
+    }
 
-        // COUNT: Total active employees
-        public async Task<int> GetActiveEmployeesCountAsync()
-        {
-            try
-            {
-                return await _context.Employees
-                    .Where(e => e.IsActive)
-                    .CountAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error counting active employees.");
-                throw;
-            }
-        }
+    // ---------------------------------
+    // DETAILS DTO - minden create mező + mindenhez név
+    // ---------------------------------
+    public class EmployeeDetailsDto
+    {
+        public int EmployeeId { get; set; }
 
-        // COUNT: Total deleted employees
-        public async Task<int> GetDeletedEmployeesCountAsync()
-        {
-            try
-            {
-                return await _context.Employees
-                    .IgnoreQueryFilters()
-                    .Where(e => !e.IsActive)
-                    .CountAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error counting deleted employees.");
-                throw;
-            }
-        }
+        // Basic
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? FullName { get; set; }
+
+        public string? Email { get; set; }
+        public string? Email2 { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? PhoneNumber2 { get; set; }
+
+        public DateTime? DateOfBirth { get; set; }
+        public string? Address { get; set; }
+        public DateTime? HireDate { get; set; }
+
+        // Department
+        public int? DepartmentId { get; set; }
+        public string? DepartmentName { get; set; } // ha van Department tábla: töltsd
+
+        // JobTitle
+        public int? JobTitleId { get; set; }
+        public string? JobTitleName { get; set; }
+
+        public bool IsActive { get; set; }
+
+        // Default site
+        public int? DefaultSiteId { get; set; }
+        public string? DefaultSiteName { get; set; }
+
+        // Contract
+        public decimal? WorkingTime { get; set; }
+        public byte? IsContracted { get; set; }
+
+        // Other create fields
+        public string? FamilyData { get; set; }
+        public string? Comment1 { get; set; }
+        public string? Comment2 { get; set; }
+        public int? VacationDays { get; set; }
+        public int? FullVacationDays { get; set; }
+        public string? TaxId { get; set; }
+        public string? TajNumber { get; set; }
+        public string? BirthName { get; set; }
+        public string? MotherBirthName { get; set; }
+        public string? BirthPlace { get; set; }
+        public string? NationalityCode { get; set; }
+        public string? FeorCode { get; set; }
+        public DateTime? EmploymentEndDate { get; set; }
+        public string? PermanentAddress { get; set; }
+        public string? MailingAddress { get; set; }
+        public string? BankAccountIban { get; set; }
+
+        // WorkerType + Partner
+        public int WorkerTypeId { get; set; }
+        public string? WorkerTypeName { get; set; }
+
+        public int? PartnerId { get; set; }
+        public string? PartnerName { get; set; }
+
+        // Status + Sites
+        public List<int> StatusIds { get; set; } = new();
+        public List<string> StatusNames { get; set; } = new();
+        public List<EmployeeStatusDto> Statuses { get; set; } = new();
+
+        public List<int> SiteIds { get; set; } = new();
+        public List<string> SiteNames { get; set; } = new();
+        public List<EmployeeSiteDto> Sites { get; set; } = new();
+    }
+
+    public class EmployeeStatusDto
+    {
+        public int StatusId { get; set; }
+        public string StatusName { get; set; } = "";
+        public DateTime? AssignedAt { get; set; }
+    }
+
+    public class EmployeeSiteDto
+    {
+        public int SiteId { get; set; }
+        public string SiteName { get; set; } = "";
+        public bool IsPrimary { get; set; }
+    }
+
+    public class EmployeeIndexQueryDto
+    {
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 30;
+
+        public string? SearchTerm { get; set; }      // a felső kereső
+        public string? QuickFilter { get; set; }     // all|active|internal|external
+
+        // Advanced modal mezők:
+        public string? Text { get; set; }            // Név/Email contains
+        public string? Phone { get; set; }           // Telefon contains
+        public int? WorkerTypeId { get; set; }
+        public int? PartnerId { get; set; }
+        public int? StatusId { get; set; }           // single select (később lehet List<int>)
+        public int? SiteId { get; set; }             // single select (később lehet List<int>)
+        public bool? ActiveOnly { get; set; }        // Csak aktív
+    }
+
+    public class EmployeeAdvancedFilterDto
+    {
+        public string? Text { get; set; }         // Név/Email contains
+        public string? Phone { get; set; }        // Telefon contains
+        public int? WorkerTypeId { get; set; }
+        public int? PartnerId { get; set; }
+        public int? StatusId { get; set; }        // single select
+        public int? SiteId { get; set; }          // single select
+        public bool? ActiveOnly { get; set; }     // Csak aktív
+    }
+
+    // ---------------------------------
+    // ServiceResult
+    // ---------------------------------
+    public class ServiceResult
+    {
+        public bool Success { get; set; }
+        public string? Error { get; set; }
+
+        public static ServiceResult Ok() => new() { Success = true };
+        public static ServiceResult Fail(string error) => new() { Success = false, Error = error };
+    }
+
+    public class ServiceResult<T> : ServiceResult
+    {
+        public T? Data { get; set; }
+
+        public static ServiceResult<T> Ok(T data) => new() { Success = true, Data = data };
+        public new static ServiceResult<T> Fail(string error) => new() { Success = false, Error = error };
     }
 }

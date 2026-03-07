@@ -13,11 +13,11 @@ namespace Cloud9_2.Models
         public string? StatusName { get; set; }
 
         public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
-
         public DateTime? UpdatedAt { get; set; }
 
-        // Navigation property
-        public ICollection<Employees>? Employees { get; set; }
+        // ONLY join navigation (explicit many-to-many)
+        public ICollection<EmployeeEmploymentStatus> EmployeeEmploymentStatuses { get; set; }
+            = new List<EmployeeEmploymentStatus>();
     }
 
     public class EmploymentStatusCreateDto
@@ -34,5 +34,4 @@ namespace Cloud9_2.Models
         [StringLength(50, ErrorMessage = "Status name cannot exceed 50 characters.")]
         public string? StatusName { get; set; }
     }
-
 }

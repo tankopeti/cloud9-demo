@@ -1,0 +1,163 @@
+ssh -i ~/.ssh/cloud9_hetzner root@89.167.71.186
+hostname
+ubuntu-4gb-hel1-1
+
+🧱 1️⃣ Tűzfal (UFW) bekapcsolása
+🎯 Cél
+
+Minden bejövő forgalom tiltva
+
+Csak szükséges portok nyitva:
+
+22 (SSH)
+
+80 (HTTP → Traefik)
+
+443 (HTTPS → Traefik)
+
+🔹 1.1 Alap szabályok
+ufw default deny incoming
+
+➡️ Minden bejövő kapcsolat tiltása alapértelmezetten.
+
+ufw default allow outgoing
+
+➡️ A szerver kifelé kommunikálhat (update, DNS, stb.).
+
+🔹 1.2 Szükséges portok megnyitása
+ufw allow 22
+
+➡️ SSH elérés engedélyezése.
+
+ufw allow 80
+
+➡️ HTTP forgalom (Traefik ACME redirect).
+
+ufw allow 443
+
+➡️ HTTPS forgalom (production app).
+
+🔹 1.3 Tűzfal aktiválása
+ufw enable
+
+Ha kérdez:
+
+Proceed with operation (y|n)?
+
+→ y
+
+🔹 1.4 Ellenőrzés
+ufw status
+
+Elvárt:
+
+22 ALLOW
+80 ALLOW
+443 ALLOW
+🗄️ 2️⃣ SQL Server ellenőrzés (biztonsági check)
+🎯 Cél
+
+Meggyőződni róla, hogy a 1433 nincs publikálva.
+
+docker ps
+
+Fontos:
+NE legyen ilyen:
+
+0.0.0.0:1433->1433/tcp
+
+Ha csak ez van:
+
+1433/tcp
+
+➡️ SQL csak belső Docker networken elérhető (jó állapot).
+
+🔐 3️⃣ SA jelszó rotáció
+
+⚠️ A jelszó most publikus lett → kötelező csere.
+
+🔹 3.1 Belépés SQL-be
+docker exec -it cloud9-mssql-1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'JELENLEGI_JELSZO'
+🔹 3.2 Új jelszó beállítása
+ALTER LOGIN sa WITH PASSWORD = 'NagyonErősÚjJelszó123!';
+GO
+
+➡️ Azonnal érvényes.
+
+🔹 3.3 Docker compose frissítése
+
+A .env vagy docker-compose.yml fájlban frissítsd:
+
+SA_PASSWORD=NagyonErősÚjJelszó123!
+
+Majd:
+
+docker compose down
+docker compose up -d
+
+➡️ SQL container újraindul új jelszóval.
+
+🔄 4️⃣ Restart policy ellenőrzés
+🎯 Cél
+
+Szerver reboot esetén minden container automatikusan induljon.
+
+docker inspect cloud9-cloud9-app-1 | grep -A 5 RestartPolicy
+
+Elvárt:
+
+"Name": "always"
+
+Ha nem az:
+
+docker-compose.yml-ben:
+
+restart: always
+
+Majd:
+
+docker compose up -d
+🔁 5️⃣ Production reboot (opcionális)
+
+Ubuntu írja:
+
+*** System restart required ***
+
+Ha minden restart policy rendben:
+
+reboot
+📊 6️⃣ Erőforrás ellenőrzés
+Disk:
+df -h
+Memory:
+free -m
+Docker stats:
+docker stats
+🧠 Összefoglalás – Mit csinálunk ezzel?
+Lépés	Miért fontos
+UFW	Külső támadási felület minimalizálása
+SQL port check	DB izoláció
+SA password rotáció	Credential hardening
+Restart policy	High availability
+Reboot	Kernel security update
+
+
+SSH tunnel indítása a Mac-en
+
+Mac terminálban futtasd:
+
+ssh -i ~/.ssh/cloud9_hetzner -L 14330:localhost:1433 root@89.167.71.186
+
+Mit jelent ez?
+
+14330 → a Mac-eden nyitunk egy lokális portot
+
+localhost:1433 → a VPS-en a SQL port
+
+SSH titkosított csatornán
+
+Ezután:
+
+a terminál nyitva marad
+
+az alagút aktív

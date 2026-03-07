@@ -95,14 +95,22 @@ namespace Cloud9_2.Models
         [ForeignKey("PartnerId")]
         public Partner Partner { get; set; }
 
+        [Display(Name = "Alapértelmezett kommunikációs mód")]
+        public int? DefaultCommunicationTypeId { get; set; }
+
+        [ForeignKey(nameof(DefaultCommunicationTypeId))]
+        public CommunicationType? DefaultCommunicationType { get; set; }
+
         // Navigation properties
         public ICollection<Quote>? Quotes { get; set; } = new List<Quote>();
         public ICollection<Document>? Documents { get; set; } = new List<Document>();
         public ICollection<Order> Orders { get; set; } = new List<Order>();
         public ICollection<Resource>? Resources { get; set; } = new List<Resource>();
+        public ICollection<EmployeeSite> EmployeeSites { get; set; } = new List<EmployeeSite>();
         public ICollection<CustomerCommunication> CustomerCommunications { get; set; } = new List<CustomerCommunication>();
 
         // public ICollection<Employee>? Employee { get; set; } = new List<Employee>();
+        public ICollection<PartnerSiteLink> PartnerSiteLinks { get; set; } = new List<PartnerSiteLink>();
 
         [Display(Name = "Státusz")]
         public int? StatusId { get; set; }
@@ -193,6 +201,9 @@ namespace Cloud9_2.Models
 
         [Display(Name = "Telephely típusa")]
         public int? SiteTypeId { get; set; }
+
+        [Display(Name = "Alapértelmezett kommunikációs mód")]
+        public int? DefaultCommunicationTypeId { get; set; }
 
         public bool IsActive { get; set; } = true;
     }

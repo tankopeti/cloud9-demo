@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
+using System.Globalization;
 
 namespace Cloud9_2.Interceptors
 {
@@ -11,6 +12,7 @@ namespace Cloud9_2.Interceptors
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<GenericAuditInterceptor> _logger;
 
+        // ✅ Audited entity types (CLR types)
         private static readonly Dictionary<Type, string> AuditedEntities = new()
         {
             { typeof(Partner), "Partner" },
@@ -19,13 +21,19 @@ namespace Cloud9_2.Interceptors
             { typeof(CustomerCommunication), "CustomerCommunication" },
             { typeof(CommunicationResponsible), "CommunicationResponsible" },
 
-            { typeof(Document), "Document" }
+            { typeof(Document), "Document" },
+
+            // HR
+            { typeof(Employees), "Employee" },
+            { typeof(EmployeeEmploymentStatus), "EmployeeEmploymentStatus" },
+            { typeof(EmployeeSite), "EmployeeSite" }
         };
 
+        // ✅ Default exclusions (noise reduction)
         private static readonly HashSet<string> ExcludedProperties = new()
         {
             "CreatedDate", "ModifiedDate", "IsActive", "RowVersion",
-            "UpdatedDate" // ✅ zaj csökkentése
+            "UpdatedDate", "CreatedAt", "UpdatedAt" // HR Employees zaj csökkentés
         };
 
         public GenericAuditInterceptor(IHttpContextAccessor httpContextAccessor, ILogger<GenericAuditInterceptor> logger)
@@ -161,21 +169,227 @@ namespace Cloud9_2.Interceptors
             return int.TryParse(s, out var n) ? n : (int?)null;
         }
 
-// ✅ TaskPM kommunikációs mód név (TaskPMcomMethodID) -> TaskPMcomMethod
-private async Task<string> GetTaskPmComMethodNameAsync(DbContext context, int? methodId)
+        // ✅ TaskPM kommunikációs mód név (TaskPMcomMethodID) -> TaskPMcomMethod
+        private async Task<string> GetTaskPmComMethodNameAsync(DbContext context, int? methodId)
+        {
+            if (!methodId.HasValue || methodId.Value <= 0) return "—";
+
+            var name = await context.Set<TaskPMcomMethod>()
+                .AsNoTracking()
+                .Where(m => m.TaskPMcomMethodID == methodId.Value)
+                .Select(m => m.Nev)
+                .FirstOrDefaultAsync();
+
+            return string.IsNullOrWhiteSpace(name) ? $"#{methodId.Value}" : name;
+        }
+
+// ==========================
+// Audit value normalization (noise reduction)
+// ==========================
+
+private static string NormalizeString(string? s)
 {
-    if (!methodId.HasValue || methodId.Value <= 0) return "—";
-
-    var name = await context.Set<TaskPMcomMethod>()
-        .AsNoTracking()
-        .Where(m => m.TaskPMcomMethodID == methodId.Value)
-        .Select(m => m.Nev)
-        .FirstOrDefaultAsync();
-
-    return string.IsNullOrWhiteSpace(name) ? $"#{methodId.Value}" : name;
+    // null == "" == "   "
+    return string.IsNullOrWhiteSpace(s) ? "" : s.Trim();
 }
 
+private static bool TryDecimal(object? o, out decimal value)
+{
+    value = 0m;
+    if (o == null) return false;
 
+    if (o is decimal d) { value = d; return true; }
+    if (o is int i) { value = i; return true; }
+    if (o is long l) { value = l; return true; }
+    if (o is double db) { value = (decimal)db; return true; }
+    if (o is float f) { value = (decimal)f; return true; }
+
+    var s = o.ToString();
+    if (string.IsNullOrWhiteSpace(s)) return false;
+
+    // HU (8,00) + invariant (8.00) + plain (8)
+    return decimal.TryParse(s, NumberStyles.Any, new CultureInfo("hu-HU"), out value)
+        || decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out value);
+}
+
+private static bool TryTimeSpanHungarian(object? o, out TimeSpan value)
+{
+    value = default;
+    if (o == null) return false;
+
+    if (o is TimeSpan ts) { value = ts; return true; }
+
+    // Ha esetleg TimeOnly lenne
+#if NET6_0_OR_GREATER
+    if (o is TimeOnly to) { value = to.ToTimeSpan(); return true; }
+#endif
+
+    var s = NormalizeString(o.ToString());
+    if (string.IsNullOrWhiteSpace(s)) return false;
+
+    // Magyar formátum: "8:00", "12:00", "15:35" (H:mm)
+    // plusz "08:00" (HH:mm) is ok
+    return TimeSpan.TryParseExact(s, new[] { @"h\:mm", @"hh\:mm", @"h\:mm\:ss", @"hh\:mm\:ss" },
+                                  CultureInfo.InvariantCulture, out value)
+        || TimeSpan.TryParse(s, CultureInfo.InvariantCulture, out value);
+}
+
+private static bool AreEquivalent(object? oldObj, object? newObj)
+{
+    if (oldObj == null && newObj == null) return true;
+
+    // string: null == ""
+    if (oldObj is string || newObj is string)
+    {
+        var a = NormalizeString(oldObj?.ToString());
+        var b = NormalizeString(newObj?.ToString());
+        return a == b;
+    }
+
+    // numeric: 8,00 == 8
+    if (TryDecimal(oldObj, out var od) && TryDecimal(newObj, out var nd))
+        return od == nd;
+
+    // time: 8:00 == 08:00
+    if (TryTimeSpanHungarian(oldObj, out var ot) && TryTimeSpanHungarian(newObj, out var nt))
+        return ot == nt;
+
+    // fallback
+    return Equals(oldObj, newObj) || (oldObj?.ToString() ?? "null") == (newObj?.ToString() ?? "null");
+}
+
+private static string FormatForAudit(object? o)
+{
+    if (o == null) return "null";
+
+    // string: trim
+    if (o is string s) return NormalizeString(s);
+
+    // numeric: egységes (8,00)
+    if (TryDecimal(o, out var d))
+        return d.ToString("0.##", new CultureInfo("hu-HU"));
+
+    // time: egységes (H:mm)
+    if (TryTimeSpanHungarian(o, out var ts))
+        return ts.ToString(@"h\:mm");
+
+    return o.ToString() ?? "null";
+}
+
+        // ==========================
+        // HR: safe helpers (property-name tolerant)
+        // ==========================
+private static int GetIntPropByNames(object obj, params string[] names)
+{
+    var t = obj.GetType();
+
+    foreach (var n in names)
+    {
+        var p = t.GetProperty(n);
+        if (p == null) continue;
+
+        var v = p.GetValue(obj);
+        if (v == null) continue;
+
+        try
+        {
+            // ha int
+            if (v.GetType() == typeof(int))
+                return (int)v;
+
+            // ha int?
+            var underlying = Nullable.GetUnderlyingType(v.GetType());
+            if (underlying == typeof(int))
+                return (int)Convert.ChangeType(v, typeof(int));
+
+            // ha string vagy más
+            var s = v.ToString();
+            if (!string.IsNullOrWhiteSpace(s) && int.TryParse(s, out var parsed))
+                return parsed;
+        }
+        catch
+        {
+            // ignore, megyünk tovább
+        }
+    }
+
+    return 0;
+}
+
+private async Task<string> GetEmploymentStatusNameAsync(DbContext context, int statusId)
+{
+    if (statusId <= 0) return "—";
+
+    var name = await context.Set<EmploymentStatus>()
+        .Where(x => x.StatusId == statusId)          // <-- nálad lehet EmploymentStatusId, StatusId, stb.
+        .Select(x => x.StatusName)                    // <-- a valós mezőnév
+        .FirstOrDefaultAsync();
+
+    return string.IsNullOrWhiteSpace(name) ? $"#{statusId}" : name.Trim();
+}
+
+        private async Task AuditEmployeeStatusLinkAsync(
+            DbContext context,
+            List<AuditLog> auditEntries,
+            EmployeeEmploymentStatus link,
+            EntityState state,
+            string userId,
+            string userName,
+            DateTime now)
+        {
+            if (state != EntityState.Added && state != EntityState.Deleted)
+                return;
+
+            // ✅ toleráns: ha nálad StatusId a mező, ez akkor is működik
+            var employeeId = GetIntPropByNames(link, "EmployeeId");
+            var statusId = GetIntPropByNames(link, "EmploymentStatusId", "StatusId", "EmploymentStatusID", "EmploymentStatusPMId");
+
+            var statusName = await GetEmploymentStatusNameAsync(context, statusId);
+
+            auditEntries.Add(new AuditLog
+            {
+                EntityType = "Employee",
+                EntityId = employeeId,
+                Action = "Updated",
+                ChangedById = userId,
+                ChangedByName = userName,
+                ChangedAt = now,
+                Changes = state == EntityState.Added
+                    ? $"Státusz hozzáadva: {statusName}"
+                    : $"Státusz eltávolítva: {statusName}"
+            });
+        }
+
+        private async Task AuditEmployeeSiteLinkAsync(
+            DbContext context,
+            List<AuditLog> auditEntries,
+            EmployeeSite link,
+            EntityState state,
+            string userId,
+            string userName,
+            DateTime now)
+        {
+            if (state != EntityState.Added && state != EntityState.Deleted)
+                return;
+
+            var employeeId = GetIntPropByNames(link, "EmployeeId");
+            var siteId = GetIntPropByNames(link, "SiteId");
+
+            var siteName = await GetSiteNameAsync(context, siteId);
+
+            auditEntries.Add(new AuditLog
+            {
+                EntityType = "Employee",
+                EntityId = employeeId,
+                Action = "Updated",
+                ChangedById = userId,
+                ChangedByName = userName,
+                ChangedAt = now,
+                Changes = state == EntityState.Added
+                    ? $"Telephely hozzáadva: {siteName}"
+                    : $"Telephely eltávolítva: {siteName}"
+            });
+        }
 
         private async Task AuditChangesAsync(DbContext context)
         {
@@ -183,27 +397,41 @@ private async Task<string> GetTaskPmComMethodNameAsync(DbContext context, int? m
             var userName = await GetUserNameAsync(context, userId);
             var now = DateTime.UtcNow;
 
-                // 🔥 Cache-ek (egy mentésen belül ne kérdezzen le mindent 10x)
-    var taskPmComMethodCache = new Dictionary<int, string>();
+            // 🔥 Cache-ek (egy mentésen belül ne kérdezzen le mindent 10x)
+            var taskPmComMethodCache = new Dictionary<int, string>();
 
-    async Task<string> GetTaskPmComMethodNameCached(int? id)
-    {
-        if (!id.HasValue || id.Value <= 0) return "—";
+            async Task<string> GetTaskPmComMethodNameCached(int? id)
+            {
+                if (!id.HasValue || id.Value <= 0) return "—";
 
-        if (taskPmComMethodCache.TryGetValue(id.Value, out var cached))
-            return cached;
+                if (taskPmComMethodCache.TryGetValue(id.Value, out var cached))
+                    return cached;
 
-        var name = await GetTaskPmComMethodNameAsync(context, id);
-        taskPmComMethodCache[id.Value] = name;
+                var name = await GetTaskPmComMethodNameAsync(context, id);
+                taskPmComMethodCache[id.Value] = name;
 
-        return name;
-    }
-
+                return name;
+            }
 
             var auditEntries = new List<AuditLog>();
 
             foreach (var entry in context.ChangeTracker.Entries())
             {
+                // ==========================
+                // HR JOIN audit -> Employee history
+                // ==========================
+                if (entry.Entity is EmployeeEmploymentStatus ees)
+                {
+                    await AuditEmployeeStatusLinkAsync(context, auditEntries, ees, entry.State, userId, userName, now);
+                    continue;
+                }
+
+                if (entry.Entity is EmployeeSite es)
+                {
+                    await AuditEmployeeSiteLinkAsync(context, auditEntries, es, entry.State, userId, userName, now);
+                    continue;
+                }
+
                 var clrType = entry.Metadata.ClrType; // ✅ proxy-biztos
                 if (!AuditedEntities.TryGetValue(clrType, out var entityTypeName))
                     continue;
@@ -313,6 +541,22 @@ private async Task<string> GetTaskPmComMethodNameAsync(DbContext context, int? m
                             break;
                         }
 
+                        // HR Employees Created – opcionális, de hasznos
+                        if (entry.Entity is Employees eNew)
+                        {
+                            auditEntries.Add(new AuditLog
+                            {
+                                EntityType = "Employee",
+                                EntityId = eNew.EmployeeId,
+                                Action = "Created",
+                                ChangedById = userId,
+                                ChangedByName = userName,
+                                ChangedAt = now,
+                                Changes = $"Új dolgozó létrehozva: {(eNew.LastName ?? "").Trim()} {(eNew.FirstName ?? "").Trim()}".Trim()
+                            });
+                            break;
+                        }
+
                         auditEntries.Add(new AuditLog
                         {
                             EntityType = entityTypeName,
@@ -330,15 +574,30 @@ private async Task<string> GetTaskPmComMethodNameAsync(DbContext context, int? m
                     {
                         var changes = new List<string>();
 
-                        foreach (var prop in entry.Properties)
-                        {
-                            if (ExcludedProperties.Contains(prop.Metadata.Name))
+foreach (var prop in entry.Properties)
+{
+    var oldObj = entry.OriginalValues[prop.Metadata];
+    var newObj = entry.CurrentValues[prop.Metadata];
+
+    // ✅ zajcsökkentés: string null/empty + numeric formázás + time (8:00) normalizálva
+    if (AreEquivalent(oldObj, newObj))
+        continue;
+
+    var oldValue = FormatForAudit(oldObj);
+    var newValue = FormatForAudit(newObj);
+
+                            // ✅ Employees IsActive: még excluded előtt!
+                            if (entry.Entity is Employees && prop.Metadata.Name == "IsActive")
+                            {
+                                var text = (newValue.Equals("False", StringComparison.OrdinalIgnoreCase) || newValue == "0")
+                                    ? "Dolgozó deaktiválva."
+                                    : "Dolgozó újraaktiválva.";
+
+                                changes.Add(text);
                                 continue;
+                            }
 
-                            var oldValue = entry.OriginalValues[prop.Metadata]?.ToString() ?? "null";
-                            var newValue = entry.CurrentValues[prop.Metadata]?.ToString() ?? "null";
-
-                            if (oldValue == newValue)
+                            if (ExcludedProperties.Contains(prop.Metadata.Name))
                                 continue;
 
                             if (entry.Entity is Partner)
@@ -359,6 +618,55 @@ private async Task<string> GetTaskPmComMethodNameAsync(DbContext context, int? m
                                     "Notes" => "Jegyzetek",
                                     _ => prop.Metadata.Name
                                 };
+
+                                changes.Add($"{displayName}: {oldValue} → {newValue}");
+                                continue;
+                            }
+
+                            // ✅ HR Employees mező mapping (minimál, bővíthető)
+                            if (entry.Entity is Employees)
+                            {
+                                string displayName = prop.Metadata.Name switch
+                                {
+                                    "FirstName" => "Keresztnév",
+                                    "LastName" => "Vezetéknév",
+                                    "Email" => "E-mail",
+                                    "Email2" => "E-mail 2",
+                                    "PhoneNumber" => "Telefonszám",
+                                    "PhoneNumber2" => "Telefonszám 2",
+                                    "Address" => "Cím",
+                                    "HireDate" => "Belépés dátuma",
+                                    "DepartmentId" => "Osztály",
+                                    "JobTitleId" => "Munkakör",
+                                    "WorkerTypeId" => "Dolgozó típus",
+                                    "PartnerId" => "Partner",
+                                    "DefaultSiteId" => "Alap telephely",
+                                    "WorkingTime" => "Munkaidő",
+                                    "IsContracted" => "Szerződéses",
+                                    _ => prop.Metadata.Name
+                                };
+
+                                // Partner név feloldás
+                                if (prop.Metadata.Name == "PartnerId")
+                                {
+                                    var oldId = ToNullableInt(oldValue);
+                                    var newId = ToNullableInt(newValue);
+                                    var oldName = await GetPartnerNameAsync(context, oldId);
+                                    var newName = await GetPartnerNameAsync(context, newId);
+                                    changes.Add($"{displayName}: {oldName} → {newName}");
+                                    continue;
+                                }
+
+                                // DefaultSite név feloldás
+                                if (prop.Metadata.Name == "DefaultSiteId")
+                                {
+                                    var oldId = ToNullableInt(oldValue);
+                                    var newId = ToNullableInt(newValue);
+                                    var oldName = await GetSiteNameAsync(context, oldId);
+                                    var newName = await GetSiteNameAsync(context, newId);
+                                    changes.Add($"{displayName}: {oldName} → {newName}");
+                                    continue;
+                                }
 
                                 changes.Add($"{displayName}: {oldValue} → {newValue}");
                                 continue;
@@ -426,7 +734,6 @@ private async Task<string> GetTaskPmComMethodNameAsync(DbContext context, int? m
                                     continue;
                                 }
 
-                                // ✅ ÚJ: PartnerId -> Partner név
                                 if (prop.Metadata.Name == "PartnerId")
                                 {
                                     var oldId = ToNullableInt(oldValue);
@@ -439,7 +746,6 @@ private async Task<string> GetTaskPmComMethodNameAsync(DbContext context, int? m
                                     continue;
                                 }
 
-                                // ✅ ÚJ: SiteId -> Telephely név
                                 if (prop.Metadata.Name == "SiteId")
                                 {
                                     var oldId = ToNullableInt(oldValue);
@@ -452,19 +758,17 @@ private async Task<string> GetTaskPmComMethodNameAsync(DbContext context, int? m
                                     continue;
                                 }
 
-                                // ✅ ÚJ: TaskPMcomMethodID -> kommunikáció mód név
-if (prop.Metadata.Name == "TaskPMcomMethodID")
-{
-    var oldId = ToNullableInt(oldValue);
-    var newId = ToNullableInt(newValue);
+                                if (prop.Metadata.Name == "TaskPMcomMethodID")
+                                {
+                                    var oldId = ToNullableInt(oldValue);
+                                    var newId = ToNullableInt(newValue);
 
-    var oldName = await GetTaskPmComMethodNameCached(oldId);
-    var newName = await GetTaskPmComMethodNameCached(newId);
+                                    var oldName = await GetTaskPmComMethodNameCached(oldId);
+                                    var newName = await GetTaskPmComMethodNameCached(newId);
 
-    changes.Add($"{displayName}: {oldName} → {newName}");
-    continue;
-}
-
+                                    changes.Add($"{displayName}: {oldName} → {newName}");
+                                    continue;
+                                }
 
                                 changes.Add($"{displayName}: {oldValue} → {newValue}");
                                 continue;

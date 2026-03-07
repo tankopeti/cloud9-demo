@@ -12,9 +12,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const partnerSelectEl = document.getElementById("createPartnerId");
   const statusSelectEl = document.getElementById("createStatusId");
+  const communicationTypeSelectEl = document.getElementById("createDefaultCommunicationTypeId");
 
+  console.log("communicationTypeSelectEl:", communicationTypeSelectEl);
 
-  // CSRF (ha nálad kell – nálad a task modalban is így van)
+  // CSRF
   const csrf =
     document.querySelector('meta[name="csrf-token"]')?.content ||
     document.querySelector('input[name="__RequestVerificationToken"]')?.value ||
@@ -28,26 +30,65 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadStatusesIntoSelect(selectEl, selectedId) {
-const base = window.API_BASE || '';
-const res = await fetch(`${base}/api/SitesIndex/meta/statuses`, {
-  credentials: 'include',
-  headers: { 'Accept': 'application/json' }
-});
+    const base = window.API_BASE || "";
+    const res = await fetch(`${base}/api/SitesIndex/meta/statuses`, {
+      credentials: "include",
+      headers: { Accept: "application/json" }
+    });
 
-    if (!res.ok) throw new Error('Failed to load statuses');
+    if (!res.ok) throw new Error("Failed to load statuses");
 
     const data = await res.json();
+    console.log("statuses data:", data);
+
     selectEl.innerHTML = '<option value="">— válassz státuszt —</option>';
 
     data.forEach(s => {
-      const opt = document.createElement('option');
+      const opt = document.createElement("option");
       opt.value = s.id;
       opt.textContent = s.name;
-      if (selectedId && String(selectedId) === String(s.id)) opt.selected = true;
+      if (selectedId && String(selectedId) === String(s.id)) {
+        opt.selected = true;
+      }
       selectEl.appendChild(opt);
     });
   }
 
+  async function loadCommunicationTypesIntoSelect(selectEl, selectedId = null) {
+    if (!selectEl) {
+      console.warn("communication type select not found");
+      return;
+    }
+
+    const base = window.API_BASE || "";
+    const res = await fetch(`${base}/api/SitesIndex/meta/communication-types`, {
+      credentials: "include",
+      headers: { Accept: "application/json" }
+    });
+
+    console.log("communication types response status:", res.status);
+
+    if (!res.ok) throw new Error("Failed to load communication types");
+
+    const data = await res.json();
+    console.log("communication types data:", data);
+
+    selectEl.innerHTML = '<option value="">-- Válassz kommunikációs módot --</option>';
+
+    data.forEach(x => {
+      const opt = document.createElement("option");
+      opt.value = x.id;
+      opt.textContent = x.name ?? "";
+
+      if (selectedId && String(selectedId) === String(opt.value)) {
+        opt.selected = true;
+      }
+
+      selectEl.appendChild(opt);
+    });
+
+    console.log("communication type options after load:", selectEl.options.length);
+  }
 
   function nullIfEmpty(v) {
     const s = (v ?? "").toString().trim();
@@ -66,18 +107,23 @@ const res = await fetch(`${base}/api/SitesIndex/meta/statuses`, {
     const ts = partnerSelectEl?.tomselect;
     if (ts) ts.clear(true);
 
-    // defaultok (ha kellenek)
+    // defaultok
     const country = form.querySelector('[name="country"]');
-    if (country && !country.value) country.value = "Magyarország";
+    if (country && !country.value) {
+      country.value = "Magyarország";
+    }
 
     const isActive = document.getElementById("createSiteIsActive");
     if (isActive) isActive.checked = true;
+
+    if (communicationTypeSelectEl) {
+      communicationTypeSelectEl.value = "";
+    }
   }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // bootstrap validation
     if (!form.checkValidity()) {
       form.classList.add("was-validated");
       return;
@@ -93,8 +139,9 @@ const res = await fetch(`${base}/api/SitesIndex/meta/statuses`, {
     }
 
     const statusIdRaw = valByName("statusId");
+    const defaultCommunicationTypeIdRaw = valByName("defaultCommunicationTypeId");
+
     const dto = {
-      // create
       siteId: 0,
       partnerId,
 
@@ -129,6 +176,9 @@ const res = await fetch(`${base}/api/SitesIndex/meta/statuses`, {
       comment2: nullIfEmpty(valByName("comment2")),
 
       statusId: statusIdRaw ? Number(statusIdRaw) : null,
+      defaultCommunicationTypeId: defaultCommunicationTypeIdRaw
+        ? Number(defaultCommunicationTypeIdRaw)
+        : null,
 
       isPrimary: isCheckedById("createSiteIsPrimary"),
       isActive: isCheckedById("createSiteIsActive")
@@ -145,8 +195,8 @@ const res = await fetch(`${base}/api/SitesIndex/meta/statuses`, {
         credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
-          ...(csrf ? { "RequestVerificationToken": csrf } : {})
+          Accept: "application/json",
+          ...(csrf ? { RequestVerificationToken: csrf } : {})
         },
         body: JSON.stringify(dto)
       });
@@ -156,17 +206,22 @@ const res = await fetch(`${base}/api/SitesIndex/meta/statuses`, {
       if (!res.ok) {
         const raw = await res.text().catch(() => "");
         let err = {};
+
         try {
           err = raw ? JSON.parse(raw) : {};
-        } catch { }
+        } catch {
+          // ignore
+        }
+
         window.c92?.showToast?.(
           "error",
           err?.errors?.PartnerId?.[0] ||
-          err?.errors?.SiteName?.[0] ||
-          err?.title ||
-          err?.message ||
-          raw ||
-          `HTTP ${res.status}`
+            err?.errors?.SiteName?.[0] ||
+            err?.errors?.DefaultCommunicationTypeId?.[0] ||
+            err?.title ||
+            err?.message ||
+            raw ||
+            `HTTP ${res.status}`
         );
         return;
       }
@@ -176,18 +231,8 @@ const res = await fetch(`${base}/api/SitesIndex/meta/statuses`, {
 
       window.c92?.showToast?.("success", "Telephely létrehozva!");
 
-      // ✅ close modal
       bootstrap.Modal.getInstance(modalEl)?.hide();
-
-      // ✅ 1) Lista frissítése oldalújratöltés nélkül:
-      // Ha a listád filterezett / lapozott, a legstabilabb a reload.
       window.Sites?.reload?.();
-
-      // ✅ 2) Alternatíva: beszúrás a lista elejére (ha ezt preferálod reload helyett)
-      // window.Sites?.prependRow?.(createdRow);
-
-      // ✅ reset form a következő create-hez
-      resetForm();
     } catch (err) {
       console.error(err);
       window.c92?.showToast?.("error", "Hálózati hiba");
@@ -196,18 +241,27 @@ const res = await fetch(`${base}/api/SitesIndex/meta/statuses`, {
     }
   });
 
-  // ha bezárod a modalt, takarítsunk
   modalEl.addEventListener("hidden.bs.modal", () => {
     resetForm();
   });
-  modalEl.addEventListener("shown.bs.modal", async () => {
-  try {
-    if (statusSelectEl && statusSelectEl.options.length <= 1) {
-      await loadStatusesIntoSelect(statusSelectEl, 8);
-    }
-  } catch (e) {
-    console.error("Failed to load statuses:", e);
-  }
-});
 
+  modalEl.addEventListener("shown.bs.modal", async () => {
+    console.log("modal shown");
+    console.log("communicationTypeSelectEl options before load:", communicationTypeSelectEl?.options?.length);
+
+    try {
+      if (statusSelectEl && statusSelectEl.options.length <= 1) {
+        await loadStatusesIntoSelect(statusSelectEl, 8);
+      }
+
+      if (communicationTypeSelectEl && communicationTypeSelectEl.options.length <= 1) {
+        console.log("loading communication types...");
+        await loadCommunicationTypesIntoSelect(communicationTypeSelectEl, null);
+      } else {
+        console.log("communication type select missing or already loaded");
+      }
+    } catch (e) {
+      console.error("Failed to load modal select data:", e);
+    }
+  });
 });

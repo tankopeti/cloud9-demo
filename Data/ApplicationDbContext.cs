@@ -102,13 +102,153 @@ namespace Cloud9_2.Data
         public DbSet<ElectronicDocument> ElectronicDocuments { get; set; }
         public DbSet<PriceType> PriceTypes { get; set; } = null!;
         public DbSet<ItemPrice> ItemPrices { get; set; } = null!;
-
+        public DbSet<WorkerType> WorkerTypes { get; set; } = null!;
+        public DbSet<EmployeeEmploymentStatus> EmployeeEmploymentStatuses { get; set; } = null!;
+        public DbSet<EmployeeSite> EmployeeSites { get; set; } = null!;
+        public DbSet<PartnerSiteLink> PartnerSiteLinks { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<PartnerSiteLink>()
+    .HasOne(x => x.Partner)
+    .WithMany(p => p.PartnerSiteLinks)
+    .HasForeignKey(x => x.PartnerId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PartnerSiteLink>()
+                .HasOne(x => x.Site)
+                .WithMany(s => s.PartnerSiteLinks)
+                .HasForeignKey(x => x.SiteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PartnerSiteLink>()
+                .HasOne(x => x.PartnerType)
+                .WithMany(pt => pt.PartnerSiteLinks)
+                .HasForeignKey(x => x.PartnerTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PartnerSiteLink>()
+                .HasOne(x => x.CreatedBy)
+                .WithMany()
+                .HasForeignKey(x => x.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PartnerSiteLink>()
+                .HasOne(x => x.LastModifiedBy)
+                .WithMany()
+                .HasForeignKey(x => x.LastModifiedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PartnerSiteLink>()
+                .HasIndex(x => new { x.PartnerId, x.SiteId, x.PartnerTypeId })
+                .IsUnique();
+
+            modelBuilder.Entity<PartnerSiteLink>()
+                .Property(x => x.Comment)
+                .HasMaxLength(500);
+
+            modelBuilder.Entity<Employees>().ToTable("Employee", "dbo");
+            modelBuilder.Entity<EmployeeSite>().ToTable("EmployeeSite", "dbo");
+            modelBuilder.Entity<EmploymentStatus>().ToTable("EmploymentStatus", "dbo");
+            modelBuilder.Entity<EmployeeEmploymentStatus>()
+            .ToTable("EmployeeEmploymentStatus", "dbo");
+
+            // Telephely: dbo.Sites (nem dbo.Site)
+            modelBuilder.Entity<Site>().ToTable("Sites", "dbo");
+
+            // (Ajánlott, ha ezek is dbo-ban vannak)
+            modelBuilder.Entity<JobTitle>().ToTable("JobTitle", "dbo");
+            modelBuilder.Entity<WorkerType>().ToTable("WorkerType", "dbo");
+            // modelBuilder.Entity<Partner>().ToTable("Partner", "dbo"); // ha tényleg ez a neve
+
+            // -----------------------------
+            // KEYS
+            // -----------------------------
+            modelBuilder.Entity<EmployeeSite>()
+                .HasKey(x => new { x.EmployeeId, x.SiteId });
+
+            modelBuilder.Entity<EmploymentStatus>()
+                .HasKey(x => x.StatusId);
+
+            // -----------------------------
+            // EmployeeSite relationships
+            // -----------------------------
+            modelBuilder.Entity<EmployeeSite>()
+                .HasOne(x => x.Employee)
+                .WithMany(e => e.EmployeeSites)
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EmployeeSite>()
+                .HasOne(x => x.Site)
+                .WithMany(s => s.EmployeeSites)
+                .HasForeignKey(x => x.SiteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<EmployeeSite>()
+                .HasIndex(x => x.SiteId);
+
+            modelBuilder.Entity<Employees>()
+                .HasOne(e => e.WorkerType)
+                .WithMany(wt => wt.Employees)
+                .HasForeignKey(e => e.WorkerTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+
+            modelBuilder.Entity<EmployeeEmploymentStatus>()
+                .HasKey(x => new { x.EmployeeId, x.StatusId });
+
+            modelBuilder.Entity<EmployeeEmploymentStatus>()
+                .HasOne(x => x.Employee)
+                .WithMany(e => e.EmployeeEmploymentStatuses)
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EmployeeEmploymentStatus>()
+                .HasOne(x => x.Status) // vagy EmploymentStatus – attól függ mi a nav neve nálad
+                .WithMany(s => s.EmployeeEmploymentStatuses)
+                .HasForeignKey(x => x.StatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // opcionális indexek:
+            modelBuilder.Entity<EmployeeEmploymentStatus>()
+                .HasIndex(x => x.StatusId);
+
+            modelBuilder.Entity<EmployeeEmploymentStatus>()
+                .HasIndex(x => x.EmployeeId);
+
+
+            modelBuilder.Entity<BusinessDocumentStatusHistory>(b =>
+            {
+                // OldStatus FK -> BusinessDocumentStatus
+                b.HasOne(x => x.OldStatus)
+                 .WithMany() // ha nincs inverse nav a BusinessDocumentStatus-ban
+                 .HasForeignKey(x => x.OldBusinessDocumentStatusId)
+                 .OnDelete(DeleteBehavior.NoAction);
+
+                // NewStatus FK -> BusinessDocumentStatus
+                b.HasOne(x => x.NewStatus)
+                 .WithMany()
+                 .HasForeignKey(x => x.NewBusinessDocumentStatusId)
+                 .OnDelete(DeleteBehavior.NoAction);
+
+                // (erősen ajánlott) BusinessDocument FK is legyen NoAction,
+                // hogy biztosan ne jöjjön ki több cascade útvonal kombinációban
+                b.HasOne(x => x.BusinessDocument)
+                 .WithMany() // vagy .WithMany(d => d.StatusHistories) ha van ilyen nav
+                 .HasForeignKey(x => x.BusinessDocumentId)
+                 .OnDelete(DeleteBehavior.NoAction);
+
+                // Tenant FK is lehet NoAction (nálad ezt globálban amúgy is állítod)
+                b.HasOne(x => x.Tenant)
+                 .WithMany()
+                 .HasForeignKey(x => x.TenantId)
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
 
             modelBuilder.Entity<PriceType>()
                 .HasIndex(x => x.Code)
@@ -198,7 +338,7 @@ namespace Cloud9_2.Data
 
 
 
-            modelBuilder.Entity<Partner>().ToTable("Partners");
+            modelBuilder.Entity<Partner>().ToTable("Partners", "dbo");
 
             modelBuilder.Entity<TaskPM>()
                 .HasOne(t => t.Partner)
@@ -302,19 +442,19 @@ namespace Cloud9_2.Data
             .HasMany(p => p.Sites)
             .WithOne(s => s.Partner)
             .HasForeignKey(s => s.PartnerId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Partner>()
                 .HasMany(p => p.Contacts)
                 .WithOne(c => c.Partner)
                 .HasForeignKey(c => c.PartnerId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Partner>()
                 .HasMany(p => p.Documents)
                 .WithOne(d => d.Partner)
                 .HasForeignKey(d => d.PartnerId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             // TaskPM
             modelBuilder.Entity<TaskPM>(entity =>
@@ -373,18 +513,28 @@ namespace Cloud9_2.Data
                 .HasColumnName("UpdatedAt");
 
             // HR
+            modelBuilder.Entity<EmployeeSite>().ToTable("EmployeeSite", "dbo");
+
+            modelBuilder.Entity<WorkerType>().ToTable("WorkerType", "dbo");
+
+            modelBuilder.Entity<JobTitle>().ToTable("JobTitle", "dbo");
+
+
             // Map Employee to singular table name
-            modelBuilder.Entity<Employees>().ToTable("Employee");
+            modelBuilder.Entity<Employees>().ToTable("Employee", "dbo");
 
             modelBuilder.Entity<Employees>().HasQueryFilter(e => e.IsActive);
 
             // Map EmploymentStatus to its table
-            modelBuilder.Entity<EmploymentStatus>().ToTable("EmploymentStatus");
+            modelBuilder.Entity<EmploymentStatus>().ToTable("EmploymentStatus", "dbo");
 
             // Map StatusName to Name column in EmploymentStatus
             modelBuilder.Entity<EmploymentStatus>()
                 .Property(es => es.StatusName)
                 .HasColumnName("Name");
+
+            modelBuilder.Entity<EmploymentStatus>()
+                .HasKey(x => x.StatusId);
 
             // Map created_at and updated_at columns
             modelBuilder.Entity<EmploymentStatus>()
@@ -394,13 +544,6 @@ namespace Cloud9_2.Data
             modelBuilder.Entity<EmploymentStatus>()
                 .Property(es => es.UpdatedAt)
                 .HasColumnName("updated_at");
-
-            // Configure Employee -> EmploymentStatus relationship
-            modelBuilder.Entity<Employees>()
-                .HasOne(e => e.Status)
-                .WithMany(es => es.Employees)
-                .HasForeignKey(e => e.StatusId)
-                .OnDelete(DeleteBehavior.SetNull);
 
             // Map JobTitle to its table
             modelBuilder.Entity<JobTitle>().ToTable("JobTitle");
@@ -1034,6 +1177,15 @@ namespace Cloud9_2.Data
             .WithMany()
             .HasForeignKey(w => w.LastModifiedBy)
             .OnDelete(DeleteBehavior.NoAction);
+
+            // IDE jön, LEGUTOLSÓKÉNT:
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var fk in entityType.GetForeignKeys())
+                {
+                    fk.DeleteBehavior = DeleteBehavior.NoAction;
+                }
+            }
         }
 
         public override int SaveChanges()
@@ -1069,6 +1221,7 @@ namespace Cloud9_2.Data
                 }
             }
         }
+
 
     }
 }

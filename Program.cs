@@ -16,7 +16,52 @@ using Cloud9_2.Services.Tenancy;
 
 
 var builder = WebApplication.CreateBuilder(args);
+Console.WriteLine("TENANT_NYUGALOM_CS=" + Environment.GetEnvironmentVariable("TENANT_NYUGALOM_CS"));
+Console.WriteLine("TENANT_CEGB_CS=" + Environment.GetEnvironmentVariable("TENANT_CEGB_CS"));
 builder.Configuration.AddEnvironmentVariables();
+
+// ---- DEV helper: load .env for local runs (VS/VS Code), Dockerben nem kell ----
+if (builder.Environment.IsDevelopment())
+{
+    // Ha már be van állítva (pl. VS Code launch.json vagy export), nem nyúlunk hozzá
+    var hasTenantEnv = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TENANT_NYUGALOM_CS"))
+                    || !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TENANT_CEGB_CS"));
+
+    if (!hasTenantEnv)
+    {
+        var envPath = Path.Combine(builder.Environment.ContentRootPath, ".env.local");
+        if (File.Exists(envPath))
+        {
+            foreach (var rawLine in File.ReadAllLines(envPath))
+            {
+                var line = rawLine.Trim();
+
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                if (line.StartsWith("#")) continue;
+
+                var idx = line.IndexOf('=');
+                if (idx <= 0) continue;
+
+                var key = line.Substring(0, idx).Trim();
+                var value = line.Substring(idx + 1).Trim();
+
+                // Opcionális: idézőjelek levétele
+                if ((value.StartsWith("\"") && value.EndsWith("\"")) ||
+                    (value.StartsWith("'") && value.EndsWith("'")))
+                {
+                    value = value.Substring(1, value.Length - 2);
+                }
+
+                // Ne írjuk felül, ha már van beállítva
+                if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(key)))
+                {
+                    Environment.SetEnvironmentVariable(key, value);
+                }
+            }
+        }
+    }
+}
+// ---------------------------------------------------------------------------
 
 // ===== DataProtection konfiguráció =====
 
@@ -84,17 +129,19 @@ builder.Services.AddControllers();
 builder.Services.Configure<TwilioSettings>(builder.Configuration.GetSection("Twilio"));
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ITenantConnectionStringProvider, SubdomainTenantConnectionStringProvider>();
+
 builder.Services.AddScoped<ITenantProvider, TenantProvider>();
 
 builder.Services.AddScoped<GenericAuditInterceptor>();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-// CSAK EGYETLEN AddDbContext hívás!
 builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 {
-    options.UseSqlServer(connectionString);
+    var csProvider = sp.GetRequiredService<ITenantConnectionStringProvider>();
+    var cs = csProvider.GetConnectionString();
+
+    options.UseSqlServer(cs);
     options.AddInterceptors(sp.GetRequiredService<GenericAuditInterceptor>());
 });
 

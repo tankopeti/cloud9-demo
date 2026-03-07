@@ -205,6 +205,7 @@ namespace Cloud9_2.Models
 
         public int? CustomerCommunicationId { get; set; }
         public int? CommunicationTypeId { get; set; }
+        public int? RelatedEmployeeId { get; set; }
 
         public List<int> ResourceIds { get; set; } = new List<int>();
 

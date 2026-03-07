@@ -114,7 +114,9 @@ namespace Cloud9_2.Services
                 // PartnerTypeId
                 if (partnerTypeId.HasValue)
                 {
-                    query = query.Where(p => p.PartnerTypeId == partnerTypeId.Value);
+                    query = query.Where(p =>
+                        p.PartnerTypeId == partnerTypeId.Value ||
+                        p.PartnerSiteLinks.Any(l => l.IsActive && l.PartnerTypeId == partnerTypeId.Value));
                 }
 
 
@@ -321,38 +323,43 @@ namespace Cloud9_2.Services
         // --------------------------------------------------------------------
         // GetPartner (részletes)
         // --------------------------------------------------------------------
-        public async Task<PartnerDto?> GetPartnerAsync(int id)
-        {
-            try
-            {
-                var partner = await _context.Partners
-                    .AsNoTracking()
-                    .Where(p => p.IsActive)
-                    .Include(p => p.Sites)
-                    .Include(p => p.Contacts)
-                    .Include(p => p.Orders)
-                    .Include(p => p.Quotes)
-                    .Include(p => p.Documents).ThenInclude(d => d.DocumentType)
-                    .Include(p => p.Status)
-                    .FirstOrDefaultAsync(p => p.PartnerId == id);
+public async Task<PartnerDto?> GetPartnerAsync(int id)
+{
+    try
+    {
+        var partner = await _context.Partners
+            .AsNoTracking()
+            .Where(p => p.IsActive)
+            .Include(p => p.Sites.Where(s => s.IsActive))
+            .Include(p => p.PartnerSiteLinks.Where(l => l.IsActive))
+                .ThenInclude(l => l.Site)
+            .Include(p => p.PartnerSiteLinks.Where(l => l.IsActive))
+                .ThenInclude(l => l.PartnerType)
+            .Include(p => p.Contacts)
+            .Include(p => p.Orders)
+            .Include(p => p.Quotes)
+            .Include(p => p.Documents)
+                .ThenInclude(d => d.DocumentType)
+            .Include(p => p.Status)
+            .FirstOrDefaultAsync(p => p.PartnerId == id);
 
-                if (partner == null) return null;
+        if (partner == null) return null;
 
-                partner.Sites ??= new List<Site>();
-                partner.Contacts ??= new List<Contact>();
-                partner.Documents ??= new List<Document>();
-                partner.Orders ??= new List<Order>();
-                partner.Quotes ??= new List<Quote>();
+        partner.Sites ??= new List<Site>();
+        partner.PartnerSiteLinks ??= new List<PartnerSiteLink>();
+        partner.Contacts ??= new List<Contact>();
+        partner.Documents ??= new List<Document>();
+        partner.Orders ??= new List<Order>();
+        partner.Quotes ??= new List<Quote>();
 
-                return MapToDto(partner);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GetPartnerAsync failed (id={Id})", id);
-                throw;
-            }
-        }
-
+        return MapToDto(partner);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "GetPartnerAsync failed (id={Id})", id);
+        throw;
+    }
+}
         // --------------------------------------------------------------------
         // Create
         // --------------------------------------------------------------------
@@ -433,6 +440,10 @@ namespace Cloud9_2.Services
                     .Include(p => p.Status)
                     .Include(p => p.Sites)
                     .Include(p => p.Contacts)
+                    .Include(p => p.PartnerSiteLinks)
+                        .ThenInclude(l => l.Site)
+                    .Include(p => p.PartnerSiteLinks)
+                        .ThenInclude(l => l.PartnerType)
                     .FirstAsync(p => p.PartnerId == partner.PartnerId);
 
                 return MapToDto(created);
@@ -527,6 +538,10 @@ namespace Cloud9_2.Services
                     .Include(p => p.Sites)
                     .Include(p => p.Contacts)
                     .Include(p => p.Documents)
+                    .Include(p => p.PartnerSiteLinks)
+                        .ThenInclude(l => l.Site)
+                    .Include(p => p.PartnerSiteLinks)
+                        .ThenInclude(l => l.PartnerType)
                     .FirstAsync(p => p.PartnerId == partnerId);
 
                 return MapToDto(refreshed);
@@ -589,7 +604,8 @@ namespace Cloud9_2.Services
                 // Relációk: itt most üresen hagyjuk (safe default)
                 Sites = new List<SiteDto>(),
                 Contacts = new List<ContactDto>(),
-                Documents = new List<DocumentDto>()
+                Documents = new List<DocumentDto>(),
+                SiteLinks = new List<PartnerSiteLinkDto>()
             };
 
             return await CreatePartnerAsync(copy);
@@ -621,158 +637,232 @@ namespace Cloud9_2.Services
             }
         }
 
-        public async Task<SiteDto> AddOrUpdateSiteAsync(int partnerId, SiteDto siteDto)
+public async Task<SiteDto> AddOrUpdateSiteAsync(int partnerId, SiteDto siteDto)
+{
+    if (siteDto == null)
+        throw new ArgumentNullException(nameof(siteDto));
+
+    var userId = GetCurrentUserId();
+    var now = DateTime.UtcNow;
+
+    // -----------------------------
+    // CREATE
+    // -----------------------------
+    if (siteDto.SiteId == 0)
+    {
+        var targetPartnerId = siteDto.PartnerId != 0
+            ? siteDto.PartnerId
+            : partnerId;
+
+        var partnerExists = await _context.Partners
+            .AnyAsync(p => p.PartnerId == targetPartnerId && p.IsActive);
+
+        if (!partnerExists)
+            throw new ArgumentException($"Partner {targetPartnerId} not found");
+
+        // opcionális validáció: kötelező mező
+        if (string.IsNullOrWhiteSpace(siteDto.SiteName))
+            throw new ArgumentException("A telephely neve kötelező");
+
+        // opcionális validáció: default communication type létezik-e
+        if (siteDto.DefaultCommunicationTypeId.HasValue)
         {
-            if (siteDto == null) throw new ArgumentNullException(nameof(siteDto));
+            var communicationTypeExists = await _context.CommunicationTypes
+                .AnyAsync(x =>
+                    x.CommunicationTypeId == siteDto.DefaultCommunicationTypeId.Value &&
+                    x.IsActive == true);
 
-            // Bejelentkezett user Id – lehet null
-            var userId = GetCurrentUserId();
-
-            // CREATE
-            if (siteDto.SiteId == 0)
-            {
-                var targetPartnerId = siteDto.PartnerId != 0 ? siteDto.PartnerId : partnerId;
-
-                var partner = await _context.Partners
-                    .FirstOrDefaultAsync(p => p.PartnerId == targetPartnerId);
-
-                if (partner == null)
-                    throw new ArgumentException($"Partner {targetPartnerId} not found");
-
-                var site = new Site
-                {
-                    PartnerId = targetPartnerId,
-
-                    SiteName = siteDto.SiteName,
-                    AddressLine1 = siteDto.AddressLine1,
-                    AddressLine2 = siteDto.AddressLine2,
-                    City = siteDto.City,
-                    State = siteDto.State,
-                    PostalCode = siteDto.PostalCode,
-                    Country = siteDto.Country,
-
-                    IsPrimary = siteDto.IsPrimary,
-                    StatusId = siteDto.StatusId,
-                    SiteTypeId = siteDto.SiteTypeId,
-
-                    ContactPerson1 = siteDto.ContactPerson1,
-                    ContactPerson2 = siteDto.ContactPerson2,
-                    ContactPerson3 = siteDto.ContactPerson3,
-                    Comment1 = siteDto.Comment1,
-                    Comment2 = siteDto.Comment2,
-
-                    Phone1 = siteDto.Phone1,
-                    Phone2 = siteDto.Phone2,
-                    Phone3 = siteDto.Phone3,
-                    MobilePhone1 = siteDto.MobilePhone1,
-                    MobilePhone2 = siteDto.MobilePhone2,
-                    MobilePhone3 = siteDto.MobilePhone3,
-                    eMail1 = siteDto.eMail1,
-                    eMail2 = siteDto.eMail2,
-                    messagingApp1 = siteDto.messagingApp1,
-                    messagingApp2 = siteDto.messagingApp2,
-                    messagingApp3 = siteDto.messagingApp3,
-
-                    IsActive = true,
-
-                    CreatedDate = DateTime.UtcNow,
-                    CreatedById = userId,
-                    LastModifiedDate = DateTime.UtcNow,
-                    LastModifiedById = userId
-                };
-
-                _context.Sites.Add(site);
-                await _context.SaveChangesAsync();
-
-                siteDto.SiteId = site.SiteId;
-                siteDto.PartnerId = site.PartnerId;
-                return siteDto;
-            }
-
-            // UPDATE
-            var existing = await _context.Sites
-                .FirstOrDefaultAsync(s => s.SiteId == siteDto.SiteId);
-
-            if (existing == null)
-                throw new ArgumentException($"Site {siteDto.SiteId} not found");
-
-            // opcionális partner check (ha szeretnéd szigorítani)
-            // if (partnerId != 0 && existing.PartnerId != partnerId)
-            //     throw new ArgumentException($"Site {siteDto.SiteId} not found for Partner {partnerId}");
-
-            existing.SiteName = siteDto.SiteName;
-            existing.AddressLine1 = siteDto.AddressLine1;
-            existing.AddressLine2 = siteDto.AddressLine2;
-            existing.City = siteDto.City;
-            existing.State = siteDto.State;
-            existing.PostalCode = siteDto.PostalCode;
-            existing.Country = siteDto.Country;
-
-            existing.IsPrimary = siteDto.IsPrimary;
-            existing.StatusId = siteDto.StatusId;
-            existing.SiteTypeId = siteDto.SiteTypeId;
-
-            existing.ContactPerson1 = siteDto.ContactPerson1;
-            existing.ContactPerson2 = siteDto.ContactPerson2;
-            existing.ContactPerson3 = siteDto.ContactPerson3;
-            existing.Comment1 = siteDto.Comment1;
-            existing.Comment2 = siteDto.Comment2;
-
-            existing.Phone1 = siteDto.Phone1;
-            existing.Phone2 = siteDto.Phone2;
-            existing.Phone3 = siteDto.Phone3;
-            existing.MobilePhone1 = siteDto.MobilePhone1;
-            existing.MobilePhone2 = siteDto.MobilePhone2;
-            existing.MobilePhone3 = siteDto.MobilePhone3;
-            existing.eMail1 = siteDto.eMail1;
-            existing.eMail2 = siteDto.eMail2;
-            existing.messagingApp1 = siteDto.messagingApp1;
-            existing.messagingApp2 = siteDto.messagingApp2;
-            existing.messagingApp3 = siteDto.messagingApp3;
-
-            // ha a modal küld partnerId-t és engeded a mozgatást:
-            if (siteDto.PartnerId != 0)
-                existing.PartnerId = siteDto.PartnerId;
-
-            existing.LastModifiedDate = DateTime.UtcNow;
-            if (!string.IsNullOrWhiteSpace(userId))
-                existing.LastModifiedById = userId;
-
-            await _context.SaveChangesAsync();
-
-            return siteDto;
+            if (!communicationTypeExists)
+                throw new ArgumentException("A kiválasztott alapértelmezett kommunikációs mód nem létezik vagy nem aktív.");
         }
 
-        public async Task<bool> DeleteSiteAsync(int partnerId, int siteId)
+        var site = new Site
         {
-            try
-            {
-                var site = await _context.Sites
-                    .FirstOrDefaultAsync(s => s.SiteId == siteId && s.PartnerId == partnerId);
+            PartnerId = targetPartnerId,
 
-                if (site == null) return false;
+            SiteName = siteDto.SiteName,
+            AddressLine1 = siteDto.AddressLine1,
+            AddressLine2 = siteDto.AddressLine2,
+            City = siteDto.City,
+            State = siteDto.State,
+            PostalCode = siteDto.PostalCode,
+            Country = siteDto.Country,
 
-                // idempotens soft delete
-                if (!site.IsActive) return true;
+            IsPrimary = siteDto.IsPrimary,
+            StatusId = siteDto.StatusId,
+            SiteTypeId = siteDto.SiteTypeId,
+            DefaultCommunicationTypeId = siteDto.DefaultCommunicationTypeId,
 
-                site.IsActive = false;
-                site.LastModifiedDate = DateTime.UtcNow;
+            ContactPerson1 = siteDto.ContactPerson1,
+            ContactPerson2 = siteDto.ContactPerson2,
+            ContactPerson3 = siteDto.ContactPerson3,
 
-                var userId = GetCurrentUserId();
-                if (!string.IsNullOrWhiteSpace(userId))
-                    site.LastModifiedById = userId;
+            Comment1 = siteDto.Comment1,
+            Comment2 = siteDto.Comment2,
 
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "DeleteSiteAsync failed (partnerId={PartnerId}, siteId={SiteId})", partnerId, siteId);
-                return false;
-            }
+            Phone1 = siteDto.Phone1,
+            Phone2 = siteDto.Phone2,
+            Phone3 = siteDto.Phone3,
+
+            MobilePhone1 = siteDto.MobilePhone1,
+            MobilePhone2 = siteDto.MobilePhone2,
+            MobilePhone3 = siteDto.MobilePhone3,
+
+            eMail1 = siteDto.eMail1,
+            eMail2 = siteDto.eMail2,
+
+            messagingApp1 = siteDto.messagingApp1,
+            messagingApp2 = siteDto.messagingApp2,
+            messagingApp3 = siteDto.messagingApp3,
+
+            IsActive = true,
+            CreatedDate = now,
+            CreatedById = userId,
+            LastModifiedDate = now,
+            LastModifiedById = userId
+        };
+
+        _context.Sites.Add(site);
+        await _context.SaveChangesAsync();
+
+        siteDto.SiteId = site.SiteId;
+        siteDto.PartnerId = site.PartnerId;
+
+        return siteDto;
+    }
+
+    // -----------------------------
+    // UPDATE
+    // -----------------------------
+    var existing = await _context.Sites
+        .FirstOrDefaultAsync(s => s.SiteId == siteDto.SiteId);
+
+    if (existing == null)
+        throw new ArgumentException($"Site {siteDto.SiteId} not found");
+
+    // opcionális szigorítás:
+    // ha biztosan csak a partner saját site-ját szerkesztheti
+    // akkor ezt kapcsold vissza
+    /*
+    if (partnerId != 0 && existing.PartnerId != partnerId)
+        throw new ArgumentException($"Site {siteDto.SiteId} not found for Partner {partnerId}");
+    */
+
+    if (string.IsNullOrWhiteSpace(siteDto.SiteName))
+        throw new ArgumentException("A telephely neve kötelező");
+
+    if (siteDto.DefaultCommunicationTypeId.HasValue)
+    {
+        var communicationTypeExists = await _context.CommunicationTypes
+            .AnyAsync(x =>
+                x.CommunicationTypeId == siteDto.DefaultCommunicationTypeId.Value &&
+                x.IsActive == true);
+
+        if (!communicationTypeExists)
+            throw new ArgumentException("A kiválasztott alapértelmezett kommunikációs mód nem létezik vagy nem aktív.");
+    }
+
+    existing.SiteName = siteDto.SiteName;
+    existing.AddressLine1 = siteDto.AddressLine1;
+    existing.AddressLine2 = siteDto.AddressLine2;
+    existing.City = siteDto.City;
+    existing.State = siteDto.State;
+    existing.PostalCode = siteDto.PostalCode;
+    existing.Country = siteDto.Country;
+
+    existing.IsPrimary = siteDto.IsPrimary;
+    existing.StatusId = siteDto.StatusId;
+    existing.SiteTypeId = siteDto.SiteTypeId;
+    existing.DefaultCommunicationTypeId = siteDto.DefaultCommunicationTypeId;
+
+    existing.ContactPerson1 = siteDto.ContactPerson1;
+    existing.ContactPerson2 = siteDto.ContactPerson2;
+    existing.ContactPerson3 = siteDto.ContactPerson3;
+
+    existing.Comment1 = siteDto.Comment1;
+    existing.Comment2 = siteDto.Comment2;
+
+    existing.Phone1 = siteDto.Phone1;
+    existing.Phone2 = siteDto.Phone2;
+    existing.Phone3 = siteDto.Phone3;
+
+    existing.MobilePhone1 = siteDto.MobilePhone1;
+    existing.MobilePhone2 = siteDto.MobilePhone2;
+    existing.MobilePhone3 = siteDto.MobilePhone3;
+
+    existing.eMail1 = siteDto.eMail1;
+    existing.eMail2 = siteDto.eMail2;
+
+    existing.messagingApp1 = siteDto.messagingApp1;
+    existing.messagingApp2 = siteDto.messagingApp2;
+    existing.messagingApp3 = siteDto.messagingApp3;
+
+    // Átmeneti kompatibilitás miatt maradhat
+    // csak akkor írjuk felül, ha tényleg küldenek partnerId-t
+    if (siteDto.PartnerId != 0)
+    {
+        var partnerExists = await _context.Partners
+            .AnyAsync(p => p.PartnerId == siteDto.PartnerId && p.IsActive);
+
+        if (!partnerExists)
+            throw new ArgumentException($"Partner {siteDto.PartnerId} not found");
+
+        existing.PartnerId = siteDto.PartnerId;
+    }
+
+    existing.LastModifiedDate = now;
+    existing.LastModifiedById = userId;
+
+    await _context.SaveChangesAsync();
+
+    siteDto.PartnerId = existing.PartnerId;
+    return siteDto;
+}
+public async Task<bool> DeleteSiteAsync(int partnerId, int siteId)
+{
+    try
+    {
+        var site = await _context.Sites
+            .FirstOrDefaultAsync(s => s.SiteId == siteId);
+
+        if (site == null) return false;
+        if (!site.IsActive) return true;
+
+        var hasRelation = await _context.PartnerSiteLinks.AnyAsync(x =>
+            x.PartnerId == partnerId &&
+            x.SiteId == siteId &&
+            x.IsActive);
+
+        if (!hasRelation && site.PartnerId != partnerId)
+            return false;
+
+        var userId = GetCurrentUserId();
+        var now = DateTime.UtcNow;
+
+        site.IsActive = false;
+        site.LastModifiedDate = now;
+        site.LastModifiedById = userId;
+
+        var links = await _context.PartnerSiteLinks
+            .Where(x => x.SiteId == siteId && x.IsActive)
+            .ToListAsync();
+
+        foreach (var link in links)
+        {
+            link.IsActive = false;
+            link.LastModifiedDate = now;
+            link.LastModifiedById = userId;
         }
 
-
+        await _context.SaveChangesAsync();
+        return true;
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "DeleteSiteAsync failed (partnerId={PartnerId}, siteId={SiteId})", partnerId, siteId);
+        return false;
+    }
+}
         // --------------------------------------------------------------------
         // MapToDto (teljes)
         // --------------------------------------------------------------------
@@ -838,6 +928,7 @@ namespace Cloud9_2.Services
                     Comment2 = s.Comment2,
                     StatusId = s.StatusId,
                     SiteTypeId = s.SiteTypeId,
+                    DefaultCommunicationTypeId = s.DefaultCommunicationTypeId,
                     Phone1 = s.Phone1,
                     Phone2 = s.Phone2,
                     Phone3 = s.Phone3,
@@ -876,7 +967,25 @@ namespace Cloud9_2.Services
                     FileName = d.FileName,
                     FilePath = d.FilePath,
                     UploadDate = d.UploadDate
-                }).ToList() ?? new List<DocumentDto>()
+                }).ToList() ?? new List<DocumentDto>(),
+
+                SiteLinks = p.PartnerSiteLinks?
+                .Where(l => l.IsActive)
+                .Select(l => new PartnerSiteLinkDto
+                {
+                    PartnerSiteLinkId = l.PartnerSiteLinkId,
+                    PartnerId = l.PartnerId,
+                    SiteId = l.SiteId,
+                    PartnerTypeId = l.PartnerTypeId,
+                    SiteName = l.Site != null ? l.Site.SiteName : null,
+                    PartnerTypeName = l.PartnerType != null ? l.PartnerType.PartnerTypeName : null,
+                    IsPrimary = l.IsPrimary,
+                    IsActive = l.IsActive,
+                    Comment = l.Comment,
+                    ValidFrom = l.ValidFrom,
+                    ValidTo = l.ValidTo
+                })
+                .ToList() ?? new List<PartnerSiteLinkDto>(),
             };
         }
     }

@@ -123,46 +123,511 @@ namespace Cloud9._2.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.Category", b =>
+            modelBuilder.Entity("Cloud9_2.Models.AttachmentCategoryLookup", b =>
                 {
-                    b.Property<int>("CategoryId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("AttachmentCategoryId")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CategoryId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
+                    b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.HasKey("AttachmentCategoryId");
+
+                    b.ToTable("AttachmentCategories");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ChangedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ChangedByName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Changes")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("EntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedAt");
+
+                    b.HasIndex("ChangedById");
+
+                    b.HasIndex("EntityType");
+
+                    b.ToTable("AuditLogs");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocument", b =>
+                {
+                    b.Property<int>("BusinessDocumentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BusinessDocumentId"));
+
+                    b.Property<int>("BusinessDocumentStatusId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BusinessDocumentTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("CurrencyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("DocumentNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("ExchangeRate")
+                        .HasColumnType("decimal(18,6)");
+
+                    b.Property<DateTime?>("FulfillmentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("GrossTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("IssueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("NetTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal?>("TaxTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("CategoryId");
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasKey("BusinessDocumentId");
 
-                    b.HasIndex("LastModifiedBy");
+                    b.HasIndex("BusinessDocumentStatusId");
 
-                    b.ToTable("Categories");
+                    b.HasIndex("BusinessDocumentTypeId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("BusinessDocuments");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentAttachment", b =>
+                {
+                    b.Property<int>("BusinessDocumentAttachmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BusinessDocumentAttachmentId"));
+
+                    b.Property<int?>("AttachmentCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BusinessDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BusinessDocumentAttachmentId");
+
+                    b.HasIndex("AttachmentCategoryId");
+
+                    b.HasIndex("BusinessDocumentId");
+
+                    b.HasIndex("DocumentId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("BusinessDocumentAttachments");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentLine", b =>
+                {
+                    b.Property<int>("BusinessDocumentLineId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BusinessDocumentLineId"));
+
+                    b.Property<int>("BusinessDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal?>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("GrossAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ItemCodeSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ItemNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("LineNo")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("NetAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal?>("TaxAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("TaxCodeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UnitId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("UnitPrice")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("UnitPriceSnapshot")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("UomSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("VatRateSnapshot")
+                        .HasColumnType("decimal(9,4)");
+
+                    b.Property<int?>("WarehouseId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BusinessDocumentLineId");
+
+                    b.HasIndex("BusinessDocumentId");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("BusinessDocumentLines");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentParty", b =>
+                {
+                    b.Property<int>("BusinessDocumentPartyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BusinessDocumentPartyId"));
+
+                    b.Property<string>("AddressSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("BusinessDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BusinessDocumentPartyRoleId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ContactId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DisplayNameSnapshot")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("PartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SiteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TaxNumberSnapshot")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BusinessDocumentPartyId");
+
+                    b.HasIndex("BusinessDocumentId");
+
+                    b.HasIndex("BusinessDocumentPartyRoleId");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("PartnerId");
+
+                    b.HasIndex("SiteId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("BusinessDocumentParties");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentPartyRole", b =>
+                {
+                    b.Property<int>("BusinessDocumentPartyRoleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("BusinessDocumentPartyRoleId");
+
+                    b.ToTable("BusinessDocumentPartyRoles");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentRelation", b =>
+                {
+                    b.Property<int>("BusinessDocumentRelationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BusinessDocumentRelationId"));
+
+                    b.Property<int>("BusinessDocumentRelationTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("FromBusinessDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ToBusinessDocumentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BusinessDocumentRelationId");
+
+                    b.HasIndex("BusinessDocumentRelationTypeId");
+
+                    b.HasIndex("FromBusinessDocumentId");
+
+                    b.HasIndex("ToBusinessDocumentId");
+
+                    b.HasIndex("TenantId", "FromBusinessDocumentId", "ToBusinessDocumentId", "BusinessDocumentRelationTypeId")
+                        .IsUnique();
+
+                    b.ToTable("BusinessDocumentRelations");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentRelationType", b =>
+                {
+                    b.Property<int>("BusinessDocumentRelationTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("BusinessDocumentRelationTypeId");
+
+                    b.ToTable("BusinessDocumentRelationTypes");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentStatus", b =>
+                {
+                    b.Property<int>("BusinessDocumentStatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("BusinessDocumentStatusId");
+
+                    b.ToTable("BusinessDocumentStatuses");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentStatusHistory", b =>
+                {
+                    b.Property<int>("BusinessDocumentStatusHistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BusinessDocumentStatusHistoryId"));
+
+                    b.Property<int>("BusinessDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BusinessDocumentId1")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ChangeDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ChangedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("NewBusinessDocumentStatusId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OldBusinessDocumentStatusId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BusinessDocumentStatusHistoryId");
+
+                    b.HasIndex("BusinessDocumentId");
+
+                    b.HasIndex("BusinessDocumentId1");
+
+                    b.HasIndex("NewBusinessDocumentStatusId");
+
+                    b.HasIndex("OldBusinessDocumentStatusId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("BusinessDocumentStatusHistories");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentType", b =>
+                {
+                    b.Property<int>("BusinessDocumentTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("BusinessDocumentTypeId");
+
+                    b.ToTable("BusinessDocumentTypes");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.ColumnVisibility", b =>
@@ -287,9 +752,35 @@ namespace Cloud9._2.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CommunicationTypeId"));
 
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("NVARCHAR(MAX)")
+                        .HasColumnName("description");
+
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("MethodName")
+                        .HasMaxLength(50)
+                        .HasColumnType("NVARCHAR(50)")
+                        .HasColumnName("method_name");
+
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("NVARCHAR(50)")
+                        .HasColumnName("Name");
+
+                    b.Property<short?>("SortOrder")
+                        .HasColumnType("smallint")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
 
                     b.HasKey("CommunicationTypeId");
 
@@ -307,34 +798,117 @@ namespace Cloud9._2.Migrations
                     b.Property<string>("Comment")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Comment2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FirstName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsPrimary")
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsPrimary")
                         .HasColumnType("bit");
 
                     b.Property<string>("JobTitle")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LastName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PartnerId")
+                    b.Property<int?>("PartnerId")
                         .HasColumnType("int");
 
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PhoneNumber2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("StatusId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("ContactId");
 
                     b.HasIndex("PartnerId");
 
+                    b.HasIndex("StatusId");
+
                     b.ToTable("Contacts");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ContactDto", b =>
+                {
+                    b.Property<int>("ContactId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ContactId"));
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Comment2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JobTitle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("PartnerDtoPartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PartnerName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("StatusId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ContactId");
+
+                    b.HasIndex("PartnerDtoPartnerId");
+
+                    b.HasIndex("StatusId");
+
+                    b.ToTable("ContactDto");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Currency", b =>
@@ -352,6 +926,11 @@ namespace Cloud9._2.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
                     b.Property<string>("CurrencyName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -365,6 +944,11 @@ namespace Cloud9._2.Migrations
 
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -421,6 +1005,9 @@ namespace Cloud9._2.Migrations
                     b.Property<int?>("QuoteId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SiteId")
+                        .HasColumnType("int");
+
                     b.Property<int>("StatusId")
                         .HasColumnType("int");
 
@@ -444,6 +1031,8 @@ namespace Cloud9._2.Migrations
 
                     b.HasIndex("QuoteId");
 
+                    b.HasIndex("SiteId");
+
                     b.HasIndex("StatusId");
 
                     b.ToTable("CustomerCommunications");
@@ -457,16 +1046,73 @@ namespace Cloud9._2.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocumentId"));
 
+                    b.Property<int?>("ContactId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("DocumentDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DocumentStatusId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("DocumentTypeId")
                         .HasColumnType("int");
 
+                    b.Property<string>("FileExtension")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("FileHash")
+                        .HasColumnType("char(64)");
+
                     b.Property<string>("FileName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("FilePath")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("HashAlgorithm")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsLatestVersion")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("ParentDocumentId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("PartnerId")
                         .HasColumnType("int");
@@ -474,21 +1120,347 @@ namespace Cloud9._2.Migrations
                     b.Property<int?>("SiteId")
                         .HasColumnType("int");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StorageKey")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<string>("StorageProvider")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("StoredFileName")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<DateTime?>("UploadDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("UploadedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("VersionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("employee_id")
+                        .HasColumnType("int");
+
+                    b.Property<bool?>("isActive")
+                        .HasColumnType("bit");
+
                     b.HasKey("DocumentId");
 
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("DocumentStatusId");
+
                     b.HasIndex("DocumentTypeId");
+
+                    b.HasIndex("ParentDocumentId");
 
                     b.HasIndex("PartnerId");
 
                     b.HasIndex("SiteId");
 
                     b.ToTable("Documents");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentDto", b =>
+                {
+                    b.Property<int>("DocumentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocumentId"));
+
+                    b.Property<int?>("ContactId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ContentType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DocumentStatusId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DocumentTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DocumentTypeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileExtension")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("HashAlgorithm")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsLatestVersion")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ParentDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PartnerDtoPartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PartnerName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("SiteId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StorageKey")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StorageProvider")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StoredFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UploadDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UploadedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("VersionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<bool?>("isActive")
+                        .HasColumnType("bit");
+
+                    b.HasKey("DocumentId");
+
+                    b.HasIndex("PartnerDtoPartnerId");
+
+                    b.ToTable("DocumentDto");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentLink", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ModuleID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RecordID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("DocumentId");
+
+                    b.ToTable("DocumentLinks");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentLinkDto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("DocumentDtoDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ModuleId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RecordId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentDtoDocumentId");
+
+                    b.ToTable("DocumentLinkDto");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentMetadata", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("DocumentId");
+
+                    b.ToTable("DocumentMetadata");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentStatus", b =>
+                {
+                    b.Property<int>("DocumentStatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("StatusColor")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("DocumentStatusId");
+
+                    b.ToTable("DocumentStatuses");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentStatusHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ChangeDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ChangedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OldStatus")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId");
+
+                    b.ToTable("DocumentStatusHistory");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentStatusHistoryDto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ChangeDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ChangedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DocumentDtoDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OldStatus")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentDtoDocumentId");
+
+                    b.ToTable("DocumentStatusHistoryDto");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.DocumentType", b =>
@@ -499,17 +1471,429 @@ namespace Cloud9._2.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocumentTypeId"));
 
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TypeName")
+                    b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("DocumentTypeId");
 
                     b.ToTable("DocumentTypes");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ElectronicDocument", b =>
+                {
+                    b.Property<int>("ElectronicDocumentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ElectronicDocumentId"));
+
+                    b.Property<DateTime?>("CreationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatorUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("VoteMaxValue")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("VoteSplitValue")
+                        .HasColumnType("int");
+
+                    b.Property<bool?>("isVoteHalfValueEnabled")
+                        .HasColumnType("bit");
+
+                    b.HasKey("ElectronicDocumentId");
+
+                    b.ToTable("ElectronicDocument");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.EmployeeHistory", b =>
+                {
+                    b.Property<int>("HistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HistoryId"));
+
+                    b.Property<int?>("AppUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AppUserId1")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ChangeTimestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WhatModified")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("HistoryId");
+
+                    b.HasIndex("AppUserId1");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("EmployeeHistories");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.EmployeeShift", b =>
+                {
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ShiftId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("EmployeeId", "ShiftId");
+
+                    b.HasIndex("ShiftId");
+
+                    b.ToTable("EmployeeShifts");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.Employees", b =>
+                {
+                    b.Property<int>("EmployeeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EmployeeId"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Comment1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Comment2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DefaultSiteId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Email2")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FamilyData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("FullVacationDays")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("HireDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<byte?>("IsContracted")
+                        .HasColumnType("tinyint");
+
+                    b.Property<int?>("JobTitleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<string>("PhoneNumber2")
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<int?>("StatusId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("VacationDays")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("WorkingTime")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("EmployeeId");
+
+                    b.HasIndex("JobTitleId");
+
+                    b.HasIndex("StatusId");
+
+                    b.ToTable("Employee", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.EmploymentStatus", b =>
+                {
+                    b.Property<int>("StatusId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StatusId"));
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("StatusName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Name");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("StatusId");
+
+                    b.ToTable("EmploymentStatus", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.GFO", b =>
+                {
+                    b.Property<int>("GFOId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GFOId"));
+
+                    b.Property<string>("ChangeType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("GFOKod")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GFOName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("GFOId");
+
+                    b.ToTable("GFO", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.Item", b =>
+                {
+                    b.Property<int>("ItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal?>("DefaultPurchasePrice")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal?>("DefaultSalesPrice")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int?>("DefaultTaxCodeId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DefaultUnitId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsManufactured")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsStockManaged")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ItemTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ItemId");
+
+                    b.HasIndex("ItemTypeId");
+
+                    b.ToTable("Items");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ItemPrice", b =>
+                {
+                    b.Property<long>("ItemPriceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("ItemPriceId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("CurrencyId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PriceTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ValidFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .HasColumnType("date");
+
+                    b.HasKey("ItemPriceId");
+
+                    b.HasIndex("CurrencyId");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("PriceTypeId");
+
+                    b.HasIndex("TenantId", "ItemId");
+
+                    b.HasIndex("TenantId", "PriceTypeId");
+
+                    b.HasIndex("TenantId", "ItemId", "CurrencyId", "PriceTypeId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1 AND [ValidTo] IS NULL");
+
+                    b.HasIndex("TenantId", "ItemId", "PriceTypeId", "CurrencyId", "IsActive", "ValidFrom", "ValidTo");
+
+                    b.ToTable("ItemPrices");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ItemTypeLookup", b =>
+                {
+                    b.Property<int>("ItemTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("ItemTypeId");
+
+                    b.ToTable("ItemTypes");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.JobTitle", b =>
+                {
+                    b.Property<int>("JobTitleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("JobTitleId"));
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<string>("TitleName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UpdatedAt");
+
+                    b.HasKey("JobTitleId");
+
+                    b.ToTable("JobTitle", (string)null);
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Lead", b =>
@@ -536,6 +1920,9 @@ namespace Cloud9._2.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("JobTitle")
                         .HasColumnType("nvarchar(max)");
@@ -658,6 +2045,24 @@ namespace Cloud9._2.Migrations
                     b.ToTable("LeadSources");
                 });
 
+            modelBuilder.Entity("Cloud9_2.Models.MetadataEntry", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("DocumentDtoDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Key");
+
+                    b.HasIndex("DocumentDtoDocumentId");
+
+                    b.ToTable("MetadataEntry");
+                });
+
             modelBuilder.Entity("Cloud9_2.Models.Order", b =>
                 {
                     b.Property<int>("OrderId")
@@ -669,6 +2074,9 @@ namespace Cloud9._2.Migrations
                     b.Property<string>("CompanyName")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("ContactId")
+                        .HasColumnType("int");
 
                     b.Property<string>("CreatedBy")
                         .ValueGeneratedOnAdd()
@@ -703,6 +2111,9 @@ namespace Cloud9._2.Migrations
                     b.Property<decimal?>("DiscountPercentage")
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("ModifiedBy")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(100)
@@ -721,16 +2132,17 @@ namespace Cloud9._2.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("OrderType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int?>("OrderStatusTypes")
+                        .HasColumnType("int");
 
                     b.Property<int>("PartnerId")
                         .HasColumnType("int");
 
-                    b.Property<string>("PaymentTerms")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int?>("PaymentTermId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PlannedDelivery")
+                        .HasColumnType("datetime");
 
                     b.Property<int?>("QuoteId")
                         .HasColumnType("int");
@@ -743,9 +2155,8 @@ namespace Cloud9._2.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("ShippingMethod")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int?>("ShippingMethodId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("SiteId")
                         .HasColumnType("int");
@@ -765,28 +2176,76 @@ namespace Cloud9._2.Migrations
 
                     b.HasKey("OrderId");
 
+                    b.HasIndex("ContactId");
+
                     b.HasIndex("CurrencyId");
 
                     b.HasIndex("OrderNumber")
                         .IsUnique()
                         .HasFilter("[OrderNumber] IS NOT NULL");
 
+                    b.HasIndex("OrderStatusTypes");
+
                     b.HasIndex("PartnerId");
 
+                    b.HasIndex("PaymentTermId");
+
                     b.HasIndex("QuoteId");
+
+                    b.HasIndex("ShippingMethodId");
 
                     b.HasIndex("SiteId");
 
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.OrderItem", b =>
+            modelBuilder.Entity("Cloud9_2.Models.OrderItemDiscount", b =>
                 {
-                    b.Property<int>("OrderItemId")
+                    b.Property<int>("OrderItemDiscountId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderItemId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderItemDiscountId"));
+
+                    b.Property<decimal?>("BasePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("DiscountPercentage")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("DiscountType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("ListPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("OrderItemId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("PartnerPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("VolumePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("VolumeThreshold")
+                        .HasColumnType("int");
+
+                    b.HasKey("OrderItemDiscountId");
+
+                    b.ToTable("OrderItemDiscounts");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.OrderShippingMethod", b =>
+                {
+                    b.Property<int>("ShippingMethodId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ShippingMethodId"));
 
                     b.Property<string>("CreatedBy")
                         .ValueGeneratedOnAdd()
@@ -803,15 +2262,10 @@ namespace Cloud9._2.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<decimal?>("DiscountAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("DiscountPercentage")
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<string>("ItemName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                    b.Property<string>("MethodName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ModifiedBy")
                         .ValueGeneratedOnAdd()
@@ -824,32 +2278,33 @@ namespace Cloud9._2.Migrations
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<int>("OrderId")
+                    b.HasKey("ShippingMethodId");
+
+                    b.HasIndex("MethodName")
+                        .IsUnique();
+
+                    b.ToTable("OrderShippingMethods");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.OrderStatusType", b =>
+                {
+                    b.Property<int>("OrderStatusId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderStatusId"));
 
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal?>("TotalPrice")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("StatusName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UnitOfMeasure")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.HasKey("OrderStatusId");
 
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("OrderItemId");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("OrderItems");
+                    b.ToTable("OrderStatusTypes");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Partner", b =>
@@ -881,8 +2336,20 @@ namespace Cloud9._2.Migrations
                     b.Property<string>("City")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Comment1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Comment2")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("CompanyName")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CompanyNameTrim")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("CompanyNameTrim")
+                        .HasComputedColumnSql("CASE WHEN [CompanyName] IS NULL THEN NULL ELSE CONVERT([nvarchar](450), LEFT(LTRIM(RTRIM([CompanyName])), 450)) END PERSISTED");
 
                     b.Property<string>("Country")
                         .HasColumnType("nvarchar(max)");
@@ -899,11 +2366,20 @@ namespace Cloud9._2.Migrations
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("GFOId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IndividualTaxId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Industry")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("IntTaxId")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<bool?>("IsTaxExempt")
                         .HasColumnType("bit");
@@ -915,8 +2391,26 @@ namespace Cloud9._2.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("NameTrim")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("NameTrim")
+                        .HasComputedColumnSql("CASE WHEN [Name] IS NULL THEN NULL ELSE CONVERT([nvarchar](450), LEFT(LTRIM(RTRIM([Name])), 450)) END PERSISTED");
+
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OwnId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PartnerCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("PartnerGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PartnerTypeId")
+                        .HasColumnType("int");
 
                     b.Property<string>("PaymentTerms")
                         .HasColumnType("nvarchar(max)");
@@ -930,14 +2424,23 @@ namespace Cloud9._2.Migrations
                     b.Property<string>("PreferredCurrency")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ShortName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("State")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("StatusId")
+                        .HasColumnType("int");
 
                     b.Property<string>("TaxId")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TaxIdTrim")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("TaxIdTrim")
+                        .HasComputedColumnSql("CASE WHEN [TaxId] IS NULL THEN NULL ELSE CONVERT([nvarchar](50), LEFT(LTRIM(RTRIM([TaxId])), 50)) END PERSISTED");
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
@@ -950,7 +2453,163 @@ namespace Cloud9._2.Migrations
 
                     b.HasKey("PartnerId");
 
-                    b.ToTable("Partners");
+                    b.HasIndex("GFOId");
+
+                    b.HasIndex("PartnerGroupId");
+
+                    b.HasIndex("PartnerTypeId");
+
+                    b.HasIndex("StatusId");
+
+                    b.ToTable("Partners", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.PartnerDto", b =>
+                {
+                    b.Property<int>("PartnerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PartnerId"));
+
+                    b.Property<string>("AddressLine1")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("AddressLine2")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("AlternatePhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("AssignedTo")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("BillingContactName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("BillingEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Comment1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Comment2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CompanyName")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal?>("CreditLimit")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int?>("GFOId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GFOName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IndividualTaxId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Industry")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("IntTaxId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsTaxExempt")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastContacted")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("OwnId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PartnerCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("PartnerGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PartnerTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymentTerms")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PreferredCurrency")
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("ShortName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("State")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("StatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TaxId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Website")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.HasKey("PartnerId");
+
+                    b.HasIndex("StatusId");
+
+                    b.ToTable("PartnerDto");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.PartnerGroup", b =>
@@ -964,7 +2623,7 @@ namespace Cloud9._2.Migrations
                     b.Property<decimal?>("DiscountPercentage")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("PartnerGroupName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -978,62 +2637,26 @@ namespace Cloud9._2.Migrations
                         {
                             PartnerGroupId = 1,
                             DiscountPercentage = 5.00m,
-                            Name = "VIP Customers"
+                            PartnerGroupName = "VIP Customers"
                         });
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.PartnerProductGroupPrice", b =>
+            modelBuilder.Entity("Cloud9_2.Models.PartnerShift", b =>
                 {
-                    b.Property<int>("PartnerProductGroupPriceId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PartnerProductGroupPriceId"));
-
                     b.Property<int>("PartnerId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ProductGroupId")
+                    b.Property<int>("ShiftId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.HasKey("PartnerProductGroupPriceId");
+                    b.HasKey("PartnerId", "ShiftId");
 
-                    b.HasIndex("ProductGroupId");
+                    b.HasIndex("ShiftId");
 
-                    b.HasIndex("PartnerId", "ProductGroupId")
-                        .IsUnique();
-
-                    b.ToTable("PartnerProductGroupPrices");
-                });
-
-            modelBuilder.Entity("Cloud9_2.Models.PartnerProductPrice", b =>
-                {
-                    b.Property<int>("PartnerProductPriceId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PartnerProductPriceId"));
-
-                    b.Property<int>("PartnerId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("PartnerProductPriceId");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("PartnerId", "ProductId")
-                        .IsUnique();
-
-                    b.ToTable("PartnerProductPrices");
+                    b.ToTable("PartnerShifts");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.PartnerType", b =>
@@ -1044,239 +2667,115 @@ namespace Cloud9._2.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PartnerTypeId"));
 
-                    b.Property<int>("PartnerId")
-                        .HasColumnType("int");
-
                     b.Property<string>("PartnerTypeName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("PartnerTypeId");
 
-                    b.HasIndex("PartnerId");
-
                     b.ToTable("PartnerTypes");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.Product", b =>
+            modelBuilder.Entity("Cloud9_2.Models.PaymentTerm", b =>
                 {
-                    b.Property<int>("ProductId")
+                    b.Property<int>("PaymentTermId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductId"));
-
-                    b.Property<int?>("BaseUOMId")
-                        .IsRequired()
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CategoryId")
-                        .IsRequired()
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaymentTermId"));
 
                     b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int?>("DimensionUOMId")
-                        .IsRequired()
-                        .HasColumnType("int");
-
-                    b.Property<double?>("Height")
-                        .HasColumnType("float");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<double?>("Length")
-                        .HasColumnType("float");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("ReorderLevel")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SKU")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int?>("StockQuantity")
-                        .IsRequired()
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("WarehouseLocation")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<double?>("Weight")
-                        .HasColumnType("float");
-
-                    b.Property<int?>("WeightUOMId")
-                        .IsRequired()
-                        .HasColumnType("int");
-
-                    b.Property<double?>("Width")
-                        .HasColumnType("float");
-
-                    b.HasKey("ProductId");
-
-                    b.HasIndex("BaseUOMId");
-
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("DimensionUOMId");
-
-                    b.HasIndex("LastModifiedBy");
-
-                    b.HasIndex("WeightUOMId");
-
-                    b.ToTable("Products");
-                });
-
-            modelBuilder.Entity("Cloud9_2.Models.ProductFile", b =>
-                {
-                    b.Property<int>("ProductFileId")
                         .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasDefaultValue("System");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<int?>("DaysDue")
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductFileId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("FileCategory")
+                    b.Property<string>("ModifiedBy")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasDefaultValue("System");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("TermName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<byte[]>("FileData")
-                        .IsRequired()
-                        .HasColumnType("varbinary(max)");
+                    b.HasKey("PaymentTermId");
 
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                    b.HasIndex("TermName")
+                        .IsUnique();
 
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("FileType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("IsPrimaryImage")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ProductUOMId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("ProductFileId");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("LastModifiedBy");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("ProductUOMId");
-
-                    b.ToTable("ProductFiles");
+                    b.ToTable("PaymentTerms");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.ProductGroup", b =>
+            modelBuilder.Entity("Cloud9_2.Models.PriceType", b =>
                 {
-                    b.Property<int>("ProductGroupId")
+                    b.Property<int>("PriceTypeId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductGroupId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PriceTypeId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.HasKey("ProductGroupId");
+                    b.HasKey("PriceTypeId");
 
-                    b.ToTable("ProductGroups");
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("PriceTypes");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.ProductGroupProduct", b =>
+            modelBuilder.Entity("Cloud9_2.Models.ProjectPM", b =>
                 {
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductGroupId")
-                        .HasColumnType("int");
-
-                    b.HasKey("ProductId", "ProductGroupId");
-
-                    b.HasIndex("ProductGroupId");
-
-                    b.ToTable("ProductGroupProducts");
-                });
-
-            modelBuilder.Entity("Cloud9_2.Models.ProductPrice", b =>
-                {
-                    b.Property<int>("ProductPriceId")
+                    b.Property<int>("ProjectPMId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductPriceId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProjectPMId"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<decimal?>("Budget")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("CreatedBy")
+                    b.Property<string>("CreatedById")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("CurrencyId")
-                        .HasColumnType("int");
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
 
-                    b.Property<decimal>("DiscountPercentage")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
@@ -1284,83 +2783,63 @@ namespace Cloud9._2.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("PurchasePrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("SalesPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("StartDate")
+                    b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("UnitOfMeasurementId")
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("ProjectStatusPMId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("ProductPriceId");
+                    b.HasKey("ProjectPMId");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasIndex("CreatedById");
 
-                    b.HasIndex("CurrencyId");
+                    b.HasIndex("ProjectStatusPMId");
 
-                    b.HasIndex("LastModifiedBy");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("UnitOfMeasurementId");
-
-                    b.ToTable("ProductPrices");
+                    b.ToTable("ProjectPM", (string)null);
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.ProductUOM", b =>
+            modelBuilder.Entity("Cloud9_2.Models.ProjectStatusPM", b =>
                 {
-                    b.Property<int>("ProductUOMId")
+                    b.Property<int>("ProjectStatusPMId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductUOMId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProjectStatusPMId"));
 
-                    b.Property<double>("ConversionFactor")
-                        .HasColumnType("float");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
+                    b.Property<string>("ColorCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
-                    b.Property<int>("ProductId")
+                    b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
-                    b.Property<int>("UnitOfMeasurementId")
-                        .HasColumnType("int");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("bit");
 
-                    b.HasKey("ProductUOMId");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasKey("ProjectStatusPMId");
 
-                    b.HasIndex("LastModifiedBy");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("UnitOfMeasurementId");
-
-                    b.ToTable("ProductUOMs");
+                    b.ToTable("ProjectStatusPMs");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Quote", b =>
@@ -1392,11 +2871,11 @@ namespace Cloud9._2.Migrations
                     b.Property<string>("DetailedDescription")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal?>("DiscountAmount")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<decimal?>("DiscountPercentage")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("ModifiedBy")
                         .HasMaxLength(100)
@@ -1411,6 +2890,9 @@ namespace Cloud9._2.Migrations
                     b.Property<DateTime?>("QuoteDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal?>("QuoteDiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("QuoteNumber")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -1423,6 +2905,9 @@ namespace Cloud9._2.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("SiteId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -1432,6 +2917,9 @@ namespace Cloud9._2.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<decimal?>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("TotalItemDiscounts")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("ValidityDate")
@@ -1446,6 +2934,8 @@ namespace Cloud9._2.Migrations
                     b.HasIndex("QuoteNumber")
                         .IsUnique()
                         .HasFilter("[QuoteNumber] IS NOT NULL");
+
+                    b.HasIndex("SiteId");
 
                     b.ToTable("Quotes");
                 });
@@ -1491,53 +2981,275 @@ namespace Cloud9._2.Migrations
 
                     b.HasIndex("QuoteId");
 
-                    b.HasIndex("QuoteItemId");
-
                     b.ToTable("QuoteHistories");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.QuoteItem", b =>
+            modelBuilder.Entity("Cloud9_2.Models.Resource", b =>
                 {
-                    b.Property<int>("QuoteItemId")
+                    b.Property<int>("ResourceId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QuoteItemId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ResourceId"));
 
-                    b.Property<decimal?>("DiscountAmount")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("Comment1")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal?>("DiscountPercentage")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("Comment2")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ItemDescription")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("ProductId")
+                    b.Property<int?>("ContactId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("CreatedAt")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("QuoteId")
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateOfPurchase")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("EmployeeId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("bit");
 
-                    b.Property<int>("VatTypeId")
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("NextService")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("PartnerId")
                         .HasColumnType("int");
 
-                    b.HasKey("QuoteItemId");
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.HasIndex("ProductId");
+                    b.Property<int?>("ResourceStatusId")
+                        .HasColumnType("int");
 
-                    b.HasIndex("QuoteId");
+                    b.Property<int?>("ResourceTypeId")
+                        .HasColumnType("int");
 
-                    b.HasIndex("VatTypeId");
+                    b.Property<string>("Serial")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.ToTable("QuoteItems");
+                    b.Property<DateTime?>("ServiceDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("SiteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("WarrantyExpireDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("WarrantyPeriod")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WhoBuyId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("WhoLastServicedId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ResourceId");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("PartnerId");
+
+                    b.HasIndex("ResourceStatusId");
+
+                    b.HasIndex("ResourceTypeId");
+
+                    b.HasIndex("SiteId");
+
+                    b.HasIndex("WhoBuyId");
+
+                    b.HasIndex("WhoLastServicedId");
+
+                    b.ToTable("Resource", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ResourceHistory", b =>
+                {
+                    b.Property<int>("ResourceHistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ResourceHistoryId"));
+
+                    b.Property<string>("ChangeDescription")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ModifiedById")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<int>("ResourceId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("ServicePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("ResourceHistoryId");
+
+                    b.HasIndex("ModifiedById");
+
+                    b.HasIndex("ResourceId");
+
+                    b.ToTable("ResourceHistory", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ResourceStatus", b =>
+                {
+                    b.Property<int>("ResourceStatusId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ResourceStatusId"));
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("ResourceStatusId");
+
+                    b.ToTable("ResourceStatus", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ResourceType", b =>
+                {
+                    b.Property<int>("ResourceTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ResourceTypeId"));
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("ResourceTypeId");
+
+                    b.ToTable("ResourceType", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.Salary", b =>
+                {
+                    b.Property<int>("SalaryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SalaryId"));
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EffectiveDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("SalaryAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("SalaryId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("Salaries");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.Shift", b =>
+                {
+                    b.Property<int>("ShiftId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ShiftId"));
+
+                    b.Property<int?>("ContactId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<TimeSpan?>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("PartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ShiftDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ShiftType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("SiteId")
+                        .HasColumnType("int");
+
+                    b.Property<TimeSpan?>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ShiftId");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("PartnerId");
+
+                    b.HasIndex("SiteId");
+
+                    b.ToTable("Shifts");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Site", b =>
@@ -1557,6 +3269,21 @@ namespace Cloud9._2.Migrations
                     b.Property<string>("City")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Comment1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Comment2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContactPerson1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContactPerson2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContactPerson3")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Country")
                         .HasColumnType("nvarchar(max)");
 
@@ -1565,6 +3292,9 @@ namespace Cloud9._2.Migrations
 
                     b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsPrimary")
                         .HasColumnType("bit");
@@ -1575,8 +3305,26 @@ namespace Cloud9._2.Migrations
                     b.Property<DateTime?>("LastModifiedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("PartnerId")
+                    b.Property<string>("MobilePhone1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MobilePhone2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MobilePhone3")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PartnerId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Phone1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone3")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PostalCode")
                         .HasColumnType("nvarchar(max)");
@@ -1585,7 +3333,28 @@ namespace Cloud9._2.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("SiteTypeId")
+                        .HasColumnType("int");
+
                     b.Property<string>("State")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("StatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("eMail1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("eMail2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("messagingApp1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("messagingApp2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("messagingApp3")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("SiteId");
@@ -1596,7 +3365,689 @@ namespace Cloud9._2.Migrations
 
                     b.HasIndex("PartnerId");
 
+                    b.HasIndex("SiteTypeId");
+
+                    b.HasIndex("StatusId");
+
                     b.ToTable("Sites");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.SiteDto", b =>
+                {
+                    b.Property<int>("SiteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SiteId"));
+
+                    b.Property<string>("AddressLine1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AddressLine2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("City")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Comment1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Comment2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContactPerson1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContactPerson2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContactPerson3")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Country")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MobilePhone1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MobilePhone2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MobilePhone3")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("PartnerDtoPartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Phone1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone3")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PostalCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SiteName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("SiteTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("State")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("StatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("eMail1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("eMail2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("messagingApp1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("messagingApp2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("messagingApp3")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("SiteId");
+
+                    b.HasIndex("PartnerDtoPartnerId");
+
+                    b.ToTable("SiteDto");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.SiteShift", b =>
+                {
+                    b.Property<int>("SiteId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ShiftId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("SiteId", "ShiftId");
+
+                    b.HasIndex("ShiftId");
+
+                    b.ToTable("SiteShifts");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.SiteType", b =>
+                {
+                    b.Property<int>("SiteTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SiteTypeId"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.HasKey("SiteTypeId");
+
+                    b.ToTable("SiteTypes");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.Status", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Color")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PartnerStatuses", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.StatusDto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Color")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("StatusDto");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskAttachmentPM", b =>
+                {
+                    b.Property<int>("TaskAttachmentPMId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskAttachmentPMId"));
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("FileSize")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaskPMId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UploadDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UploadedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("TaskAttachmentPMId");
+
+                    b.HasIndex("TaskPMId");
+
+                    b.HasIndex("UploadedById");
+
+                    b.ToTable("TaskAttachmentsPMs");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskCommentPM", b =>
+                {
+                    b.Property<int>("TaskCommentPMId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskCommentPMId"));
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TaskPMId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TaskCommentPMId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("TaskPMId");
+
+                    b.ToTable("TaskCommentsPMs");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskDocumentLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LinkedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("LinkedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId");
+
+                    b.HasIndex("LinkedById");
+
+                    b.HasIndex("TaskId");
+
+                    b.ToTable("TaskDocumentLinks");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskEmployeeAssignment", b =>
+                {
+                    b.Property<int>("TaskEmployeeAssignmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskEmployeeAssignmentId"));
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaskPMId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TaskEmployeeAssignmentId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("TaskPMId");
+
+                    b.ToTable("TaskEmployeeAssignment", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskHistory", b =>
+                {
+                    b.Property<int>("TaskHistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskHistoryId"));
+
+                    b.Property<string>("ChangeDescription")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ModifiedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TaskPMId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TaskHistoryId");
+
+                    b.HasIndex("ModifiedById");
+
+                    b.HasIndex("TaskPMId");
+
+                    b.ToTable("TaskHistory", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskPM", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("ActualHours")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("AssignedToId")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("AssignedTo");
+
+                    b.Property<string>("CommunicationDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("CommunicationTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ContactId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CustomerCommunicationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("EstimatedHours")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int?>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProjectPMId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("QuoteId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RelatedPartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ScheduledDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("SiteId")
+                        .HasColumnType("int");
+
+                    b.Property<short?>("TaskPMcomMethodID")
+                        .HasColumnType("smallint");
+
+                    b.Property<int?>("TaskPriorityPMId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TaskStatusPMId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TaskTypePMId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedToId");
+
+                    b.HasIndex("CommunicationTypeId");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("CustomerCommunicationId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("PartnerId");
+
+                    b.HasIndex("ProjectPMId");
+
+                    b.HasIndex("QuoteId");
+
+                    b.HasIndex("RelatedPartnerId");
+
+                    b.HasIndex("SiteId");
+
+                    b.HasIndex("TaskPMcomMethodID");
+
+                    b.HasIndex("TaskPriorityPMId");
+
+                    b.HasIndex("TaskStatusPMId");
+
+                    b.HasIndex("TaskTypePMId");
+
+                    b.ToTable("TaskPM", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskPMcomMethod", b =>
+                {
+                    b.Property<short>("TaskPMcomMethodID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<short>("TaskPMcomMethodID"));
+
+                    b.Property<bool?>("Aktiv")
+                        .IsRequired()
+                        .HasColumnType("bit")
+                        .HasColumnName("aktiv");
+
+                    b.Property<string>("Kod")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("kod");
+
+                    b.Property<string>("Leiras")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("leiras");
+
+                    b.Property<DateTime?>("Letrehozva")
+                        .IsRequired()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("letrehozva");
+
+                    b.Property<DateTime?>("Modositva")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("modositva");
+
+                    b.Property<string>("Nev")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("nev");
+
+                    b.Property<short?>("Sorrend")
+                        .IsRequired()
+                        .HasColumnType("smallint")
+                        .HasColumnName("sorrend");
+
+                    b.HasKey("TaskPMcomMethodID");
+
+                    b.ToTable("TaskPMcomMethod", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskPriorityPM", b =>
+                {
+                    b.Property<int>("TaskPriorityPMId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskPriorityPMId"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int?>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("PriorityColorCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("TaskPriorityPMId");
+
+                    b.ToTable("TaskPriorityPM", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskResourceAssignment", b =>
+                {
+                    b.Property<int>("TaskResourceAssignmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskResourceAssignmentId"));
+
+                    b.Property<int>("ResourceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaskPMId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TaskResourceAssignmentId");
+
+                    b.HasIndex("ResourceId");
+
+                    b.HasIndex("TaskPMId");
+
+                    b.ToTable("TaskResourceAssignment", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskStatusPM", b =>
+                {
+                    b.Property<int>("TaskStatusPMId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskStatusPMId"));
+
+                    b.Property<string>("ColorCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int?>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DisplayType")
+                        .HasColumnType("int");
+
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("TaskStatusPMId");
+
+                    b.ToTable("TaskStatusPM", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskTypePM", b =>
+                {
+                    b.Property<int>("TaskTypePMId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskTypePMId"));
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int?>("DisplayType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("TaskTypePMName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UpdatedAt");
+
+                    b.HasKey("TaskTypePMId");
+
+                    b.ToTable("TaskTypePM", (string)null);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.Tenant", b =>
+                {
+                    b.Property<int>("TenantId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TenantId"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("TenantId");
+
+                    b.ToTable("Tenants");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.UnitOfMeasurement", b =>
@@ -1672,6 +4123,84 @@ namespace Cloud9._2.Migrations
                     b.ToTable("UserActivities");
                 });
 
+            modelBuilder.Entity("Cloud9_2.Models.Vacation", b =>
+                {
+                    b.Property<int>("VacationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VacationId"));
+
+                    b.Property<int?>("AppUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AppUserId1")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("DurationDays")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte?>("IsApproved")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("VacationId");
+
+                    b.HasIndex("AppUserId1");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("Vacations");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.VacationBalance", b =>
+                {
+                    b.Property<int>("BalanceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BalanceId"));
+
+                    b.Property<decimal?>("AvailableDays")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("BalanceId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("VacationBalances");
+                });
+
             modelBuilder.Entity("Cloud9_2.Models.VatType", b =>
                 {
                     b.Property<int>("VatTypeId")
@@ -1701,39 +4230,6 @@ namespace Cloud9._2.Migrations
                             VatTypeId = 1,
                             Rate = 27.00m,
                             TypeName = "27%"
-                        });
-                });
-
-            modelBuilder.Entity("Cloud9_2.Models.VolumeDiscount", b =>
-                {
-                    b.Property<int>("VolumeDiscountId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VolumeDiscountId"));
-
-                    b.Property<decimal>("DiscountPercentage")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("MinQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.HasKey("VolumeDiscountId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("VolumeDiscounts");
-
-                    b.HasData(
-                        new
-                        {
-                            VolumeDiscountId = 1,
-                            DiscountPercentage = 10.00m,
-                            MinQuantity = 10,
-                            ProductId = 1
                         });
                 });
 
@@ -1793,54 +4289,6 @@ namespace Cloud9._2.Migrations
                     b.HasIndex("LastModifiedBy");
 
                     b.ToTable("Warehouses");
-                });
-
-            modelBuilder.Entity("Cloud9_2.Models.WarehouseStock", b =>
-                {
-                    b.Property<int>("WarehouseStockId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WarehouseStockId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StockQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UnitOfMeasurementId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("WarehouseId")
-                        .HasColumnType("int");
-
-                    b.HasKey("WarehouseStockId");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("LastModifiedBy");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("UnitOfMeasurementId");
-
-                    b.HasIndex("WarehouseId");
-
-                    b.ToTable("WarehouseStocks");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -1976,22 +4424,215 @@ namespace Cloud9._2.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.Category", b =>
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocument", b =>
                 {
-                    b.HasOne("Cloud9_2.Models.ApplicationUser", "Creator")
+                    b.HasOne("Cloud9_2.Models.BusinessDocumentStatus", "BusinessDocumentStatus")
                         .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasForeignKey("BusinessDocumentStatusId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Cloud9_2.Models.ApplicationUser", "LastModifier")
+                    b.HasOne("Cloud9_2.Models.BusinessDocumentType", "BusinessDocumentType")
                         .WithMany()
-                        .HasForeignKey("LastModifiedBy")
+                        .HasForeignKey("BusinessDocumentTypeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BusinessDocumentStatus");
+
+                    b.Navigation("BusinessDocumentType");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentAttachment", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.AttachmentCategoryLookup", "AttachmentCategory")
+                        .WithMany()
+                        .HasForeignKey("AttachmentCategoryId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.Navigation("Creator");
+                    b.HasOne("Cloud9_2.Models.BusinessDocument", "BusinessDocument")
+                        .WithMany("Attachments")
+                        .HasForeignKey("BusinessDocumentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
-                    b.Navigation("LastModifier");
+                    b.HasOne("Cloud9_2.Models.Document", "Document")
+                        .WithMany()
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("AttachmentCategory");
+
+                    b.Navigation("BusinessDocument");
+
+                    b.Navigation("Document");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentLine", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.BusinessDocument", "BusinessDocument")
+                        .WithMany("Lines")
+                        .HasForeignKey("BusinessDocumentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BusinessDocument");
+
+                    b.Navigation("Item");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentParty", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.BusinessDocument", "BusinessDocument")
+                        .WithMany("Parties")
+                        .HasForeignKey("BusinessDocumentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.BusinessDocumentPartyRole", "BusinessDocumentPartyRole")
+                        .WithMany()
+                        .HasForeignKey("BusinessDocumentPartyRoleId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.Contact", "Contact")
+                        .WithMany()
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Partner", "Partner")
+                        .WithMany()
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BusinessDocument");
+
+                    b.Navigation("BusinessDocumentPartyRole");
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("Partner");
+
+                    b.Navigation("Site");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentRelation", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.BusinessDocumentRelationType", "BusinessDocumentRelationType")
+                        .WithMany()
+                        .HasForeignKey("BusinessDocumentRelationTypeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.BusinessDocument", "FromBusinessDocument")
+                        .WithMany("FromRelations")
+                        .HasForeignKey("FromBusinessDocumentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.BusinessDocument", "ToBusinessDocument")
+                        .WithMany("ToRelations")
+                        .HasForeignKey("ToBusinessDocumentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BusinessDocumentRelationType");
+
+                    b.Navigation("FromBusinessDocument");
+
+                    b.Navigation("Tenant");
+
+                    b.Navigation("ToBusinessDocument");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocumentStatusHistory", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.BusinessDocument", "BusinessDocument")
+                        .WithMany()
+                        .HasForeignKey("BusinessDocumentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.BusinessDocument", null)
+                        .WithMany("StatusHistory")
+                        .HasForeignKey("BusinessDocumentId1")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.BusinessDocumentStatus", "NewStatus")
+                        .WithMany()
+                        .HasForeignKey("NewBusinessDocumentStatusId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.BusinessDocumentStatus", "OldStatus")
+                        .WithMany()
+                        .HasForeignKey("OldBusinessDocumentStatusId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BusinessDocument");
+
+                    b.Navigation("NewStatus");
+
+                    b.Navigation("OldStatus");
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.CommunicationPost", b =>
@@ -1999,13 +4640,13 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.ApplicationUser", "CreatedBy")
                         .WithMany()
                         .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Cloud9_2.Models.CustomerCommunication", "CustomerCommunication")
                         .WithMany("Posts")
                         .HasForeignKey("CustomerCommunicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("CreatedBy");
@@ -2018,19 +4659,19 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.ApplicationUser", "AssignedBy")
                         .WithMany()
                         .HasForeignKey("AssignedById")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Cloud9_2.Models.CustomerCommunication", "CustomerCommunication")
                         .WithMany("ResponsibleHistory")
                         .HasForeignKey("CustomerCommunicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Cloud9_2.Models.ApplicationUser", "Responsible")
                         .WithMany()
                         .HasForeignKey("ResponsibleId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("AssignedBy");
@@ -2045,10 +4686,31 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.Partner", "Partner")
                         .WithMany("Contacts")
                         .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Status", "Status")
+                        .WithMany()
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Partner");
+
+                    b.Navigation("Status");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ContactDto", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.PartnerDto", null)
+                        .WithMany("Contacts")
+                        .HasForeignKey("PartnerDtoPartnerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Status", "Status")
+                        .WithMany()
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Status");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Currency", b =>
@@ -2056,7 +4718,7 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.ApplicationUser", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Cloud9_2.Models.ApplicationUser", "LastModifier")
@@ -2074,43 +4736,48 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.ApplicationUser", "Agent")
                         .WithMany("CustomerCommunications")
                         .HasForeignKey("AgentId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cloud9_2.Models.CommunicationType", "CommunicationType")
                         .WithMany("CustomerCommunications")
                         .HasForeignKey("CommunicationTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Cloud9_2.Models.Contact", "Contact")
                         .WithMany("CustomerCommunications")
                         .HasForeignKey("ContactId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cloud9_2.Models.Lead", "Lead")
                         .WithMany("Communications")
                         .HasForeignKey("LeadId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cloud9_2.Models.Order", "Order")
                         .WithMany("Communications")
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cloud9_2.Models.Partner", "Partner")
                         .WithMany("Communications")
                         .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cloud9_2.Models.Quote", "Quote")
                         .WithMany("Communications")
                         .HasForeignKey("QuoteId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("Cloud9_2.Models.Site", "Site")
+                        .WithMany("CustomerCommunications")
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Cloud9_2.Models.CommunicationStatus", "Status")
                         .WithMany("CustomerCommunications")
                         .HasForeignKey("StatusId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Agent");
@@ -2127,28 +4794,203 @@ namespace Cloud9._2.Migrations
 
                     b.Navigation("Quote");
 
+                    b.Navigation("Site");
+
                     b.Navigation("Status");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Document", b =>
                 {
-                    b.HasOne("Cloud9_2.Models.DocumentType", "DocumentType")
+                    b.HasOne("Cloud9_2.Models.Contact", "Contact")
                         .WithMany("Documents")
-                        .HasForeignKey("DocumentTypeId");
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.DocumentStatus", "DocumentStatus")
+                        .WithMany("Documents")
+                        .HasForeignKey("DocumentStatusId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.DocumentType", "DocumentType")
+                        .WithMany()
+                        .HasForeignKey("DocumentTypeId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Document", "ParentDocument")
+                        .WithMany()
+                        .HasForeignKey("ParentDocumentId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cloud9_2.Models.Partner", "Partner")
                         .WithMany("Documents")
-                        .HasForeignKey("PartnerId");
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cloud9_2.Models.Site", "Site")
                         .WithMany("Documents")
-                        .HasForeignKey("SiteId");
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("DocumentStatus");
 
                     b.Navigation("DocumentType");
+
+                    b.Navigation("ParentDocument");
 
                     b.Navigation("Partner");
 
                     b.Navigation("Site");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentDto", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.PartnerDto", null)
+                        .WithMany("Documents")
+                        .HasForeignKey("PartnerDtoPartnerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentLink", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.Document", "Document")
+                        .WithMany("DocumentLinks")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentLinkDto", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.DocumentDto", null)
+                        .WithMany("DocumentLinks")
+                        .HasForeignKey("DocumentDtoDocumentId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentMetadata", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.Document", "Document")
+                        .WithMany("DocumentMetadata")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentStatusHistory", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.Document", "Document")
+                        .WithMany("StatusHistory")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentStatusHistoryDto", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.DocumentDto", null)
+                        .WithMany("StatusHistory")
+                        .HasForeignKey("DocumentDtoDocumentId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.EmployeeHistory", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.ApplicationUser", "AppUser")
+                        .WithMany()
+                        .HasForeignKey("AppUserId1")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Employees", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.EmployeeShift", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.Employees", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.Shift", "Shift")
+                        .WithMany("EmployeeShifts")
+                        .HasForeignKey("ShiftId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Shift");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.Employees", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.JobTitle", "JobTitle")
+                        .WithMany("Employees")
+                        .HasForeignKey("JobTitleId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.EmploymentStatus", "Status")
+                        .WithMany("Employees")
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("JobTitle");
+
+                    b.Navigation("Status");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.Item", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.ItemTypeLookup", "ItemType")
+                        .WithMany()
+                        .HasForeignKey("ItemTypeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ItemType");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ItemPrice", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.Currency", "Currency")
+                        .WithMany("ItemPrices")
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.Item", "Item")
+                        .WithMany("ItemPrices")
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.PriceType", "PriceType")
+                        .WithMany("ItemPrices")
+                        .HasForeignKey("PriceTypeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Currency");
+
+                    b.Navigation("Item");
+
+                    b.Navigation("PriceType");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Lead", b =>
@@ -2156,7 +4998,7 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.Partner", "Partner")
                         .WithMany("Leads")
                         .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Partner");
                 });
@@ -2166,7 +5008,7 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.Lead", "Lead")
                         .WithMany("LeadHistories")
                         .HasForeignKey("LeadId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Lead");
@@ -2177,289 +5019,158 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.Partner", "Partner")
                         .WithMany("LeadSources")
                         .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Partner");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.MetadataEntry", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.DocumentDto", null)
+                        .WithMany("CustomMetadata")
+                        .HasForeignKey("DocumentDtoDocumentId")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Order", b =>
                 {
+                    b.HasOne("Cloud9_2.Models.Contact", "Contact")
+                        .WithMany("Orders")
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Cloud9_2.Models.Currency", "Currency")
                         .WithMany("Orders")
                         .HasForeignKey("CurrencyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.OrderStatusType", "OrderStatusType")
+                        .WithMany("Orders")
+                        .HasForeignKey("OrderStatusTypes")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cloud9_2.Models.Partner", "Partner")
                         .WithMany("Orders")
                         .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.PaymentTerm", "PaymentTerm")
+                        .WithMany("Orders")
+                        .HasForeignKey("PaymentTermId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cloud9_2.Models.Quote", "Quote")
                         .WithMany("Orders")
                         .HasForeignKey("QuoteId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.OrderShippingMethod", "ShippingMethod")
+                        .WithMany("Orders")
+                        .HasForeignKey("ShippingMethodId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cloud9_2.Models.Site", "Site")
                         .WithMany("Orders")
                         .HasForeignKey("SiteId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Contact");
 
                     b.Navigation("Currency");
 
+                    b.Navigation("OrderStatusType");
+
                     b.Navigation("Partner");
 
+                    b.Navigation("PaymentTerm");
+
                     b.Navigation("Quote");
+
+                    b.Navigation("ShippingMethod");
 
                     b.Navigation("Site");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.OrderItem", b =>
+            modelBuilder.Entity("Cloud9_2.Models.Partner", b =>
                 {
-                    b.HasOne("Cloud9_2.Models.Order", "Order")
-                        .WithMany("OrderItems")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("Cloud9_2.Models.GFO", "GFO")
+                        .WithMany("Partners")
+                        .HasForeignKey("GFOId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Cloud9_2.Models.Product", "Product")
-                        .WithMany("OrderItems")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.HasOne("Cloud9_2.Models.PartnerGroup", "PartnerGroup")
+                        .WithMany("Partners")
+                        .HasForeignKey("PartnerGroupId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
-                    b.Navigation("Order");
+                    b.HasOne("Cloud9_2.Models.PartnerType", "PartnerType")
+                        .WithMany("Partners")
+                        .HasForeignKey("PartnerTypeId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
-                    b.Navigation("Product");
+                    b.HasOne("Cloud9_2.Models.Status", "Status")
+                        .WithMany()
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("GFO");
+
+                    b.Navigation("PartnerGroup");
+
+                    b.Navigation("PartnerType");
+
+                    b.Navigation("Status");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.PartnerProductGroupPrice", b =>
+            modelBuilder.Entity("Cloud9_2.Models.PartnerDto", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.StatusDto", "Status")
+                        .WithMany()
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Status");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.PartnerShift", b =>
                 {
                     b.HasOne("Cloud9_2.Models.Partner", "Partner")
                         .WithMany()
                         .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Cloud9_2.Models.ProductGroup", "ProductGroup")
-                        .WithMany()
-                        .HasForeignKey("ProductGroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Partner");
-
-                    b.Navigation("ProductGroup");
-                });
-
-            modelBuilder.Entity("Cloud9_2.Models.PartnerProductPrice", b =>
-                {
-                    b.HasOne("Cloud9_2.Models.Partner", "Partner")
-                        .WithMany()
-                        .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("Cloud9_2.Models.Shift", "Shift")
+                        .WithMany("PartnerShifts")
+                        .HasForeignKey("ShiftId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Partner");
 
-                    b.Navigation("Product");
+                    b.Navigation("Shift");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.PartnerType", b =>
+            modelBuilder.Entity("Cloud9_2.Models.ProjectPM", b =>
                 {
-                    b.HasOne("Cloud9_2.Models.Partner", "Partner")
-                        .WithMany("PartnerTypes")
-                        .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("Cloud9_2.Models.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("Partner");
-                });
-
-            modelBuilder.Entity("Cloud9_2.Models.Product", b =>
-                {
-                    b.HasOne("Cloud9_2.Models.UnitOfMeasurement", "BaseUOM")
-                        .WithMany()
-                        .HasForeignKey("BaseUOMId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("Cloud9_2.Models.ProjectStatusPM", "ProjectStatusPM")
+                        .WithMany("Projects")
+                        .HasForeignKey("ProjectStatusPMId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Cloud9_2.Models.Category", "Category")
-                        .WithMany("Products")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("CreatedBy");
 
-                    b.HasOne("Cloud9_2.Models.ApplicationUser", "Creator")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.UnitOfMeasurement", "DimensionUOM")
-                        .WithMany()
-                        .HasForeignKey("DimensionUOMId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.ApplicationUser", "LastModifier")
-                        .WithMany()
-                        .HasForeignKey("LastModifiedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Cloud9_2.Models.UnitOfMeasurement", "WeightUOM")
-                        .WithMany()
-                        .HasForeignKey("WeightUOMId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("BaseUOM");
-
-                    b.Navigation("Category");
-
-                    b.Navigation("Creator");
-
-                    b.Navigation("DimensionUOM");
-
-                    b.Navigation("LastModifier");
-
-                    b.Navigation("WeightUOM");
-                });
-
-            modelBuilder.Entity("Cloud9_2.Models.ProductFile", b =>
-                {
-                    b.HasOne("Cloud9_2.Models.ApplicationUser", "Creator")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.ApplicationUser", "LastModifier")
-                        .WithMany()
-                        .HasForeignKey("LastModifiedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Cloud9_2.Models.Product", "Product")
-                        .WithMany("Files")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.ProductUOM", "ProductUOM")
-                        .WithMany()
-                        .HasForeignKey("ProductUOMId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Creator");
-
-                    b.Navigation("LastModifier");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("ProductUOM");
-                });
-
-            modelBuilder.Entity("Cloud9_2.Models.ProductGroupProduct", b =>
-                {
-                    b.HasOne("Cloud9_2.Models.ProductGroup", "ProductGroup")
-                        .WithMany("ProductGroupProducts")
-                        .HasForeignKey("ProductGroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.Product", "Product")
-                        .WithMany("ProductGroupProducts")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("ProductGroup");
-                });
-
-            modelBuilder.Entity("Cloud9_2.Models.ProductPrice", b =>
-                {
-                    b.HasOne("Cloud9_2.Models.ApplicationUser", "Creator")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.Currency", "Currency")
-                        .WithMany()
-                        .HasForeignKey("CurrencyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.ApplicationUser", "LastModifier")
-                        .WithMany()
-                        .HasForeignKey("LastModifiedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Cloud9_2.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.UnitOfMeasurement", "UnitOfMeasurement")
-                        .WithMany()
-                        .HasForeignKey("UnitOfMeasurementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Creator");
-
-                    b.Navigation("Currency");
-
-                    b.Navigation("LastModifier");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("UnitOfMeasurement");
-                });
-
-            modelBuilder.Entity("Cloud9_2.Models.ProductUOM", b =>
-                {
-                    b.HasOne("Cloud9_2.Models.ApplicationUser", "Creator")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.ApplicationUser", "LastModifier")
-                        .WithMany()
-                        .HasForeignKey("LastModifiedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Cloud9_2.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.UnitOfMeasurement", "UnitOfMeasurement")
-                        .WithMany()
-                        .HasForeignKey("UnitOfMeasurementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Creator");
-
-                    b.Navigation("LastModifier");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("UnitOfMeasurement");
+                    b.Navigation("ProjectStatusPM");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Quote", b =>
@@ -2467,14 +5178,19 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.Currency", "Currency")
                         .WithMany()
                         .HasForeignKey("CurrencyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Cloud9_2.Models.Partner", "Partner")
                         .WithMany("Quotes")
                         .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.Site", null)
+                        .WithMany("Quotes")
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Currency");
 
@@ -2486,64 +5202,413 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.Quote", "Quote")
                         .WithMany("QuoteHistories")
                         .HasForeignKey("QuoteId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Cloud9_2.Models.QuoteItem", "QuoteItem")
-                        .WithMany()
-                        .HasForeignKey("QuoteItemId");
-
                     b.Navigation("Quote");
-
-                    b.Navigation("QuoteItem");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.QuoteItem", b =>
+            modelBuilder.Entity("Cloud9_2.Models.Resource", b =>
                 {
-                    b.HasOne("Cloud9_2.Models.Product", "Product")
-                        .WithMany("QuoteItems")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.Quote", "Quote")
-                        .WithMany("QuoteItems")
-                        .HasForeignKey("QuoteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.VatType", "VatType")
+                    b.HasOne("Cloud9_2.Models.Contact", "Contact")
                         .WithMany()
-                        .HasForeignKey("VatTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Employees", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Partner", "Partner")
+                        .WithMany()
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.ResourceStatus", "ResourceStatus")
+                        .WithMany("Resources")
+                        .HasForeignKey("ResourceStatusId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.ResourceType", "ResourceType")
+                        .WithMany("Resources")
+                        .HasForeignKey("ResourceTypeId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Site", "Site")
+                        .WithMany("Resources")
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.ApplicationUser", "WhoBuy")
+                        .WithMany()
+                        .HasForeignKey("WhoBuyId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.ApplicationUser", "WhoLastServiced")
+                        .WithMany()
+                        .HasForeignKey("WhoLastServicedId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Partner");
+
+                    b.Navigation("ResourceStatus");
+
+                    b.Navigation("ResourceType");
+
+                    b.Navigation("Site");
+
+                    b.Navigation("WhoBuy");
+
+                    b.Navigation("WhoLastServiced");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ResourceHistory", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Resource", "Resource")
+                        .WithMany("ResourceHistories")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("Product");
+                    b.Navigation("ModifiedBy");
 
-                    b.Navigation("Quote");
+                    b.Navigation("Resource");
+                });
 
-                    b.Navigation("VatType");
+            modelBuilder.Entity("Cloud9_2.Models.Salary", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.Employees", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.Shift", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.Contact", "Contact")
+                        .WithMany()
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Partner", "Partner")
+                        .WithMany()
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("Partner");
+
+                    b.Navigation("Site");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Site", b =>
                 {
                     b.HasOne("Cloud9_2.Models.ApplicationUser", "CreatedBy")
                         .WithMany()
-                        .HasForeignKey("CreatedById");
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cloud9_2.Models.ApplicationUser", "LastModifiedBy")
                         .WithMany()
-                        .HasForeignKey("LastModifiedById");
+                        .HasForeignKey("LastModifiedById")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Cloud9_2.Models.Partner", "Partner")
                         .WithMany("Sites")
-                        .HasForeignKey("PartnerId");
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.SiteType", "SiteType")
+                        .WithMany("Sites")
+                        .HasForeignKey("SiteTypeId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Status", "Status")
+                        .WithMany()
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("CreatedBy");
 
                     b.Navigation("LastModifiedBy");
 
                     b.Navigation("Partner");
+
+                    b.Navigation("SiteType");
+
+                    b.Navigation("Status");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.SiteDto", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.PartnerDto", null)
+                        .WithMany("Sites")
+                        .HasForeignKey("PartnerDtoPartnerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.SiteShift", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.Shift", "Shift")
+                        .WithMany("SiteShifts")
+                        .HasForeignKey("ShiftId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Shift");
+
+                    b.Navigation("Site");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskAttachmentPM", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.TaskPM", "TaskPM")
+                        .WithMany("Attachments")
+                        .HasForeignKey("TaskPMId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.ApplicationUser", "UploadedBy")
+                        .WithMany()
+                        .HasForeignKey("UploadedById")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("TaskPM");
+
+                    b.Navigation("UploadedBy");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskCommentPM", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.TaskPM", "TaskPM")
+                        .WithMany("Comments")
+                        .HasForeignKey("TaskPMId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("TaskPM");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskDocumentLink", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.Document", "Document")
+                        .WithMany("TaskDocuments")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.ApplicationUser", "LinkedBy")
+                        .WithMany()
+                        .HasForeignKey("LinkedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.TaskPM", "Task")
+                        .WithMany("TaskDocuments")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+
+                    b.Navigation("LinkedBy");
+
+                    b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskEmployeeAssignment", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.Employees", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.TaskPM", "TaskPM")
+                        .WithMany("TaskEmployeeAssignments")
+                        .HasForeignKey("TaskPMId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("TaskPM");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskHistory", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.ApplicationUser", "ModifiedBy")
+                        .WithMany()
+                        .HasForeignKey("ModifiedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.TaskPM", "TaskPM")
+                        .WithMany("TaskHistories")
+                        .HasForeignKey("TaskPMId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ModifiedBy");
+
+                    b.Navigation("TaskPM");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskPM", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.ApplicationUser", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedToId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.CommunicationType", "CommunicationType")
+                        .WithMany("TaskPMs")
+                        .HasForeignKey("CommunicationTypeId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Contact", "Contact")
+                        .WithMany()
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.CustomerCommunication", "CustomerCommunication")
+                        .WithMany()
+                        .HasForeignKey("CustomerCommunicationId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Partner", "Partner")
+                        .WithMany()
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.ProjectPM", null)
+                        .WithMany("Tasks")
+                        .HasForeignKey("ProjectPMId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Quote", "Quote")
+                        .WithMany()
+                        .HasForeignKey("QuoteId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Partner", "RelatedPartner")
+                        .WithMany("TasksAsRelatedPartner")
+                        .HasForeignKey("RelatedPartnerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.TaskPMcomMethod", "TaskPMcomMethod")
+                        .WithMany()
+                        .HasForeignKey("TaskPMcomMethodID")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.TaskPriorityPM", "TaskPriorityPM")
+                        .WithMany("Tasks")
+                        .HasForeignKey("TaskPriorityPMId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.TaskStatusPM", "TaskStatusPM")
+                        .WithMany("Tasks")
+                        .HasForeignKey("TaskStatusPMId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.TaskTypePM", "TaskTypePM")
+                        .WithMany("Tasks")
+                        .HasForeignKey("TaskTypePMId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("AssignedTo");
+
+                    b.Navigation("CommunicationType");
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("CustomerCommunication");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Partner");
+
+                    b.Navigation("Quote");
+
+                    b.Navigation("RelatedPartner");
+
+                    b.Navigation("Site");
+
+                    b.Navigation("TaskPMcomMethod");
+
+                    b.Navigation("TaskPriorityPM");
+
+                    b.Navigation("TaskStatusPM");
+
+                    b.Navigation("TaskTypePM");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskResourceAssignment", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.Resource", "Resource")
+                        .WithMany()
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Cloud9_2.Models.TaskPM", "TaskPM")
+                        .WithMany("TaskResourceAssignments")
+                        .HasForeignKey("TaskPMId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Resource");
+
+                    b.Navigation("TaskPM");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.UnitOfMeasurement", b =>
@@ -2551,7 +5616,7 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.ApplicationUser", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Cloud9_2.Models.ApplicationUser", "LastModifier")
@@ -2564,15 +5629,33 @@ namespace Cloud9._2.Migrations
                     b.Navigation("LastModifier");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.VolumeDiscount", b =>
+            modelBuilder.Entity("Cloud9_2.Models.Vacation", b =>
                 {
-                    b.HasOne("Cloud9_2.Models.Product", "Product")
+                    b.HasOne("Cloud9_2.Models.ApplicationUser", "AppUser")
                         .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("AppUserId1")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Cloud9_2.Models.Employees", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("Product");
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.VacationBalance", b =>
+                {
+                    b.HasOne("Cloud9_2.Models.Employees", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Warehouse", b =>
@@ -2580,7 +5663,7 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.ApplicationUser", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Cloud9_2.Models.ApplicationUser", "LastModifier")
@@ -2591,48 +5674,6 @@ namespace Cloud9._2.Migrations
                     b.Navigation("Creator");
 
                     b.Navigation("LastModifier");
-                });
-
-            modelBuilder.Entity("Cloud9_2.Models.WarehouseStock", b =>
-                {
-                    b.HasOne("Cloud9_2.Models.ApplicationUser", "Creator")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.ApplicationUser", "LastModifier")
-                        .WithMany()
-                        .HasForeignKey("LastModifiedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Cloud9_2.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.UnitOfMeasurement", "UnitOfMeasurement")
-                        .WithMany()
-                        .HasForeignKey("UnitOfMeasurementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Cloud9_2.Models.Warehouse", "Warehouse")
-                        .WithMany("Stocks")
-                        .HasForeignKey("WarehouseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Creator");
-
-                    b.Navigation("LastModifier");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("UnitOfMeasurement");
-
-                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -2640,7 +5681,7 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 
@@ -2649,7 +5690,7 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 
@@ -2658,7 +5699,7 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 
@@ -2667,13 +5708,13 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Cloud9_2.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 
@@ -2682,7 +5723,7 @@ namespace Cloud9._2.Migrations
                     b.HasOne("Cloud9_2.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 
@@ -2691,9 +5732,19 @@ namespace Cloud9._2.Migrations
                     b.Navigation("CustomerCommunications");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.Category", b =>
+            modelBuilder.Entity("Cloud9_2.Models.BusinessDocument", b =>
                 {
-                    b.Navigation("Products");
+                    b.Navigation("Attachments");
+
+                    b.Navigation("FromRelations");
+
+                    b.Navigation("Lines");
+
+                    b.Navigation("Parties");
+
+                    b.Navigation("StatusHistory");
+
+                    b.Navigation("ToRelations");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.CommunicationStatus", b =>
@@ -2704,15 +5755,23 @@ namespace Cloud9._2.Migrations
             modelBuilder.Entity("Cloud9_2.Models.CommunicationType", b =>
                 {
                     b.Navigation("CustomerCommunications");
+
+                    b.Navigation("TaskPMs");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Contact", b =>
                 {
                     b.Navigation("CustomerCommunications");
+
+                    b.Navigation("Documents");
+
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Currency", b =>
                 {
+                    b.Navigation("ItemPrices");
+
                     b.Navigation("Orders");
                 });
 
@@ -2723,9 +5782,49 @@ namespace Cloud9._2.Migrations
                     b.Navigation("ResponsibleHistory");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.DocumentType", b =>
+            modelBuilder.Entity("Cloud9_2.Models.Document", b =>
+                {
+                    b.Navigation("DocumentLinks");
+
+                    b.Navigation("DocumentMetadata");
+
+                    b.Navigation("StatusHistory");
+
+                    b.Navigation("TaskDocuments");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentDto", b =>
+                {
+                    b.Navigation("CustomMetadata");
+
+                    b.Navigation("DocumentLinks");
+
+                    b.Navigation("StatusHistory");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.DocumentStatus", b =>
                 {
                     b.Navigation("Documents");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.EmploymentStatus", b =>
+                {
+                    b.Navigation("Employees");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.GFO", b =>
+                {
+                    b.Navigation("Partners");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.Item", b =>
+                {
+                    b.Navigation("ItemPrices");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.JobTitle", b =>
+                {
+                    b.Navigation("Employees");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Lead", b =>
@@ -2738,8 +5837,16 @@ namespace Cloud9._2.Migrations
             modelBuilder.Entity("Cloud9_2.Models.Order", b =>
                 {
                     b.Navigation("Communications");
+                });
 
-                    b.Navigation("OrderItems");
+            modelBuilder.Entity("Cloud9_2.Models.OrderShippingMethod", b =>
+                {
+                    b.Navigation("Orders");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.OrderStatusType", b =>
+                {
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Partner", b =>
@@ -2756,27 +5863,50 @@ namespace Cloud9._2.Migrations
 
                     b.Navigation("Orders");
 
-                    b.Navigation("PartnerTypes");
-
                     b.Navigation("Quotes");
+
+                    b.Navigation("Sites");
+
+                    b.Navigation("TasksAsRelatedPartner");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.PartnerDto", b =>
+                {
+                    b.Navigation("Contacts");
+
+                    b.Navigation("Documents");
 
                     b.Navigation("Sites");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.Product", b =>
+            modelBuilder.Entity("Cloud9_2.Models.PartnerGroup", b =>
                 {
-                    b.Navigation("Files");
-
-                    b.Navigation("OrderItems");
-
-                    b.Navigation("ProductGroupProducts");
-
-                    b.Navigation("QuoteItems");
+                    b.Navigation("Partners");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.ProductGroup", b =>
+            modelBuilder.Entity("Cloud9_2.Models.PartnerType", b =>
                 {
-                    b.Navigation("ProductGroupProducts");
+                    b.Navigation("Partners");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.PaymentTerm", b =>
+                {
+                    b.Navigation("Orders");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.PriceType", b =>
+                {
+                    b.Navigation("ItemPrices");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ProjectPM", b =>
+                {
+                    b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ProjectStatusPM", b =>
+                {
+                    b.Navigation("Projects");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Quote", b =>
@@ -2786,20 +5916,78 @@ namespace Cloud9._2.Migrations
                     b.Navigation("Orders");
 
                     b.Navigation("QuoteHistories");
+                });
 
-                    b.Navigation("QuoteItems");
+            modelBuilder.Entity("Cloud9_2.Models.Resource", b =>
+                {
+                    b.Navigation("ResourceHistories");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ResourceStatus", b =>
+                {
+                    b.Navigation("Resources");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.ResourceType", b =>
+                {
+                    b.Navigation("Resources");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.Shift", b =>
+                {
+                    b.Navigation("EmployeeShifts");
+
+                    b.Navigation("PartnerShifts");
+
+                    b.Navigation("SiteShifts");
                 });
 
             modelBuilder.Entity("Cloud9_2.Models.Site", b =>
                 {
+                    b.Navigation("CustomerCommunications");
+
                     b.Navigation("Documents");
 
                     b.Navigation("Orders");
+
+                    b.Navigation("Quotes");
+
+                    b.Navigation("Resources");
                 });
 
-            modelBuilder.Entity("Cloud9_2.Models.Warehouse", b =>
+            modelBuilder.Entity("Cloud9_2.Models.SiteType", b =>
                 {
-                    b.Navigation("Stocks");
+                    b.Navigation("Sites");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskPM", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Comments");
+
+                    b.Navigation("TaskDocuments");
+
+                    b.Navigation("TaskEmployeeAssignments");
+
+                    b.Navigation("TaskHistories");
+
+                    b.Navigation("TaskResourceAssignments");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskPriorityPM", b =>
+                {
+                    b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskStatusPM", b =>
+                {
+                    b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("Cloud9_2.Models.TaskTypePM", b =>
+                {
+                    b.Navigation("Tasks");
                 });
 #pragma warning restore 612, 618
         }

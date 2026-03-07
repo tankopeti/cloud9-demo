@@ -23,7 +23,9 @@
           headers: { 'Accept': 'application/json' }
         });
 
-        if (!res.ok) throw new Error(res.status === 404 ? 'Telephely nem található' : `HTTP ${res.status}`);
+        if (!res.ok) {
+          throw new Error(res.status === 404 ? 'Telephely nem található' : `HTTP ${res.status}`);
+        }
 
         const d = await res.json();
 
@@ -75,6 +77,21 @@
         const c1 = d.comment1 ?? d.Comment1;
         const c2 = d.comment2 ?? d.Comment2;
 
+        const defaultCommunicationTypeName =
+          d.defaultCommunicationTypeName ??
+          d.DefaultCommunicationTypeName ??
+          '—';
+
+        const linkedPartners =
+          d.linkedPartners ??
+          d.LinkedPartners ??
+          [];
+
+        const linkedEmployees =
+          d.linkedEmployees ??
+          d.LinkedEmployees ??
+          [];
+
         // ---- render ----
         contentEl.innerHTML = `
           <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
@@ -91,102 +108,134 @@
             </div>
           </div>
 
-          <div class="row g-4">
-            <!-- BAL -->
-            <div class="col-lg-6">
-              ${card('Alapadatok', `
-                <div class="d-flex justify-content-between"><strong>Telephely neve:</strong><span class="ms-3 text-end">${esc(siteName)}</span></div>
-                <div class="d-flex justify-content-between"><strong>Partner:</strong><span class="ms-3 text-end">${esc(partnerName)}</span></div>
-                <div class="d-flex justify-content-between"><strong>PartnerId:</strong><span class="ms-3 text-end">${esc(partnerIdVal)}</span></div>
-                <hr/>
-                <div class="d-flex justify-content-between"><strong>Státusz:</strong><span class="ms-3 text-end">${renderStatus(status)}</span></div>
-                <div class="d-flex justify-content-between"><strong>Elsődleges:</strong><span class="ms-3 text-end">${isPrimary ? 'Igen' : 'Nem'}</span></div>
-                <div class="d-flex justify-content-between"><strong>Aktív:</strong><span class="ms-3 text-end">${isActive ? 'Igen' : 'Nem'}</span></div>
-              `, 'text-info')}
+<div class="row g-4">
 
-              ${card('Cím adatok', `
-                <div><strong>Cím 1:</strong> ${mutedIfEmpty(addr1)}</div>
-                <div><strong>Cím 2:</strong> ${mutedIfEmpty(addr2)}</div>
-                <hr/>
-                <div><strong>Város:</strong> ${mutedIfEmpty(city)}</div>
-                <div><strong>Megye:</strong> ${mutedIfEmpty(state)}</div>
-                <div><strong>Irányítószám:</strong> ${mutedIfEmpty(postal)}</div>
-                <div><strong>Ország:</strong> ${mutedIfEmpty(country)}</div>
-              `, 'text-info')}
-            </div>
+  <!-- BAL -->
+  <div class="col-lg-6">
 
-            <!-- JOBB -->
-            <div class="col-lg-6">
-              ${card('Kapcsolattartók', `
-                <div><strong>Kapcsolattartó 1:</strong> ${mutedIfEmpty(cp1)}</div>
-                <div><strong>Kapcsolattartó 2:</strong> ${mutedIfEmpty(cp2)}</div>
-                <div><strong>Kapcsolattartó 3:</strong> ${mutedIfEmpty(cp3)}</div>
-              `, 'text-info')}
+    ${card('Alapadatok', `
+      <div class="d-flex justify-content-between">
+        <strong>Telephely neve:</strong>
+        <span class="ms-3 text-end">${esc(siteName)}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <strong>Partner:</strong>
+        <span class="ms-3 text-end">${esc(partnerName)}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <strong>PartnerId:</strong>
+        <span class="ms-3 text-end">${esc(partnerIdVal)}</span>
+      </div>
+      <hr/>
+      <div class="d-flex justify-content-between">
+        <strong>Státusz:</strong>
+        <span class="ms-3 text-end">${renderStatus(status)}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <strong>Alapértelmezett kommunikáció:</strong>
+        <span class="ms-3 text-end">${mutedIfEmpty(defaultCommunicationTypeName)}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <strong>Elsődleges:</strong>
+        <span class="ms-3 text-end">${isPrimary ? 'Igen' : 'Nem'}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <strong>Aktív:</strong>
+        <span class="ms-3 text-end">${isActive ? 'Igen' : 'Nem'}</span>
+      </div>
+    `, 'text-info')}
 
-              ${card('Elérhetőségek', `
-                <div class="row g-2">
-                  <div class="col-md-6">
-                    <div class="text-muted small">Vezetékes (1)</div>
-                    <div>${mutedIfEmpty(phone1)}</div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="text-muted small">Vezetékes (2)</div>
-                    <div>${mutedIfEmpty(phone2)}</div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="text-muted small">Vezetékes (3)</div>
-                    <div>${mutedIfEmpty(phone3)}</div>
-                  </div>
+    ${card('Cím adatok', `
+      <div><strong>Cím 1:</strong> ${mutedIfEmpty(addr1)}</div>
+      <div><strong>Cím 2:</strong> ${mutedIfEmpty(addr2)}</div>
+      <hr/>
+      <div><strong>Város:</strong> ${mutedIfEmpty(city)}</div>
+      <div><strong>Megye:</strong> ${mutedIfEmpty(state)}</div>
+      <div><strong>Irányítószám:</strong> ${mutedIfEmpty(postal)}</div>
+      <div><strong>Ország:</strong> ${mutedIfEmpty(country)}</div>
+    `, 'text-info')}
 
-                  <div class="col-md-6">
-                    <div class="text-muted small">Mobil (1)</div>
-                    <div>${mutedIfEmpty(mobile1)}</div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="text-muted small">Mobil (2)</div>
-                    <div>${mutedIfEmpty(mobile2)}</div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="text-muted small">Mobil (3)</div>
-                    <div>${mutedIfEmpty(mobile3)}</div>
-                  </div>
+    ${card('Kapcsolt személyek', renderLinkedEmployees(linkedEmployees), 'text-info')}
 
-                  <div class="col-md-6">
-                    <div class="text-muted small">Üzenető app 1</div>
-                    <div>${mutedIfEmpty(msg1)}</div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="text-muted small">Üzenető app 2</div>
-                    <div>${mutedIfEmpty(msg2)}</div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="text-muted small">Üzenető app 3</div>
-                    <div>${mutedIfEmpty(msg3)}</div>
-                  </div>
+    ${card('Kapcsolt partnerek', renderLinkedPartners(linkedPartners), 'text-info')}
 
-                  <div class="col-md-6">
-                    <div class="text-muted small">e-Mail (1)</div>
-                    <div>${mailHtml(mail1)}</div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="text-muted small">e-Mail (2)</div>
-                    <div>${mailHtml(mail2)}</div>
-                  </div>
-                </div>
-              `, 'text-info')}
+  </div>
 
-              ${card('Megjegyzések', `
-                <div class="mb-3">
-                  <div class="text-muted small">Megjegyzés 1</div>
-                  <div class="p-2 bg-body-tertiary rounded">${nlOrDash(c1)}</div>
-                </div>
-                <div>
-                  <div class="text-muted small">Megjegyzés 2</div>
-                  <div class="p-2 bg-body-tertiary rounded">${nlOrDash(c2)}</div>
-                </div>
-              `, 'text-info')}
-            </div>
-          </div>
+  <!-- JOBB -->
+  <div class="col-lg-6">
+
+    ${card('Kapcsolattartók', `
+      <div><strong>Kapcsolattartó 1:</strong> ${mutedIfEmpty(cp1)}</div>
+      <div><strong>Kapcsolattartó 2:</strong> ${mutedIfEmpty(cp2)}</div>
+      <div><strong>Kapcsolattartó 3:</strong> ${mutedIfEmpty(cp3)}</div>
+    `, 'text-info')}
+
+    ${card('Elérhetőségek', `
+      <div class="row g-2">
+        <div class="col-md-6">
+          <div class="text-muted small">Vezetékes (1)</div>
+          <div>${mutedIfEmpty(phone1)}</div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-muted small">Vezetékes (2)</div>
+          <div>${mutedIfEmpty(phone2)}</div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-muted small">Vezetékes (3)</div>
+          <div>${mutedIfEmpty(phone3)}</div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="text-muted small">Mobil (1)</div>
+          <div>${mutedIfEmpty(mobile1)}</div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-muted small">Mobil (2)</div>
+          <div>${mutedIfEmpty(mobile2)}</div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-muted small">Mobil (3)</div>
+          <div>${mutedIfEmpty(mobile3)}</div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="text-muted small">Üzenető app 1</div>
+          <div>${mutedIfEmpty(msg1)}</div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-muted small">Üzenető app 2</div>
+          <div>${mutedIfEmpty(msg2)}</div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-muted small">Üzenető app 3</div>
+          <div>${mutedIfEmpty(msg3)}</div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="text-muted small">e-Mail (1)</div>
+          <div>${mailHtml(mail1)}</div>
+        </div>
+        <div class="col-md-6">
+          <div class="text-muted small">e-Mail (2)</div>
+          <div>${mailHtml(mail2)}</div>
+        </div>
+      </div>
+    `, 'text-info')}
+
+    ${card('Megjegyzések', `
+      <div class="mb-3">
+        <div class="text-muted small">Megjegyzés 1</div>
+        <div class="p-2 bg-body-tertiary rounded">${nlOrDash(c1)}</div>
+      </div>
+      <div>
+        <div class="text-muted small">Megjegyzés 2</div>
+        <div class="p-2 bg-body-tertiary rounded">${nlOrDash(c2)}</div>
+      </div>
+    `, 'text-info')}
+
+  </div>
+
+</div>
         `;
       } catch (err) {
         console.error(err);
@@ -220,6 +269,86 @@
       const color = st?.color || st?.Color || '#6c757d';
       return `<span class="badge text-white" style="background:${esc(color)}">${esc(name)}</span>`;
     }
+
+    function renderLinkedPartners(items) {
+      if (!Array.isArray(items) || items.length === 0) {
+        return `<div class="text-muted">Nincs kapcsolt partner.</div>`;
+      }
+
+      return `
+        <div class="list-group list-group-flush">
+          ${items.map(x => `
+            <div class="list-group-item px-0 bg-transparent">
+              <div class="fw-semibold">${esc(x.partnerName ?? x.PartnerName ?? '—')}</div>
+              <div class="small text-muted">
+                Típus: ${esc(x.partnerTypeName ?? x.PartnerTypeName ?? '—')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+function renderLinkedEmployees(items) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return `<div class="text-muted">Nincs kapcsolt személy.</div>`;
+  }
+
+  return `
+    <div class="list-group list-group-flush">
+      ${items.map(x => {
+        const fullName =
+          [x.firstName ?? x.FirstName ?? '', x.lastName ?? x.LastName ?? '']
+            .join(' ')
+            .trim();
+
+        const employeeName =
+          x.employeeName ??
+          x.EmployeeName ??
+          (fullName || '—');
+
+        const email = x.email ?? x.Email ?? '';
+        const phone = x.phone ?? x.Phone ?? x.phoneNumber ?? x.PhoneNumber ?? '';
+        const jobTitle = x.jobTitle ?? x.JobTitle ?? '';
+
+        const rawPartner =
+          x.partnerName ??
+          x.PartnerName ??
+          x.partner ??
+          x.Partner ??
+          '';
+
+        const partnerName =
+          typeof rawPartner === 'string'
+            ? rawPartner
+            : rawPartner?.companyName ??
+              rawPartner?.CompanyName ??
+              rawPartner?.name ??
+              rawPartner?.Name ??
+              '';
+
+        const isPrimary = (x.isPrimary ?? x.IsPrimary) === true;
+
+        return `
+          <div class="list-group-item px-0 bg-transparent">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <div>
+                <div class="fw-semibold">${esc(employeeName)}</div>
+                <div class="small text-muted">${jobTitle ? esc(jobTitle) : '—'}</div>
+                ${partnerName ? `<div class="small text-muted"><i class="bi bi-building me-1"></i>${esc(partnerName)}</div>` : ``}
+                <div class="small mt-1">${email ? `<a href="mailto:${escAttr(email)}">${esc(email)}</a>` : `<span class="text-muted">—</span>`}</div>
+                <div class="small">${phone ? esc(phone) : `<span class="text-muted">—</span>`}</div>
+              </div>
+              <div>
+                ${isPrimary ? `<span class="badge bg-primary">Elsődleges</span>` : ``}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
 
     function mutedIfEmpty(v) {
       const s = (v ?? '').toString().trim();

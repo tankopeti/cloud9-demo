@@ -188,6 +188,40 @@ namespace Cloud9_2.Controllers
             }
         }
 
+        // GET api/documents/{id}/download
+        [HttpGet("{id:int}/download")]
+        public async Task<IActionResult> Download(int id)
+        {
+            var doc = await _context.Documents
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.DocumentId == id && d.IsDeleted == false);
+
+            if (doc == null)
+                return NotFound(new { message = $"Document {id} not found" });
+
+            var rel = (doc.StorageKey ?? doc.FilePath ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(rel))
+                return NotFound(new { message = "Document storage path missing" });
+
+            // "/uploads/documents/xxx" -> "uploads/documents/xxx"
+            rel = rel.TrimStart('/');
+            var physicalPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", rel);
+
+            if (!System.IO.File.Exists(physicalPath))
+                return NotFound(new { message = "File not found on disk", physicalPath });
+
+            var contentType = string.IsNullOrWhiteSpace(doc.ContentType)
+                ? "application/octet-stream"
+                : doc.ContentType;
+
+            var downloadName = string.IsNullOrWhiteSpace(doc.OriginalFileName)
+                ? (doc.FileName ?? $"document_{id}")
+                : doc.OriginalFileName;
+
+            var stream = System.IO.File.OpenRead(physicalPath);
+            return File(stream, contentType, downloadName);
+        }
+
         // POST api/documents (multipart/form-data)
         // ÚJ: kitöltjük az új mezőket: OriginalFileName, StoredFileName, FileExtension, ContentType, FileSizeBytes,
         //     StorageProvider, StorageKey, HashAlgorithm, FileHash, DocumentName/Description (ha jön), ContactId (ha jön)

@@ -1,0 +1,1140 @@
+@* Pages/Shared/_EmployeeModals.cshtml *@
+
+<!-- Create Employee Modal -->
+<div class="modal fade" id="createEmployeeModal" tabindex="-1" aria-labelledby="createEmployeeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="createEmployeeLabel">
+                    <i class="bi bi-person-plus-fill me-2"></i> Új dolgozó létrehozása
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Bezárás"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="createEmployeeForm">
+
+                    <h6 class="mb-3">Alap információk</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Vezetéknév</label>
+                            <input type="text" class="form-control" name="LastName" maxlength="50">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Keresztnév</label>
+                            <input type="text" class="form-control" name="FirstName" maxlength="50">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">E-mail</label>
+                            <input type="email" class="form-control" name="Email" maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">E-mail 2</label>
+                            <input type="email" class="form-control" name="Email2" maxlength="100">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Telefonszám</label>
+                            <input type="text" class="form-control" name="PhoneNumber" maxlength="15">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefonszám 2</label>
+                            <input type="text" class="form-control" name="PhoneNumber2" maxlength="15">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Születési dátum</label>
+                            <input type="date" class="form-control" name="DateOfBirth">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Belépés dátuma</label>
+                            <input type="date" class="form-control" name="HireDate">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="createEmployeeIsActive"
+                                       name="IsActive" checked>
+                                <label class="form-check-label" for="createEmployeeIsActive">Aktív</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Típus / Partner</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Dolgozó típusa *</label>
+                            <select class="form-select" id="createWorkerTypeId" name="WorkerTypeId" required>
+                                <option value="">Válasszon...</option>
+                            </select>
+                            <div class="form-text">INTERNAL esetén a Partner automatikusan nullázva lesz.</div>
+                        </div>
+
+                        <div class="col-md-6" id="createPartnerContainer" style="display:none;">
+                            <label class="form-label">Partner (külsős esetén kötelező) *</label>
+                            <select class="form-select" id="createPartnerId" name="PartnerId">
+                                <option value="">Válasszon...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Munka / HR</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Osztály</label>
+                            <input type="number" class="form-control" name="DepartmentId" min="0" step="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Pozíció</label>
+                            <select class="form-select" id="createJobTitleId" name="JobTitleId">
+                                <option value="">Válasszon...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Alap telephely</label>
+                            <select class="form-select" id="createDefaultSiteId" name="DefaultSiteId">
+                                <option value="">Válasszon...</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Napi munkaidő (óra)</label>
+                            <input type="number" class="form-control" name="WorkingTime" min="0" max="99.99" step="0.01"
+                                   value="8.00">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Szerződéses</label>
+                            <select class="form-select" name="IsContracted">
+                                <option value="0" selected>Nem</option>
+                                <option value="1">Igen</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Kilépés dátuma</label>
+                            <input type="date" class="form-control" name="EmploymentEndDate">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Szabadság napok</label>
+                            <input type="number" class="form-control" name="VacationDays" min="0" step="1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Teljes szabadság napok</label>
+                            <input type="number" class="form-control" name="FullVacationDays" min="0" step="1">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Státuszok és telephelyek</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Státuszok</label>
+                            <select class="form-select" id="createEmploymentStatusIds" name="StatusIds" multiple>
+                                @* TomSelect tölti *@
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Telephelyek</label>
+                            <select class="form-select" id="createSiteIds" name="SiteIds" multiple>
+                                @* TomSelect tölti *@
+                            </select>
+                            <div class="form-text">Ajánlott szabály: külsős csak a saját partner telephelyeire.</div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Azonosítók</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Adóazonosító jel</label>
+                            <input type="text" class="form-control" name="TaxId" maxlength="10">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">TAJ</label>
+                            <input type="text" class="form-control" name="TajNumber" maxlength="9">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Nemzetiség kód</label>
+                            <input type="text" class="form-control" name="NationalityCode" maxlength="2"
+                                   placeholder="HU">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Születési név</label>
+                            <input type="text" class="form-control" name="BirthName" maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Anyja születési neve</label>
+                            <input type="text" class="form-control" name="MotherBirthName" maxlength="100">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Születési hely</label>
+                            <input type="text" class="form-control" name="BirthPlace" maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">FEOR kód</label>
+                            <input type="text" class="form-control" name="FeorCode" maxlength="10">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Címek</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Állandó lakcím</label>
+                            <input type="text" class="form-control" name="PermanentAddress" maxlength="250">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Levelezési cím</label>
+                            <input type="text" class="form-control" name="MailingAddress" maxlength="250">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">Cím (összefűzött)</label>
+                            <input type="text" class="form-control" name="Address" maxlength="200">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Pénzügy / Megjegyzések</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">IBAN</label>
+                            <input type="text" class="form-control" name="BankAccountIban" maxlength="34">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Családi adatok</label>
+                            <input type="text" class="form-control" name="FamilyData">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Komment 1</label>
+                            <input type="text" class="form-control" name="Comment1">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Komment 2</label>
+                            <input type="text" class="form-control" name="Comment2">
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+                <button type="button" class="btn btn-primary" id="saveNewEmployeeBtn">Mentés</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- View Employee Modal -->
+<div class="modal fade" id="viewEmployeeModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="viewEmployeeModalTitle">Dolgozó</h5>
+
+        <button id="editEmployeeBtn" type="button" class="btn btn-sm btn-outline-primary me-2" style="display:none;">
+          <i class="bi bi-pencil"></i> Szerkesztés
+        </button>
+
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- TOP SUMMARY -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+          <div>
+            <div class="fs-5 fw-semibold" id="ve_fullName">–</div>
+            <div class="text-muted small">
+              ID: <span id="ve_employeeId">–</span>
+              <span class="mx-2">•</span>
+              Aktív: <span id="ve_isActiveText">–</span>
+            </div>
+          </div>
+
+          <div class="text-end">
+            <span class="badge bg-light text-dark border" id="ve_workerTypeBadge">–</span>
+            <span class="badge bg-light text-dark border" id="ve_partnerBadge" style="display:none;">–</span>
+          </div>
+        </div>
+
+        <!-- NAV TABS -->
+        <ul class="nav nav-tabs" id="ve_tabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="ve-tab-basic" data-bs-toggle="tab" data-bs-target="#ve-basic" type="button" role="tab">
+              Alap
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ve-tab-work" data-bs-toggle="tab" data-bs-target="#ve-work" type="button" role="tab">
+              Munkaviszony
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ve-tab-status-sites" data-bs-toggle="tab" data-bs-target="#ve-status-sites" type="button" role="tab">
+              Státuszok & telephelyek
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ve-tab-ids" data-bs-toggle="tab" data-bs-target="#ve-ids" type="button" role="tab">
+              Azonosítók
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ve-tab-notes" data-bs-toggle="tab" data-bs-target="#ve-notes" type="button" role="tab">
+              Megjegyzések
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content pt-3">
+
+          <!-- BASIC -->
+          <div class="tab-pane fade show active" id="ve-basic" role="tabpanel" aria-labelledby="ve-tab-basic">
+            <div class="row g-3">
+
+              <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <div class="form-control bg-light" id="ve_email">–</div>
+                <small class="text-muted" id="ve_email2_wrap" style="display:none;">
+                  Másodlagos: <span id="ve_email2"></span>
+                </small>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Telefon</label>
+                <div class="form-control bg-light" id="ve_phoneNumber">–</div>
+                <small class="text-muted" id="ve_phone2_wrap" style="display:none;">
+                  Másodlagos: <span id="ve_phoneNumber2"></span>
+                </small>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Születési dátum</label>
+                <div class="form-control bg-light" id="ve_dateOfBirth">–</div>
+              </div>
+
+              <div class="col-md-8">
+                <label class="form-label">Cím</label>
+                <div class="form-control bg-light" id="ve_address">–</div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Belépés dátuma</label>
+                <div class="form-control bg-light" id="ve_hireDate">–</div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Kilépés dátuma</label>
+                <div class="form-control bg-light" id="ve_employmentEndDate">–</div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Osztály</label>
+                <div class="form-control bg-light" id="ve_department">–</div>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label">Állandó lakcím</label>
+                <div class="form-control bg-light" id="ve_permanentAddress">–</div>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label">Levelezési cím</label>
+                <div class="form-control bg-light" id="ve_mailingAddress">–</div>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label">Bank IBAN</label>
+                <div class="form-control bg-light" id="ve_bankAccountIban">–</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- WORK -->
+          <div class="tab-pane fade" id="ve-work" role="tabpanel" aria-labelledby="ve-tab-work">
+            <div class="row g-3">
+
+              <div class="col-md-4">
+                <label class="form-label">Worker type</label>
+                <div class="form-control bg-light" id="ve_workerTypeName">–</div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Partner</label>
+                <div class="form-control bg-light" id="ve_partnerName">–</div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Munkakör</label>
+                <div class="form-control bg-light" id="ve_jobTitleName">–</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Alap telephely</label>
+                <div class="form-control bg-light" id="ve_defaultSiteName">–</div>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Napi munkaidő</label>
+                <div class="form-control bg-light" id="ve_workingTime">–</div>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Szerződéses</label>
+                <div class="form-control bg-light" id="ve_isContracted">–</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Családi adatok</label>
+                <div class="form-control bg-light" id="ve_familyData">–</div>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Szabadság napok</label>
+                <div class="form-control bg-light" id="ve_vacationDays">–</div>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Teljes szabadság</label>
+                <div class="form-control bg-light" id="ve_fullVacationDays">–</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- STATUS + SITES -->
+          <div class="tab-pane fade" id="ve-status-sites" role="tabpanel" aria-labelledby="ve-tab-status-sites">
+
+            <div class="row g-4">
+
+              <div class="col-lg-6">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h6 class="mb-0">Státuszok</h6>
+                  <small class="text-muted" id="ve_statusCount">–</small>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle">
+                    <thead>
+                      <tr>
+                        <th>Státusz</th>
+                        <th class="text-nowrap">Assigned</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ve_statusRows">
+                      <tr><td colspan="2" class="text-muted">–</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="col-lg-6">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h6 class="mb-0">Telephelyek</h6>
+                  <small class="text-muted" id="ve_siteCount">–</small>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle">
+                    <thead>
+                      <tr>
+                        <th>Telephely</th>
+                        <th class="text-nowrap">Alap</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ve_siteRows">
+                      <tr><td colspan="2" class="text-muted">–</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- IDS -->
+          <div class="tab-pane fade" id="ve-ids" role="tabpanel" aria-labelledby="ve-tab-ids">
+            <div class="row g-3">
+
+              <div class="col-md-4">
+                <label class="form-label">Adóazonosító (TaxId)</label>
+                <div class="form-control bg-light" id="ve_taxId">–</div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">TAJ</label>
+                <div class="form-control bg-light" id="ve_tajNumber">–</div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">FEOR</label>
+                <div class="form-control bg-light" id="ve_feorCode">–</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Születési név</label>
+                <div class="form-control bg-light" id="ve_birthName">–</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Anyja neve</label>
+                <div class="form-control bg-light" id="ve_motherBirthName">–</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Születési hely</label>
+                <div class="form-control bg-light" id="ve_birthPlace">–</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Állampolgárság kód</label>
+                <div class="form-control bg-light" id="ve_nationalityCode">–</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- NOTES -->
+          <div class="tab-pane fade" id="ve-notes" role="tabpanel" aria-labelledby="ve-tab-notes">
+            <div class="row g-3">
+
+              <div class="col-md-6">
+                <label class="form-label">Megjegyzés 1</label>
+                <div class="form-control bg-light" id="ve_comment1" style="min-height: 80px; white-space: pre-wrap;">–</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Megjegyzés 2</label>
+                <div class="form-control bg-light" id="ve_comment2" style="min-height: 80px; white-space: pre-wrap;">–</div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bezár</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Edit Employee Modal -->
+<div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-labelledby="editEmployeeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="editEmployeeLabel">
+                    <i class="bi bi-pencil-square me-2"></i> Dolgozó szerkesztése
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Bezárás"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="editEmployeeForm">
+                    <input type="hidden" id="editEmployeeId" name="EmployeeId" />
+
+                    <h6 class="mb-3">Alap információk</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Vezetéknév</label>
+                            <input type="text" class="form-control" id="editLastName" name="LastName" maxlength="50">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Keresztnév</label>
+                            <input type="text" class="form-control" id="editFirstName" name="FirstName" maxlength="50">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">E-mail</label>
+                            <input type="email" class="form-control" id="editEmail" name="Email" maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">E-mail 2</label>
+                            <input type="email" class="form-control" id="editEmail2" name="Email2" maxlength="100">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Telefonszám</label>
+                            <input type="text" class="form-control" id="editPhoneNumber" name="PhoneNumber"
+                                   maxlength="15">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefonszám 2</label>
+                            <input type="text" class="form-control" id="editPhoneNumber2" name="PhoneNumber2"
+                                   maxlength="15">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Születési dátum</label>
+                            <input type="date" class="form-control" id="editDateOfBirth" name="DateOfBirth">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Belépés dátuma</label>
+                            <input type="date" class="form-control" id="editHireDate" name="HireDate">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="editEmployeeIsActive"
+                                       name="IsActive">
+                                <label class="form-check-label" for="editEmployeeIsActive">Aktív</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Típus / Partner</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Dolgozó típusa *</label>
+                            <select class="form-select" id="editWorkerTypeId" name="WorkerTypeId" required>
+                                <option value="">Válasszon...</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6" id="editPartnerContainer" style="display:none;">
+                            <label class="form-label">Partner (külsős esetén kötelező) *</label>
+                            <select class="form-select" id="editPartnerId" name="PartnerId">
+                                <option value="">Válasszon...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Munka / HR</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Osztály</label>
+                            <input type="number" class="form-control" id="editDepartmentId" name="DepartmentId" min="0"
+                                   step="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Pozíció</label>
+                            <select class="form-select" id="editJobTitleId" name="JobTitleId">
+                                <option value="">Válasszon...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Alap telephely</label>
+                            <select class="form-select" id="editDefaultSiteId" name="DefaultSiteId">
+                                <option value="">Válasszon...</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Napi munkaidő (óra)</label>
+                            <input type="number" class="form-control" id="editWorkingTime" name="WorkingTime" min="0"
+                                   max="99.99" step="0.01">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Szerződéses</label>
+                            <select class="form-select" id="editIsContracted" name="IsContracted">
+                                <option value="0">Nem</option>
+                                <option value="1">Igen</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Kilépés dátuma</label>
+                            <input type="date" class="form-control" id="editEmploymentEndDate" name="EmploymentEndDate">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Szabadság napok</label>
+                            <input type="number" class="form-control" id="editVacationDays" name="VacationDays" min="0"
+                                   step="1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Teljes szabadság napok</label>
+                            <input type="number" class="form-control" id="editFullVacationDays" name="FullVacationDays"
+                                   min="0" step="1">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Státuszok és telephelyek</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Státuszok</label>
+                            <select class="form-select" id="editEmploymentStatusIds" name="StatusIds" multiple></select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Telephelyek</label>
+                            <select class="form-select" id="editSiteIds" name="SiteIds" multiple></select>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Azonosítók</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Adóazonosító jel</label>
+                            <input type="text" class="form-control" id="editTaxId" name="TaxId" maxlength="10">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">TAJ</label>
+                            <input type="text" class="form-control" id="editTajNumber" name="TajNumber" maxlength="9">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Nemzetiség kód</label>
+                            <input type="text" class="form-control" id="editNationalityCode" name="NationalityCode"
+                                   maxlength="2">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Születési név</label>
+                            <input type="text" class="form-control" id="editBirthName" name="BirthName" maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Anyja születési neve</label>
+                            <input type="text" class="form-control" id="editMotherBirthName" name="MotherBirthName"
+                                   maxlength="100">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Születési hely</label>
+                            <input type="text" class="form-control" id="editBirthPlace" name="BirthPlace"
+                                   maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">FEOR kód</label>
+                            <input type="text" class="form-control" id="editFeorCode" name="FeorCode" maxlength="10">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Címek</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Állandó lakcím</label>
+                            <input type="text" class="form-control" id="editPermanentAddress" name="PermanentAddress"
+                                   maxlength="250">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Levelezési cím</label>
+                            <input type="text" class="form-control" id="editMailingAddress" name="MailingAddress"
+                                   maxlength="250">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">Cím (összefűzött)</label>
+                            <input type="text" class="form-control" id="editAddress" name="Address" maxlength="200">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Pénzügy / Megjegyzések</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">IBAN</label>
+                            <input type="text" class="form-control" id="editBankAccountIban" name="BankAccountIban"
+                                   maxlength="34">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Családi adatok</label>
+                            <input type="text" class="form-control" id="editFamilyData" name="FamilyData">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Komment 1</label>
+                            <input type="text" class="form-control" id="editComment1" name="Comment1">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Komment 2</label>
+                            <input type="text" class="form-control" id="editComment2" name="Comment2">
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+                <button type="submit" class="btn btn-primary" form="editEmployeeForm">Mentés</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteEmployeeModal" tabindex="-1" aria-labelledby="deleteEmployeeModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteEmployeeModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Dolgozó törlése
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Bezárás"></button>
+            </div>
+
+            <div class="modal-body">
+                <p>Biztosan törölni szeretné a <strong id="deleteEmployeeName"></strong> nevű dolgozót?</p>
+                <p class="text-muted small mb-0">Ez egy soft delete művelet – a rekord inaktív lesz.</p>
+                <input type="hidden" id="deleteEmployeeId" value="">
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteEmployeeBtn">Törlés</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Employee History Modal -->
+<div class="modal fade" id="employeeHistoryModal" tabindex="-1" aria-labelledby="employeeHistoryModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="employeeHistoryModalLabel">
+          <i class="bi bi-clock-history me-2"></i>
+          <span id="history-employee-name"></span> – Történet
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                aria-label="Bezárás"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Mini CSS csak ehhez a modalhoz -->
+        <style>
+          .emp-timeline {
+            position: relative;
+            margin: 0;
+            padding: 0.25rem 0 0.25rem 0;
+            list-style: none;
+          }
+          .emp-timeline::before {
+            content: "";
+            position: absolute;
+            top: 0.5rem;
+            bottom: 0.5rem;
+            left: 18px;
+            width: 2px;
+            background: rgba(0,0,0,.12);
+          }
+          .emp-timeline-item {
+            position: relative;
+            display: grid;
+            grid-template-columns: 42px 1fr;
+            gap: .75rem;
+            padding: .5rem 0;
+          }
+          .emp-timeline-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            border: 2px solid rgba(0,0,0,.12);
+            z-index: 2;
+            margin-left: 0px;
+          }
+          .emp-timeline-meta {
+            font-size: .85rem;
+          }
+          .emp-timeline-card {
+            border: 1px solid rgba(0,0,0,.12);
+            border-radius: .75rem;
+            padding: .75rem .9rem;
+            background: #fff;
+          }
+          .emp-timeline-title {
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            flex-wrap: wrap;
+          }
+          .emp-timeline-changes {
+            margin-top: .5rem;
+            white-space: pre-line;
+          }
+          .emp-timeline-changes code {
+            background: rgba(0,0,0,.04);
+            padding: .1rem .35rem;
+            border-radius: .35rem;
+          }
+        </style>
+
+        <div id="employee-history-loading" class="text-center py-4">
+          <div class="spinner-border" role="status" aria-hidden="true"></div>
+          <p class="mt-3 mb-0">Történet betöltése...</p>
+        </div>
+
+        <div id="employee-history-content" class="d-none">
+          <div id="employee-history-empty" class="text-muted text-center py-4 d-none">
+            <i class="bi bi-inbox display-6"></i>
+            <p class="mt-3 mb-0">Nincs rögzített változás ehhez a dolgozóhoz.</p>
+          </div>
+
+          <!-- Ide rendereli a JS a timeline-t -->
+          <div id="employee-history-list"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bezárás</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- Advanced Filter Modal -->
+<div class="modal fade" id="advancedEmployeeFilterModal" tabindex="-1"
+     aria-labelledby="advancedEmployeeFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="advancedEmployeeFilterModalLabel">
+                    <i class="bi bi-funnel-fill me-2"></i> Összetett szűrés
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="advancedEmployeeFilterForm">
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="form-label">Név / Email tartalmazza</label>
+                            <input type="text" class="form-control" id="empFilterText" placeholder="">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Telefon tartalmazza</label>
+                            <input type="text" class="form-control" id="empFilterPhone" placeholder="pl. +36">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Dolgozó típusa</label>
+                            <select class="form-select" id="empFilterWorkerTypeId">
+                                <option value="">-- Mindegy --</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Partner</label>
+                            <select class="form-select" id="empFilterPartnerId">
+                                <option value="">-- Mindegy --</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Státusz</label>
+                            <select class="form-select" id="empFilterStatusId">
+                                <option value="">-- Mindegy --</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Telephely</label>
+                            <select class="form-select" id="empFilterSiteId">
+                                <option value="">-- Mindegy --</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="empFilterActiveOnly" checked>
+                                <label class="form-check-label" for="empFilterActiveOnly">
+                                    Csak aktív dolgozók
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="clearEmployeeFilterBtn">
+                    <i class="bi bi-eraser"></i> Szűrők törlése
+                </button>
+                <button type="button" class="btn btn-primary" id="applyEmployeeFilterBtn">
+                    <i class="bi bi-check-lg"></i> Szűrés alkalmazása
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="employeeSitesModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-diagram-3 me-2"></i> Telephelyek összerendelése
+        </h5>
+        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <div class="mb-3">
+          Dolgozó: <strong id="employee-sites-employee-name"></strong>
+        </div>
+
+        <div class="row g-2">
+
+          <div class="col-md-9">
+            <select id="employee-site-picker"></select>
+          </div>
+
+          <div class="col-md-3 d-grid">
+            <button class="btn btn-success" id="employee-site-add">
+              <i class="bi bi-plus-lg"></i> Hozzáadás
+            </button>
+          </div>
+
+        </div>
+
+        <hr>
+
+        <h6>Kiválasztott telephelyek</h6>
+
+        <ul class="list-group" id="employee-sites-list"></ul>
+
+        <div class="text-muted small mt-2" id="employee-sites-empty">
+          Nincs hozzáadott telephely
+        </div>
+
+        <div class="alert alert-danger d-none mt-3" id="employee-sites-error"></div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+        <button class="btn btn-primary" id="employee-sites-save">Mentés</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Employee Documents Modal -->
+<div class="modal fade" id="employeeDocumentsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-paperclip me-2"></i> Dokumentumok kezelése
+        </h5>
+        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <div class="mb-3">
+          Dolgozó: <strong id="employee-documents-employee-name"></strong>
+        </div>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-7">
+    <label class="form-label mb-1">Fájl kiválasztása</label>
+    <input type="file"
+           class="form-control"
+           id="employee-document-file"
+           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
+    <div class="form-text">
+      Helyi gépről vagy hálózati meghajtóról is választható (ha elérhető a gépen).
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-5">
+    <label class="form-label mb-1">Dokumentum megnevezés (opcionális)</label>
+    <input type="text"
+           class="form-control"
+           id="employee-document-name"
+           placeholder="pl. Munkaszerződés" />
+  </div>
+
+  <div class="col-12">
+    <button class="btn btn-primary w-100" id="employee-document-upload">
+      <i class="bi bi-cloud-upload me-1"></i> Hozzáadás / Feltöltés
+    </button>
+  </div>
+</div>
+
+        <hr>
+
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h6 class="mb-0">Feltöltött dokumentumok</h6>
+          <button class="btn btn-outline-secondary btn-sm" id="employee-documents-refresh" title="Frissítés">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+
+        <ul class="list-group" id="employee-documents-list"></ul>
+
+        <div class="text-muted small mt-2" id="employee-documents-empty">
+          Nincs feltöltött dokumentum
+        </div>
+
+        <div class="alert alert-danger d-none mt-3" id="employee-documents-error"></div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Bezár</button>
+      </div>
+
+    </div>
+  </div>
+</div>

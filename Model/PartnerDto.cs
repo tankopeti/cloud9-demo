@@ -125,6 +125,7 @@ namespace Cloud9_2.Models
         public List<SiteDto>? Sites { get; set; } = new List<SiteDto>();
         public List<ContactDto>? Contacts { get; set; } = new List<ContactDto>();
         public List<DocumentDto>? Documents { get; set; } = new List<DocumentDto>();
+        public List<PartnerSiteLinkDto> SiteLinks { get; set; } = new();
     }
     
 }

@@ -1,241 +1,128 @@
 @page
-@model Cloud9_2.Pages.HR.WorkGroup.EmployeesModel
+@model Cloud9_2.Pages.HR.Employees.IndexModel
+
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Employees";
+    ViewData["Title"] = "Dolgozók";
 }
 
 @await Html.PartialAsync("_HRSidebar")
 
-<!-- Main Content -->
 <div class="right-content">
-    <!-- Success/Error Messages -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    <!-- Page Header -->
     <div class="page-header-fixed-top">
+
         <div class="d-flex justify-content-between align-items-center mb-2">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb bg-body-tertiary rounded-3 p-2 mb-0">
                     <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
-                    <li class="breadcrumb-item"><a href="../">HR</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Munkavállalók</li>
+                    <li class="breadcrumb-item"><a href="../">HR Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Dolgozók</li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        @Model.Employees.Count of @Model.TotalRecords dolgozó@(Model.TotalRecords != 1 ? "k" : "")
+                        (Oldal @Model.CurrentPage / @Model.TotalPages)
+                    </li>
                 </ol>
             </nav>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createEmployeeModal">
-                <i class="bi bi-plus-circle me-1"></i> New Employee
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createEmployeeModal">
+                    + Új dolgozó
+                </button>
+
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#advancedEmployeeFilterModal">
+                    <i class="bi bi-funnel me-1"></i> Összetett szűrés
+                </button>
+
+                <button id="exportEmployeesExcelBtn" class="btn btn-outline-success">
+                    <i class="bi bi-file-earmark-excel me-1"></i>
+                    Export Excel
+                </button>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <form id="employeeSearchForm" method="get" asp-page="./Index" class="input-group input-group-sm" style="width: 280px;">
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Dolgozók keresése..."
+                           id="employeeSearchInput"
+                           name="SearchTerm"
+                           value="@Model.SearchTerm">
+
+                    <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </form>
+
+                <div class="dropdown">
+                    <button id="employeeQuickFilterToggle"
+                            class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                            type="button"
+                            data-bs-toggle="dropdown">
+                        <i class="bi bi-funnel me-1"></i>Szűrő
+                    </button>
+
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" data-filter="all">Minden dolgozó</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="active">Aktív dolgozók</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="internal">Belsős</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="external">Külsős</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-dynamic-height">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="sticky-top custom-thead table-blur">
+                    <tr>
+                        <th>Név</th>
+                        <th>Email</th>
+                        <th>Telefon</th>
+                        <th>Típus</th>
+                        <th>Partner</th>
+                        <th>Pozíció</th>
+                        <th>Státusz(ok)</th>
+                        <th>Telephely(ek)</th>
+                        <th>Aktív</th>
+                        <th class="text-center">Műveletek</th>
+                    </tr>
+                </thead>
+
+                <tbody id="employeesTableBody">
+                    <tr>
+                        <td colspan="10" class="text-center py-5 text-muted">
+                            Betöltés...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="loadMoreEmployeesContainer" class="text-center py-2">
+            <button id="loadMoreEmployeesBtn" class="btn btn-outline-primary btn-sm">
+                Több betöltése
             </button>
         </div>
     </div>
 
-    <!-- Employees Table -->
-    <div class="card">
-        <div class="card-body">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th scope="col">Name</th>
-                        <th scope="col">Email</th>
-                        <th scope="col">Phone</th>
-                        <th scope="col">Hire Date</th>
-                        <th scope="col">Job Title</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Összes szabadnap</th>
-                        <th scope="col">Kiadható szabadnap</th>
-                        <th scope="col">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var employee in Model.Employees)
-                    {
-                        <tr>
-                            <td>@employee.FirstName @employee.LastName</td>
-                            <td>@employee.Email</td>
-                            <td>@employee.PhoneNumber</td>
-                            <td>@(employee.HireDate?.ToString("yyyy-MM-dd"))</td>
-                            <td>@(employee.JobTitle?.TitleName ?? "N/A")</td>
-                            <td>@(employee.Status?.StatusName ?? "N/A")</td>
-                            <td>@employee.FullVacationDays</td>
-                            <td>@employee.VacationDays</td>
-                            <td>
-                                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editEmployeeModal_@employee.EmployeeId">Edit</button>
-                                <form asp-page-handler="Delete" asp-route-id="@employee.EmployeeId" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this employee?');">
-                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <!-- Include Modals -->
+    @await Html.PartialAsync("_EmployeeModals")
 
-    <!-- Create Employee Modal -->
-    <div class="modal fade" id="createEmployeeModal" tabindex="-1" aria-labelledby="createEmployeeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="createEmployeeModalLabel">Create New Employee</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form asp-page-handler="Create" method="post">
-                        <div class="mb-3">
-                            <label asp-for="EmployeeCreate.FirstName" class="form-label"></label>
-                            <input asp-for="EmployeeCreate.FirstName" class="form-control" />
-                            <span asp-validation-for="EmployeeCreate.FirstName" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="EmployeeCreate.LastName" class="form-label"></label>
-                            <input asp-for="EmployeeCreate.LastName" class="form-control" />
-                            <span asp-validation-for="EmployeeCreate.LastName" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="EmployeeCreate.Email" class="form-label"></label>
-                            <input asp-for="EmployeeCreate.Email" class="form-control" />
-                            <span asp-validation-for="EmployeeCreate.Email" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="EmployeeCreate.PhoneNumber" class="form-label"></label>
-                            <input asp-for="EmployeeCreate.PhoneNumber" class="form-control" />
-                            <span asp-validation-for="EmployeeCreate.PhoneNumber" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="EmployeeCreate.HireDate" class="form-label"></label>
-                            <input asp-for="EmployeeCreate.HireDate" class="form-control" type="date" />
-                            <span asp-validation-for="EmployeeCreate.HireDate" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="EmployeeCreate.JobTitleId" class="form-label">Job Title</label>
-                            <select asp-for="EmployeeCreate.JobTitleId" class="form-select">
-                                <option value="">Select Job Title</option>
-                                @foreach (var jobTitle in Model.JobTitles)
-                                {
-                                    <option value="@jobTitle.JobTitleId">@jobTitle.TitleName</option>
-                                }
-                            </select>
-                            <span asp-validation-for="EmployeeCreate.JobTitleId" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="EmployeeCreate.StatusId" class="form-label">Employment Status</label>
-                            <select asp-for="EmployeeCreate.StatusId" class="form-select">
-                                <option value="">Select Status</option>
-                                @foreach (var status in Model.EmploymentStatuses)
-                                {
-                                    <option value="@status.StatusId">@status.StatusName</option>
-                                }
-                            </select>
-                            <span asp-validation-for="EmployeeCreate.StatusId" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="EmployeeCreate.FullVacationDays" class="form-label"></label>
-                            <input asp-for="EmployeeCreate.FullVacationDays" class="form-control" />
-                            <span asp-validation-for="EmployeeCreate.FullVacationDays" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="EmployeeCreate.VacationDays" class="form-label"></label>
-                            <input asp-for="EmployeeCreate.VacationDays" class="form-control" />
-                            <span asp-validation-for="EmployeeCreate.VacationDays" class="text-danger"></span>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Create</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Employee Modals -->
-    @foreach (var employee in Model.Employees)
-    {
-        <div class="modal fade" id="editEmployeeModal_@employee.EmployeeId" tabindex="-1" aria-labelledby="editEmployeeModalLabel_@employee.EmployeeId" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editEmployeeModalLabel_@employee.EmployeeId">Edit Employee</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form asp-page-handler="Update" method="post">
-                            <input type="hidden" asp-for="EmployeeUpdate.EmployeeId" value="@employee.EmployeeId" />
-                            <div class="mb-3">
-                                <label asp-for="EmployeeUpdate.FirstName" class="form-label"></label>
-                                <input asp-for="EmployeeUpdate.FirstName" class="form-control" value="@employee.FirstName" />
-                                <span asp-validation-for="EmployeeUpdate.FirstName" class="text-danger"></span>
-                            </div>
-                            <div class="mb-3">
-                                <label asp-for="EmployeeUpdate.LastName" class="form-label"></label>
-                                <input asp-for="EmployeeUpdate.LastName" class="form-control" value="@employee.LastName" />
-                                <span asp-validation-for="EmployeeUpdate.LastName" class="text-danger"></span>
-                            </div>
-                            <div class="mb-3">
-                                <label asp-for="EmployeeUpdate.Email" class="form-label"></label>
-                                <input asp-for="EmployeeUpdate.Email" class="form-control" value="@employee.Email" />
-                                <span asp-validation-for="EmployeeUpdate.Email" class="text-danger"></span>
-                            </div>
-                            <div class="mb-3">
-                                <label asp-for="EmployeeUpdate.PhoneNumber" class="form-label"></label>
-                                <input asp-for="EmployeeUpdate.PhoneNumber" class="form-control" value="@employee.PhoneNumber" />
-                                <span asp-validation-for="EmployeeUpdate.PhoneNumber" class="text-danger"></span>
-                            </div>
-                            <div class="mb-3">
-                                <label asp-for="EmployeeUpdate.HireDate" class="form-label"></label>
-                                <input asp-for="EmployeeUpdate.HireDate" class="form-control" type="date" value="@(employee.HireDate?.ToString("yyyy-MM-dd"))" />
-                                <span asp-validation-for="EmployeeUpdate.HireDate" class="text-danger"></span>
-                            </div>
-                            <div class="mb-3">
-                                <label asp-for="EmployeeUpdate.JobTitleId" class="form-label">Job Title</label>
-                                <select asp-for="EmployeeUpdate.JobTitleId" class="form-select">
-                                    <option value="">Select Job Title</option>
-                                    @foreach (var jobTitle in Model.JobTitles)
-                                    {
-                                        <option value="@jobTitle.JobTitleId" selected="@(jobTitle.JobTitleId == employee.JobTitleId ? "selected" : null)">@jobTitle.TitleName</option>
-                                    }
-                                </select>
-                                <span asp-validation-for="EmployeeUpdate.JobTitleId" class="text-danger"></span>
-                            </div>
-                            <div class="mb-3">
-                                <label asp-for="EmployeeUpdate.StatusId" class="form-label">Employment Status</label>
-                                <select asp-for="EmployeeUpdate.StatusId" class="form-select">
-                                    <option value="">Select Status</option>
-                                    @foreach (var status in Model.EmploymentStatuses)
-                                    {
-                                        <option value="@status.StatusId" selected="@(status.StatusId == employee.StatusId ? "selected" : null)">@status.StatusName</option>
-                                    }
-                                </select>
-                                <span asp-validation-for="EmployeeUpdate.StatusId" class="text-danger"></span>
-                            </div>
-                            <div class="mb-3">
-                                <label asp-for="EmployeeUpdate.VacationDays" class="form-label"></label>
-                                <input asp-for="EmployeeUpdate.VacationDays" class="form-control" value="@employee.VacationDays" />
-                                <span asp-validation-for="EmployeeUpdate.VacationDays" class="text-danger"></span>
-                            </div>
-                            <div class="mb-3">
-                                <label asp-for="EmployeeUpdate.FullVacationDays" class="form-label"></label>
-                                <input asp-for="EmployeeUpdate.FullVacationDays" class="form-control" value="@employee.FullVacationDays" />
-                                <span asp-validation-for="EmployeeUpdate.FullVacationDays" class="text-danger"></span>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Update</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-</div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    @section Scripts {
+    <script src="~/js/HR/employeesIndex.js"></script>
+    <script src="~/js/HR/employeesCreate.js"></script>
+    <script src="~/js/HR/employeesView.js"></script>
+    <script src="~/js/HR/employeesEdit.js"></script>
+    <script src="/js/HR/employee-delete.js"></script>
+    <script src="/js/HR/employee-advanced-filter.js"></script>
+    <script src="/js/HR/employee-history.js"></script>
+    <script src="/js/HR/employee-sites.js"></script>
+    <script src="/js/HR/employee-files.js"></script>
 }
+
+</div>

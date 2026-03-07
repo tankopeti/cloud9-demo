@@ -1,0 +1,103 @@
+Rendben — nálatok (tenantonként külön DB + subdomain tenancy) egy új cég = új adatbázis + új tenant rekord/config + új connection string. Íme a DB-szintű “runbook”.
+
+0) Előfeltétel
+
+Az app már rendelkezik baseline migrációval (InitialCreate + esetleges további migrációk).
+
+Tudod az új cég “tenant kulcsát” (pl. acme) és a DB nevét (pl. Cloud9_Acme).
+
+1) Új adatbázis létrehozása (SQL)
+
+Azure Data Studio-ban vagy sqlcmd-vel csináld meg:
+
+ADS-ben
+
+New Query a szerveren (127.0.0.1,1433)
+
+futtasd:
+
+CREATE DATABASE [Cloud9_Acme];
+GO
+sqlcmd-vel (opcionális)
+sqlcmd -S 127.0.0.1,1433 -U sa -P 'HUmmer512!!!' -C -Q "CREATE DATABASE [Cloud9_Acme];"
+2) Migrációk alkalmazása az új DB-re (EF)
+
+Ugyanazt a migrációcsomagot kell ráengedni, mint a többire:
+
+dotnet ef database update --connection "Server=127.0.0.1,1433;Database=Cloud9_Acme;User Id=sa;Password=HUmmer512\!\!\!;TrustServerCertificate=True;"
+
+Ezzel:
+
+létrejön az összes tábla
+
+létrejön __EFMigrationsHistory
+
+a DB sémája “ugyanarra a verzióra” kerül, mint a többi tenant.
+
+3) Tenant “regisztrálása” az alkalmazásban
+
+Mivel tenantonként külön DB van, kell egy mapping:
+
+subdomain → tenant → connection string
+
+Ezt nálatok tipikusan valami config/tenant registry tárolja (pl. appsettings/env/DB). DB szempontból két gyakori megoldás van:
+
+A) Konfiguráció fájl / env (gyors, egyszerű)
+
+Adj hozzá egy új connection stringet pl. .env.local / .env.docker-be:
+
+Local:
+
+TENANT_ACME_CS=Server=127.0.0.1,1433;Database=Cloud9_Acme;User Id=sa;Password=HUmmer512!!!;TrustServerCertificate=True;
+
+Docker app konténeren belül (figyelj: ott mssql a hostnév):
+
+TENANT_ACME_CS=Server=mssql;Database=Cloud9_Acme;User Id=sa;Password=HUmmer512!!!;TrustServerCertificate=True;
+
+És a tenancy resolverben (ITenantProvider) legyen szabály:
+
+acme.cloud9... → TENANT_ACME_CS
+
+B) “Master” (központi) registry DB (szebb hosszú távon)
+
+Van egy központi DB (pl. Cloud9_Master), benne Tenants tábla:
+
+TenantKey / Subdomain
+
+DatabaseName
+
+(esetleg Server, stb.)
+
+Új cég felvételekor ide beszúrsz egy rekordot, az app innen olvassa. (Ezt érdemes később bevezetni, ha sok tenant lesz.)
+
+4) Seed / alapadatok (ha kell)
+
+Ha az új tenant DB-ben kell alap master data (pl. státuszok, típusok), akkor DB szempontból 2 út:
+
+EF HasData (migráció része): automatikusan bekerül database update során
+
+külön “seed” script/parancs: pl. dotnet run -- seed --tenant acme
+
+Minimum ellenőrzés:
+
+vannak-e kötelező lookup táblák feltöltve (ha nem, UI hibázhat).
+
+5) Ellenőrzés
+
+Azure Data Studio-ban az új DB-ben:
+
+__EFMigrationsHistory tartalmazza a legutolsó migrációt
+
+alap táblák léteznek
+
+(ha van seed) lookup táblákban vannak rekordok
+
+6) Üzemeltetési szabály (nagyon fontos)
+
+Amikor később új migrációt készítesz (feature fejlesztés):
+
+dotnet ef migrations add ... csak egyszer
+
+utána minden tenant DB-re le kell futtatni a database update-et (Nyugalom, CegB, Acme, stb.)
+
+Érdemes erre egy scriptet csinálni, ami végigiterál tenantokon.

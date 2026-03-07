@@ -8,5 +8,6 @@ namespace Cloud9_2.Models
         public string PartnerTypeName { get; set; }
 
         public ICollection<Partner>? Partners { get; set; }
+        public ICollection<PartnerSiteLink> PartnerSiteLinks { get; set; } = new List<PartnerSiteLink>();
     }
 }

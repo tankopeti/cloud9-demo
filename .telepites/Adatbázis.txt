@@ -1,0 +1,148 @@
+1️⃣ Architektúra – hogyan működik most
+🖥 Local gép
+
+SQL Server fut Dockerben
+
+DB fájlok Docker volume-ban
+
+Azure Data Studio → localhost:1433
+
+☁ VPS (Hetzner)
+
+SQL Server fut Dockerben
+
+DB fájlok itt vannak:
+
+/opt/cloud9/_data/mssql
+
+Ez van bind mountolva ide:
+
+/var/opt/mssql   (containeren belül)
+
+Ellenőrzés:
+
+docker inspect cloud9-mssql-1 --format '{{json .Mounts}}'
+2️⃣ A legfontosabb szabály
+🔴 A SA_PASSWORD a docker-compose-ben NEM változtat jelszót
+
+Ha a DB már létezik (volume megvan), akkor:
+
+SA_PASSWORD csak az első induláskor számít
+
+Később csak ezzel lehet változtatni:
+
+mssql-conf set-sa-password
+
+Te ezt már jól csináltad ✔
+
+3️⃣ Hogyan lépsz be SQL-be a VPS-en
+Biztos módszer (env varral)
+docker exec -it cloud9-mssql-1 bash -lc 'export PWD="JELSZO"; /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$PWD" -C -No'
+Interaktív mód (legbiztonságosabb)
+docker exec -it cloud9-mssql-1 bash
+/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C
+
+Itt kérni fogja a jelszót.
+
+Kilépés:
+
+exit
+4️⃣ Azure Data Studio csatlakozás VPS-re
+SSH tunnel Macről
+
+Mac terminál:
+
+ssh -i ~/.ssh/cloud9_hetzner -N -L 14330:127.0.0.1:1433 root@89.167.71.186
+
+Azure Data Studio:
+
+Server: localhost,14330
+User: sa
+Password: ...
+Trust server certificate: true
+5️⃣ DB mozgatás – Local ↔ VPS
+☁ VPS → backup készítés
+Teljes volume mentés (gyors, brutális)
+tar -czf /opt/cloud9/_backup/mssql_$(date +%F).tgz -C /opt/cloud9/_data mssql
+
+Ez minden DB-t ment.
+
+🧠 Professzionális módszer (ajánlott)
+
+SQL backup fájl (.bak)
+
+BACKUP DATABASE Cloud9_Nyugalom 
+TO DISK = '/var/opt/mssql/backup/nyugalom.bak'
+WITH FORMAT;
+
+Majd SCP-vel lehúzod.
+
+Restore localon:
+
+RESTORE DATABASE Cloud9_Nyugalom
+FROM DISK = 'nyugalom.bak'
+WITH REPLACE;
+6️⃣ Mire figyelj nagyon
+🔥 1. Soha ne töröld ezt mappát:
+/opt/cloud9/_data/mssql
+
+Ez az éles adat.
+
+🔥 2. Jelszó változtatás sorrend
+
+SQL reset (mssql-conf)
+
+docker-compose.yml frissítés
+
+docker compose up -d --force-recreate cloud9-app
+
+🔥 3. Ne legyen ! jelszóban
+
+Shell problémát okoz.
+
+🔥 4. SQL container user
+
+Most így fut:
+
+user: "0:0"
+
+Ez root.
+Ez azért kellett, mert permission gond volt.
+
+Hosszú távon jobb:
+
+user: "10001:0"
+
+DE csak akkor, ha a volume owner:
+
+chown -R 10001:0 /opt/cloud9/_data/mssql
+7️⃣ Hibaelhárítás gyors cheat sheet
+Login failed
+docker logs cloud9-mssql-1 | grep "Login failed"
+Nem indul
+docker logs cloud9-mssql-1 --tail 100
+Port ellenőrzés
+ss -lntp | grep 1433
+8️⃣ Mentális modell (fontos)
+Hol fut SQL	Hol van adat	Mi történik ha container törlődik
+Docker	Host volume	adat MEGMARAD
+Docker	nincs volume	adat ELVESZIK
+
+Te most jó architektúrán vagy ✔
+
+9️⃣ Ajánlott jövőbeli stratégia
+🟢 Development
+
+Local SQL
+
+🟢 Staging
+
+VPS másik volume / másik DB
+
+🔵 Production
+
+Heti automatikus SQL backup
+
+Cron példa:
+
+0 2 * * * docker exec cloud9-mssql-1 ...

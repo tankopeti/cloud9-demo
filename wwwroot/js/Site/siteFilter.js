@@ -183,19 +183,48 @@ document.addEventListener('DOMContentLoaded', () => {
           <i class="bi bi-three-dots-vertical"></i>
         </button>
 
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li>
-            <a class="dropdown-item edit-site-btn" href="#" data-site-id="${escapeAttr(s.siteId)}">
-              <i class="bi bi-pencil-square me-2"></i>Szerkesztés
-            </a>
-          </li>
-          <li><hr class="dropdown-divider"></li>
-          <li>
-            <a class="dropdown-item text-danger delete-site-btn" href="#" data-site-id="${escapeAttr(s.siteId)}" data-site-name="${escapeAttr(s.siteName || 'Telephely')}">
-              <i class="bi bi-trash me-2"></i>Törlés
-            </a>
-          </li>
-        </ul>
+<ul class="dropdown-menu dropdown-menu-end">
+
+  <li>
+    <a class="dropdown-item edit-site-btn"
+       href="#"
+       data-site-id="${escapeAttr(s.siteId)}">
+      <i class="bi bi-pencil-square me-2"></i>Szerkesztés
+    </a>
+  </li>
+
+  <li><hr class="dropdown-divider"></li>
+
+  <li>
+    <a class="dropdown-item assign-site-partners-btn"
+       href="#"
+       data-site-id="${escapeAttr(s.siteId)}"
+       data-site-name="${escapeAttr(s.siteName || 'Telephely')}">
+      <i class="bi bi-diagram-3 me-2"></i>Partner hozzárendelés
+    </a>
+  </li>
+
+  <li>
+    <a class="dropdown-item assign-site-employees-btn"
+       href="#"
+       data-site-id="${escapeAttr(s.siteId)}"
+       data-site-name="${escapeAttr(s.siteName || 'Telephely')}">
+      <i class="bi bi-people me-2"></i>Személy hozzárendelés
+    </a>
+  </li>
+
+  <li><hr class="dropdown-divider"></li>
+
+  <li>
+    <a class="dropdown-item text-danger delete-site-btn"
+       href="#"
+       data-site-id="${escapeAttr(s.siteId)}"
+       data-site-name="${escapeAttr(s.siteName || 'Telephely')}">
+      <i class="bi bi-trash me-2"></i>Törlés
+    </a>
+  </li>
+
+</ul>
       </div>
     </div>
   </td>
@@ -274,6 +303,30 @@ document.addEventListener('DOMContentLoaded', () => {
     currentPage++;
     loadSites(false);
   });
+
+    // ------------------------------------------------------------
+  // SITE -> EMPLOYEES ASSIGNMENT (dropdown menu)
+  // Event delegation, mert a sorok AJAX-ból jönnek.
+  // ------------------------------------------------------------
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.assign-site-employees-btn');
+    if (!btn) return;
+
+    e.preventDefault();
+
+    const siteId = parseInt(btn.dataset.siteId, 10);
+    if (Number.isNaN(siteId)) return;
+
+    const siteName = btn.dataset.siteName || '';
+
+    if (!window.openSiteEmployeesModal) {
+      console.error('site-employees.js nincs betöltve.');
+      alert('A telephely-dolgozó hozzárendelés modul nincs betöltve.');
+      return;
+    }
+
+    window.openSiteEmployeesModal(siteId, siteName);
+  }, true);
 
   // init
   clearBtn?.classList.toggle('d-none', !(filters.search || '').trim());

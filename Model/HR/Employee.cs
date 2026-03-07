@@ -40,7 +40,6 @@ namespace Cloud9_2.Models
 
         public int? JobTitleId { get; set; }
 
-        public int? StatusId { get; set; }
         public bool IsActive { get; set; } = true;
 
         public int? DefaultSiteId { get; set; }
@@ -61,10 +60,51 @@ namespace Cloud9_2.Models
 
         public DateTime? UpdatedAt { get; set; }
         public JobTitle? JobTitle { get; set; }
-        public EmploymentStatus? Status { get; set; }
         public int? VacationDays { get; set; }
         public int? FullVacationDays { get; set; }
 
+        // Azonosítók
+        [StringLength(10)]
+        public string? TaxId { get; set; }          // adóazonosító jel (10)
+
+        [StringLength(9)]
+        public string? TajNumber { get; set; }      // TAJ (9)
+
+        [StringLength(100)]
+        public string? BirthName { get; set; }      // születési név
+
+        [StringLength(100)]
+        public string? MotherBirthName { get; set; } // anyja születési neve
+
+        [StringLength(100)]
+        public string? BirthPlace { get; set; }     // születési hely
+
+        [StringLength(2)]
+        public string? NationalityCode { get; set; } // pl. "HU"
+
+        // Foglalkoztatás
+        [StringLength(10)]
+        public string? FeorCode { get; set; }       // FEOR kód
+
+        public DateTime? EmploymentEndDate { get; set; }
+
+        // Címek (ha bontani akarod)
+        [StringLength(250)]
+        public string? PermanentAddress { get; set; }
+
+        [StringLength(250)]
+        public string? MailingAddress { get; set; }
+
+        // Bérfizetés (csak ha kell)
+        [StringLength(34)]
+        public string? BankAccountIban { get; set; }
+        public int WorkerTypeId { get; set; } = 1;          // default: belsős
+        public WorkerType WorkerType { get; set; } = null!;
+
+        public int? PartnerId { get; set; }                // csak külsősöknél
+        public Partner? Partner { get; set; }              // ha van Partner modelled
+        public ICollection<EmployeeSite> EmployeeSites { get; set; } = new List<EmployeeSite>();
+        public ICollection<EmployeeEmploymentStatus> EmployeeEmploymentStatuses { get; set; } = new List<EmployeeEmploymentStatus>();
 
     }
 
@@ -115,13 +155,50 @@ namespace Cloud9_2.Models
 
         public string? Comment1 { get; set; }
 
-        public string? Comment2 { get; set; }
-        public JobTitle? JobTitle { get; set; }
+        // Azonosítók
+        [StringLength(10)]
+        public string? TaxId { get; set; }          // adóazonosító jel (10)
 
-        public int? StatusId { get; set; }
-        public EmploymentStatus? Status { get; set; }
+        [StringLength(9)]
+        public string? TajNumber { get; set; }      // TAJ (9)
+
+        [StringLength(100)]
+        public string? BirthName { get; set; }      // születési név
+
+        [StringLength(100)]
+        public string? MotherBirthName { get; set; } // anyja születési neve
+
+        [StringLength(100)]
+        public string? BirthPlace { get; set; }     // születési hely
+
+        [StringLength(2)]
+        public string? NationalityCode { get; set; } // pl. "HU"
+
+        // Foglalkoztatás
+        [StringLength(10)]
+        public string? FeorCode { get; set; }       // FEOR kód
+
+        public DateTime? EmploymentEndDate { get; set; }
+
+        // Címek (ha bontani akarod)
+        [StringLength(250)]
+        public string? PermanentAddress { get; set; }
+
+        [StringLength(250)]
+        public string? MailingAddress { get; set; }
+
+        // Bérfizetés (csak ha kell)
+        [StringLength(34)]
+        public string? BankAccountIban { get; set; }
+
+        public List<int> StatusIds { get; set; } = new();
+
+        public string? Comment2 { get; set; }
         public int? VacationDays { get; set; }
         public int? FullVacationDays { get; set; }
+        public int WorkerTypeId { get; set; } = 1;  // 1=INTERNAL, 2=EXTERNAL (seed alapján)
+        public int? PartnerId { get; set; }         // külsősöknél kötelező
+        public List<int> SiteIds { get; set; } = new();
     }
 
     public class EmployeesUpdateDto
@@ -160,8 +237,6 @@ namespace Cloud9_2.Models
 
         public int? JobTitleId { get; set; }
 
-        public int? StatusId { get; set; }
-
         public int? DefaultSiteId { get; set; }
 
         [Range(0, 99.99, ErrorMessage = "Working time must be between 0 and 99.99 hours.")]
@@ -175,8 +250,54 @@ namespace Cloud9_2.Models
         public string? Comment1 { get; set; }
 
         public string? Comment2 { get; set; }
+
+        // Azonosítók
+        [StringLength(10)]
+        public string? TaxId { get; set; }          // adóazonosító jel (10)
+
+        [StringLength(9)]
+        public string? TajNumber { get; set; }      // TAJ (9)
+
+        [StringLength(100)]
+        public string? BirthName { get; set; }      // születési név
+
+        [StringLength(100)]
+        public string? MotherBirthName { get; set; } // anyja születési neve
+
+        [StringLength(100)]
+        public string? BirthPlace { get; set; }     // születési hely
+
+        [StringLength(2)]
+        public string? NationalityCode { get; set; } // pl. "HU"
+
+        // Foglalkoztatás
+        [StringLength(10)]
+        public string? FeorCode { get; set; }       // FEOR kód
+
+        public DateTime? EmploymentEndDate { get; set; }
+
+        // Címek (ha bontani akarod)
+        [StringLength(250)]
+        public string? PermanentAddress { get; set; }
+
+        [StringLength(250)]
+        public string? MailingAddress { get; set; }
+
+        // Bérfizetés (csak ha kell)
+        [StringLength(34)]
+        public string? BankAccountIban { get; set; }
+        public List<int> StatusIds { get; set; } = new();
         public int? VacationDays { get; set; }
         public int? FullVacationDays { get; set; }
+        public int WorkerTypeId { get; set; } = 1;
+        public int? PartnerId { get; set; }
+        public List<int> SiteIds { get; set; } = new();
+        public bool IsActive { get; set; } = true;
+    }
+
+    public class EmployeeSitesDto
+    {
+        public List<int> SiteIds { get; set; } = new();
     }
 
 }

@@ -44,7 +44,8 @@ namespace Cloud9_2.Controllers
                     .AsNoTracking()
                     .Include(s => s.Partner)
                     .Include(s => s.Status)
-    .Include(s => s.SiteType)
+                    .Include(s => s.SiteType)
+                    .Include(s => s.DefaultCommunicationType)
                     .Where(s => s.IsActive == true);
 
                 if (!string.IsNullOrWhiteSpace(search))
@@ -150,6 +151,11 @@ namespace Cloud9_2.Controllers
                         siteTypeId = s.SiteTypeId,
                         siteType = s.SiteType == null ? null : new { id = s.SiteType.SiteTypeId, name = s.SiteType.Name },
 
+                        defaultCommunicationTypeId = s.DefaultCommunicationTypeId,
+                        defaultCommunicationTypeName = s.DefaultCommunicationType != null
+                            ? s.DefaultCommunicationType.Name
+                            : null,
+
 
                         isActive = s.IsActive
                     })
@@ -166,83 +172,146 @@ namespace Cloud9_2.Controllers
         }
 
         // GET: /api/SitesIndex/123  -> részletek (view/edit)
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id)
+[HttpGet("{id:int}")]
+public async Task<IActionResult> GetById(int id)
+{
+    var dto = await _context.Sites
+        .AsNoTracking()
+        .Where(site => site.SiteId == id && site.IsActive == true)
+        .Select(site => new
         {
-            var site = await _context.Sites
-                .AsNoTracking()
-                .Include(s => s.Partner)
-                .Include(s => s.Status)
-    .Include(s => s.SiteType)
-                .FirstOrDefaultAsync(s => s.SiteId == id && s.IsActive == true);
+            siteId = site.SiteId,
+            siteName = site.SiteName,
 
-            if (site == null) return NotFound(new { title = "Not found" });
+            partnerId = site.PartnerId,
+            partnerName = site.Partner != null
+                ? (string.IsNullOrWhiteSpace(site.Partner.CompanyName)
+                    ? site.Partner.Name
+                    : site.Partner.CompanyName)
+                : null,
 
-            return Ok(new
+            addressLine1 = site.AddressLine1,
+            addressLine2 = site.AddressLine2,
+            city = site.City,
+            state = site.State,
+            postalCode = site.PostalCode,
+            country = site.Country,
+
+            isPrimary = site.IsPrimary,
+
+            contactPerson1 = site.ContactPerson1,
+            contactPerson2 = site.ContactPerson2,
+            contactPerson3 = site.ContactPerson3,
+
+            phone1 = site.Phone1,
+            phone2 = site.Phone2,
+            phone3 = site.Phone3,
+
+            mobilePhone1 = site.MobilePhone1,
+            mobilePhone2 = site.MobilePhone2,
+            mobilePhone3 = site.MobilePhone3,
+
+            messagingApp1 = site.messagingApp1,
+            messagingApp2 = site.messagingApp2,
+            messagingApp3 = site.messagingApp3,
+
+            eMail1 = site.eMail1,
+            eMail2 = site.eMail2,
+
+            comment1 = site.Comment1,
+            comment2 = site.Comment2,
+
+            statusId = site.StatusId,
+            siteTypeId = site.SiteTypeId,
+
+            defaultCommunicationTypeId = site.DefaultCommunicationTypeId,
+            defaultCommunicationTypeName = site.DefaultCommunicationType != null
+                ? site.DefaultCommunicationType.Name
+                : null,
+
+            status = site.Status == null ? null : new
             {
-                siteId = site.SiteId,
-                siteName = site.SiteName,
+                id = site.Status.Id,
+                name = site.Status.Name,
+                color = site.Status.Color
+            },
 
-                partnerId = site.PartnerId,
-                partnerName = site.Partner != null
-                    ? (string.IsNullOrWhiteSpace(site.Partner.CompanyName) ? site.Partner.Name : site.Partner.CompanyName)
-                    : null,
-
-                addressLine1 = site.AddressLine1,
-                addressLine2 = site.AddressLine2,
-                city = site.City,
-                state = site.State,
-                postalCode = site.PostalCode,
-                country = site.Country,
-
-                isPrimary = site.IsPrimary,
-
-                contactPerson1 = site.ContactPerson1,
-                contactPerson2 = site.ContactPerson2,
-                contactPerson3 = site.ContactPerson3,
-
-                phone1 = site.Phone1,
-                phone2 = site.Phone2,
-                phone3 = site.Phone3,
-
-                mobilePhone1 = site.MobilePhone1,
-                mobilePhone2 = site.MobilePhone2,
-                mobilePhone3 = site.MobilePhone3,
-
-                messagingApp1 = site.messagingApp1,
-                messagingApp2 = site.messagingApp2,
-                messagingApp3 = site.messagingApp3,
-
-                eMail1 = site.eMail1,
-                eMail2 = site.eMail2,
-
-                comment1 = site.Comment1,
-                comment2 = site.Comment2,
-
-                statusId = site.StatusId,
-
-                // view badge-hez
-                status = site.Status == null ? null : new
+            linkedPartners = site.PartnerSiteLinks
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.PartnerId)
+                .Select(x => new
                 {
-                    id = site.Status.Id,
-                    name = site.Status.Name,
-                    color = site.Status.Color
-                },
+                    partnerId = x.PartnerId,
+                    partnerName = x.Partner != null
+                        ? (string.IsNullOrWhiteSpace(x.Partner.CompanyName)
+                            ? x.Partner.Name
+                            : x.Partner.CompanyName)
+                        : "",
+                    partnerTypeId = x.PartnerTypeId,
+                    partnerTypeName = x.PartnerType != null
+                        ? x.PartnerType.PartnerTypeName
+                        : ""
+                })
+                .ToList(),
 
-                isActive = site.IsActive
-            });
-        }
+            linkedEmployees = site.EmployeeSites
+                .Where(x => x.Employee != null && x.Employee.IsActive)
+                .OrderBy(x => x.Employee.LastName)
+                .ThenBy(x => x.Employee.FirstName)
+                .Select(x => new
+                {
+                    employeeId = x.EmployeeId,
+                    employeeName = ((x.Employee.FirstName ?? "") + " " + (x.Employee.LastName ?? "")).Trim(),
+                    email = x.Employee.Email,
+                    phone = x.Employee.PhoneNumber,
+                    jobTitle = x.Employee.JobTitle,
+                    partnerName = x.Employee.Partner != null
+                        ? (string.IsNullOrWhiteSpace(x.Employee.Partner.CompanyName)
+                            ? x.Employee.Partner.Name
+                            : x.Employee.Partner.CompanyName)
+                        : "",
+                    isPrimary = x.IsPrimary
+                })
+                .ToList(),
+
+            isActive = site.IsActive
+        })
+        .FirstOrDefaultAsync();
+
+    if (dto == null)
+        return NotFound(new { title = "Not found" });
+
+    return Ok(dto);
+}
 
         [HttpGet("meta/statuses")]
-public async Task<IActionResult> GetStatuses()
+        public async Task<IActionResult> GetStatuses()
+        {
+            var statuses = await _context.PartnerStatuses
+                .AsNoTracking()
+                .OrderBy(s => s.Name)
+                .Select(s => new { id = s.Id, name = s.Name })
+                .ToListAsync();
+
+            return Ok(statuses);
+        }
+
+[HttpGet("meta/communication-types")]
+public async Task<IActionResult> GetCommunicationTypes()
 {
-    var statuses = await _context.PartnerStatuses
+    var items = await _context.CommunicationTypes
         .AsNoTracking()
-        .OrderBy(s => s.Name)
-        .Select(s => new { id = s.Id, name = s.Name })
+        .Where(x => x.IsActive == true)
+        .OrderBy(x => x.SortOrder)
+        .ThenBy(x => x.Name)
+        .Select(x => new
+        {
+            id = x.CommunicationTypeId,
+            name = x.Name
+        })
         .ToListAsync();
 
-    return Ok(statuses);
+    return Ok(items);
 }
 
 
@@ -269,7 +338,8 @@ public async Task<IActionResult> GetStatuses()
                 .AsNoTracking()
                 .Include(s => s.Partner)
                 .Include(s => s.Status)
-    .Include(s => s.SiteType)
+                .Include(s => s.SiteType)
+                .Include(s => s.DefaultCommunicationType)
                 .Where(s => s.SiteId == created.SiteId)
                 .Select(s => new
                 {
@@ -288,6 +358,13 @@ public async Task<IActionResult> GetStatuses()
                     contactPerson2 = s.ContactPerson2,
                     contactPerson3 = s.ContactPerson3,
                     isPrimary = s.IsPrimary,
+                    siteTypeId = s.SiteTypeId,
+                    siteType = s.SiteType == null ? null : new { id = s.SiteType.SiteTypeId, name = s.SiteType.Name },
+
+                    defaultCommunicationTypeId = s.DefaultCommunicationTypeId,
+                    defaultCommunicationTypeName = s.DefaultCommunicationType != null
+                        ? s.DefaultCommunicationType.Name
+                        : null,
                     isActive = s.IsActive,
                     statusId = s.StatusId,
                     status = s.Status == null ? null : new { id = s.Status.Id, name = s.Status.Name, color = s.Status.Color }
@@ -328,7 +405,8 @@ public async Task<IActionResult> GetStatuses()
                 .AsNoTracking()
                 .Include(s => s.Partner)
                 .Include(s => s.Status)
-    .Include(s => s.SiteType)
+                .Include(s => s.SiteType)
+                .Include(s => s.DefaultCommunicationType)
                 .Where(s => s.SiteId == updated.SiteId)
                 .Select(s => new
                 {
@@ -370,6 +448,14 @@ public async Task<IActionResult> GetStatuses()
 
                     comment1 = s.Comment1,
                     comment2 = s.Comment2,
+
+                    siteTypeId = s.SiteTypeId,
+                    siteType = s.SiteType == null ? null : new { id = s.SiteType.SiteTypeId, name = s.SiteType.Name },
+
+                    defaultCommunicationTypeId = s.DefaultCommunicationTypeId,
+                    defaultCommunicationTypeName = s.DefaultCommunicationType != null
+                        ? s.DefaultCommunicationType.Name
+                        : null,
 
                     statusId = s.StatusId,
                     status = s.Status == null ? null : new { id = s.Status.Id, name = s.Status.Name, color = s.Status.Color },
@@ -462,5 +548,186 @@ public async Task<IActionResult> GetStatuses()
                 return StatusCode(500, new { error = "Failed to retrieve sites" });
             }
         }
+
+
+[HttpGet("{id:int}/employees")]
+public async Task<IActionResult> GetSiteEmployees([FromRoute] int id)
+{
+    var exists = await _context.Sites.AnyAsync(s => s.SiteId == id);
+    if (!exists) return NotFound(new { message = "A telephely nem található." });
+
+    var items = await _context.EmployeeSites
+        .AsNoTracking()
+        .Where(x => x.SiteId == id && x.Employee != null && x.Employee.IsActive)
+        .Select(x => new
+        {
+            employeeId = x.EmployeeId,
+            fullName = ((x.Employee.FirstName ?? "") + " " + (x.Employee.LastName ?? "")).Trim(),
+            partnerName = x.Employee.Partner != null
+                ? (string.IsNullOrWhiteSpace(x.Employee.Partner.CompanyName)
+                    ? x.Employee.Partner.Name
+                    : x.Employee.Partner.CompanyName)
+                : ""
+        })
+        .OrderBy(x => x.fullName)
+        .ToListAsync();
+
+    return Ok(new { items });
+}
+
+        // PUT: /api/site/{id}/employees
+        [HttpPut("{id:int}/employees")]
+        public async Task<IActionResult> UpdateSiteEmployees([FromRoute] int id, [FromBody] SiteEmployeesDto dto)
+        {
+            if (dto == null) return BadRequest(new { message = "Hiányzó kérés tartalom." });
+
+            var exists = await _context.Sites.AnyAsync(s => s.SiteId == id);
+            if (!exists) return NotFound(new { message = "A telephely nem található." });
+
+            var desired = (dto.EmployeeIds ?? new List<int>())
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList();
+
+            // aktuális linkek
+            var current = await _context.EmployeeSites
+                .Where(x => x.SiteId == id)
+                .ToListAsync();
+
+            var currentIds = current.Select(x => x.EmployeeId).ToHashSet();
+            var desiredSet = desired.ToHashSet();
+
+            // remove
+            var toRemove = current.Where(x => !desiredSet.Contains(x.EmployeeId)).ToList();
+            if (toRemove.Count > 0)
+                _context.EmployeeSites.RemoveRange(toRemove);
+
+            // add
+            var toAdd = desired.Where(empId => !currentIds.Contains(empId)).ToList();
+            foreach (var empId in toAdd)
+            {
+                _context.EmployeeSites.Add(new EmployeeSite
+                {
+                    EmployeeId = empId,
+                    SiteId = id,
+                    IsPrimary = false
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, employeeIds = desired });
+        }
+
+        [HttpGet("meta/partner-types")]
+        public async Task<IActionResult> GetPartnerTypes()
+        {
+            var items = await _context.PartnerTypes
+                .AsNoTracking()
+                .OrderBy(x => x.PartnerTypeName)
+                .Select(x => new
+                {
+                    id = x.PartnerTypeId,
+                    name = x.PartnerTypeName
+                })
+                .ToListAsync();
+
+            return Ok(items);
+        }
+
+        [HttpGet("{id:int}/partners")]
+public async Task<IActionResult> GetSitePartners([FromRoute] int id)
+{
+    var exists = await _context.Sites.AnyAsync(s => s.SiteId == id);
+    if (!exists)
+        return NotFound(new { message = "A telephely nem található." });
+
+    var items = await _context.PartnerSiteLinks
+        .AsNoTracking()
+        .Where(x => x.SiteId == id && x.IsActive)
+        .Include(x => x.Partner)
+        .Include(x => x.PartnerType)
+        .Select(x => new
+        {
+            partnerId = x.PartnerId,
+            partnerName = x.Partner != null
+                ? (string.IsNullOrWhiteSpace(x.Partner.CompanyName) ? x.Partner.Name : x.Partner.CompanyName)
+                : "",
+            partnerTypeId = x.PartnerTypeId,
+            partnerTypeName = x.PartnerType != null
+                ? x.PartnerType.PartnerTypeName
+                : ""
+        })
+        .ToListAsync();
+
+    return Ok(items);
+}
+
+[HttpPut("{id:int}/partners")]
+public async Task<IActionResult> UpdateSitePartners([FromRoute] int id, [FromBody] SitePartnersDto dto)
+{
+    if (dto == null)
+        return BadRequest(new { message = "Hiányzó kérés tartalom." });
+
+    if (dto.SiteId != 0 && dto.SiteId != id)
+        return BadRequest(new { message = "Site ID mismatch." });
+
+    var siteExists = await _context.Sites.AnyAsync(s => s.SiteId == id);
+    if (!siteExists)
+        return NotFound(new { message = "A telephely nem található." });
+
+    var desired = (dto.Partners ?? new List<SitePartnerItemDto>())
+        .Where(x => x.PartnerId > 0 && x.PartnerTypeId > 0)
+        .GroupBy(x => x.PartnerId)
+        .Select(g => g.First())
+        .ToList();
+
+    var partnerIds = desired.Select(x => x.PartnerId).Distinct().ToList();
+    var partnerTypeIds = desired.Select(x => x.PartnerTypeId).Distinct().ToList();
+
+    var validPartnerIds = await _context.Partners
+        .AsNoTracking()
+        .Where(p => partnerIds.Contains(p.PartnerId))
+        .Select(p => p.PartnerId)
+        .ToListAsync();
+
+    var validPartnerTypeIds = await _context.PartnerTypes
+        .AsNoTracking()
+        .Where(pt => partnerTypeIds.Contains(pt.PartnerTypeId))
+        .Select(pt => pt.PartnerTypeId)
+        .ToListAsync();
+
+    if (validPartnerIds.Count != partnerIds.Count)
+        return BadRequest(new { message = "Érvénytelen partner szerepel a listában." });
+
+    if (validPartnerTypeIds.Count != partnerTypeIds.Count)
+        return BadRequest(new { message = "Érvénytelen partner típus szerepel a listában." });
+
+    var current = await _context.PartnerSiteLinks
+        .Where(x => x.SiteId == id)
+        .ToListAsync();
+
+    _context.PartnerSiteLinks.RemoveRange(current);
+
+    foreach (var item in desired)
+    {
+        _context.PartnerSiteLinks.Add(new PartnerSiteLink
+        {
+            SiteId = id,
+            PartnerId = item.PartnerId,
+            PartnerTypeId = item.PartnerTypeId
+        });
+    }
+
+    await _context.SaveChangesAsync();
+
+    return Ok(new
+    {
+        success = true,
+        siteId = id,
+        partners = desired
+    });
+}
+
     }
 }

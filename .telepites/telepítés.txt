@@ -16,6 +16,7 @@
 --   "DefaultConnection": "Server=127.0.0.1,1433;Database=c9Nyugalom;User Id=sa;Password=...;TrustServerCertificate=True;"
 -- }
 
+hetzner cloud: ssh -i ~/.ssh/cloud9_hetzner root@89.167.71.186
 
 -- Ajánlás: jelszavak/tokek ne legyenek appsettings.json-ban:
 
