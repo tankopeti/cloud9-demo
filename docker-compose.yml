@@ -4,23 +4,16 @@ services:
     image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: cloud9-mssql
     restart: always
-
     env_file:
       - .env.docker
-
     environment:
       ACCEPT_EULA: "Y"
-      SA_PASSWORD: "${SA_PASSWORD}"
-
     ports:
       - "1433:1433"
-
     volumes:
-      - ./_data/mssql:/var/opt/mssql
-
+      - /srv/cloud9/mssql:/var/opt/mssql
     networks:
       - app-network
-
 
   app:
     build:
@@ -28,33 +21,19 @@ services:
       dockerfile: dockerfile
     container_name: cloud9-app
     restart: always
-
     depends_on:
       - mssql
-
     env_file:
       - .env.docker
-
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
       ASPNETCORE_URLS: "http://0.0.0.0:8080"
-
-      # Multi-tenant connection strings (env_file-ból jönnek)
-      TENANT_NYUGALOM_CS: "${TENANT_NYUGALOM_CS}"
-      TENANT_CEGB_CS: "${TENANT_CEGB_CS}"
-
-      # Fallback (amíg teljesen tenancy-re nem állsz át)
-      ConnectionStrings__DefaultConnection: "${TENANT_NYUGALOM_CS}"
-
     ports:
       - "8080:8080"
-
     volumes:
-      - ./_data/dpkeys:/var/dpkeys
-
+      - /srv/cloud9/dpkeys:/var/dpkeys
     networks:
       - app-network
-
 
 networks:
   app-network:
