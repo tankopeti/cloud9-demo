@@ -62,5 +62,5 @@ networks:
     driver: bridge
 
   cloud9_default:
-    external: tru
+    external: true
   
