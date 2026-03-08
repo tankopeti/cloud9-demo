@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Net;
 
 namespace Cloud9_2.Services.Tenancy
 {
@@ -15,27 +16,33 @@ namespace Cloud9_2.Services.Tenancy
             _config = config;
         }
 
-public string GetTenantKey()
-{
-    var http = _httpContextAccessor.HttpContext;
-    var host = http?.Request?.Host.Host;
+        public string GetTenantKey()
+        {
+            var http = _httpContextAccessor.HttpContext;
+            var host = http?.Request?.Host.Host;
 
-    // nincs host (startup) → default
-    if (string.IsNullOrWhiteSpace(host))
-        return (_config["Tenancy:DefaultTenant"] ?? "nyugalom").ToLowerInvariant();
+            var defaultTenant = (_config["Tenancy:DefaultTenant"] ?? "nyugalom").ToLowerInvariant();
 
-    host = host.ToLowerInvariant();
+            // nincs host (startup) → default
+            if (string.IsNullOrWhiteSpace(host))
+                return defaultTenant;
 
-    // ✅ sima localhost / 127.0.0.1 → default tenant
-    if (host == "localhost" || host == "127.0.0.1")
-        return (_config["Tenancy:DefaultTenant"] ?? "nyugalom").ToLowerInvariant();
+            host = host.ToLowerInvariant();
 
-    var subdomain = host.Split('.')[0];
-    if (string.IsNullOrWhiteSpace(subdomain))
-        return (_config["Tenancy:DefaultTenant"] ?? "nyugalom").ToLowerInvariant();
+            // localhost → default tenant
+            if (host == "localhost")
+                return defaultTenant;
 
-    return subdomain;
-}
+            // bármilyen IP cím → default tenant
+            if (IPAddress.TryParse(host, out _))
+                return defaultTenant;
+
+            var subdomain = host.Split('.')[0];
+            if (string.IsNullOrWhiteSpace(subdomain))
+                return defaultTenant;
+
+            return subdomain;
+        }
 
         public string GetConnectionString()
         {

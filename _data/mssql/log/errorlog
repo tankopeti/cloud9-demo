@@ -82,3 +82,15 @@
 2026-03-06 13:21:59.51 spid9s      Recovery is complete. This is an informational message only. No user action is required.
 2026-03-06 13:29:22.67 spid61      Attempting to load library 'xplog70.dll' into memory. This is an informational message only. No user action is required.
 2026-03-06 13:29:22.69 spid61      Using 'xplog70.dll' version '2019.150.4455' to execute extended stored procedure 'xp_msver'. This is an informational message only; no user action is required.
+2026-03-07 08:35:25.35 Logon       Error: 18456, Severity: 14, State: 38.
+2026-03-07 08:35:25.35 Logon       Login failed for user 'sa'. Reason: Failed to open the explicitly specified database 'Cloud9.2'. [CLIENT: 172.21.0.1]
+2026-03-07 08:35:35.39 Logon       Error: 18456, Severity: 14, State: 38.
+2026-03-07 08:35:35.39 Logon       Login failed for user 'sa'. Reason: Failed to open the explicitly specified database 'Cloud9.2'. [CLIENT: 172.21.0.1]
+2026-03-07 09:03:55.48 spid65      Attempting to load library 'xpstar.dll' into memory. This is an informational message only. No user action is required.
+2026-03-07 09:03:55.51 spid65      Using 'xpstar.dll' version '2019.150.4455' to execute extended stored procedure 'xp_instance_regread'. This is an informational message only; no user action is required.
+2026-03-07 10:01:06.02 Backup      Database backed up. Database: Cloud9_Nyugalom, creation date(time): 2026/02/26(12:45:45), pages dumped: 9101, first LSN: 55:14488:1, last LSN: 55:14512:1, number of dump devices: 1, device information: (FILE=1, TYPE=DISK: {'/var/opt/mssql/data/Cloud9_Nyugalom-202637-11-0-31.bak'}). This is an informational message only. No user action is required.
+2026-03-07 10:01:06.04 Backup      BACKUP DATABASE successfully processed 8962 pages in 0.071 seconds (986.080 MB/sec).
+2026-03-07 10:01:56.83 Backup      Database backed up. Database: Cloud9_Nyugalom, creation date(time): 2026/02/26(12:45:45), pages dumped: 9101, first LSN: 55:14608:1, last LSN: 55:14632:1, number of dump devices: 1, device information: (FILE=1, TYPE=DISK: {'/var/opt/mssql/data/Cloud9_Nyugalom-202637-11-1-46.bak'}). This is an informational message only. No user action is required.
+2026-03-07 10:01:56.84 Backup      BACKUP DATABASE successfully processed 8962 pages in 0.047 seconds (1489.611 MB/sec).
+2026-03-07 10:05:45.16 Backup      Database backed up. Database: Cloud9_Nyugalom, creation date(time): 2026/02/26(12:45:45), pages dumped: 9101, first LSN: 55:14728:1, last LSN: 55:14752:1, number of dump devices: 1, device information: (FILE=1, TYPE=DISK: {'/var/opt/mssql/data/Cloud9_Nyugalom-202637-11-4-17.bak'}). This is an informational message only. No user action is required.
+2026-03-07 10:05:45.18 Backup      BACKUP DATABASE successfully processed 8962 pages in 0.055 seconds (1272.940 MB/sec).

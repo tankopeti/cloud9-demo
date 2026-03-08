@@ -19,12 +19,12 @@
     var submitBtn = formEl.querySelector('button[type="submit"]');
     var siteEl = formEl.querySelector('#SiteId, [name="SiteId"]');
     var assignedEl = formEl.querySelector('#AssignedToId, [name="AssignedToId"]'); // taskért felelős user
-    var relatedEmployeeEl = formEl.querySelector('#RelatedEmployeeId, [name="RelatedEmployeeId"]'); // site-hoz kapcsolt érintett dolgozó
+    var relatedEmployeeEl = formEl.querySelector('#RelatedEmployeeId, [name="RelatedEmployeeId"]'); // telephelyhez kapcsolt érintett dolgozó
     var commMethodEl = formEl.querySelector('#TaskPMcomMethodID, [name="TaskPMcomMethodID"]');
     var taskTypeEl = formEl.querySelector('#TaskTypePMId, [name="TaskTypePMId"]');
     var taskStatusEl = formEl.querySelector('#TaskStatusPMId, [name="TaskStatusPMId"]');
 
-    // Bejelentés = 1, Intézkedés = 2 (később bővíthető 3-ra is)
+    // Bejelentés = 1, Intézkedés = 2
     var DISPLAY_TYPE = toInt(modalEl.getAttribute('data-display-type')) || 2;
 
     var isSubmitting = false;
@@ -40,6 +40,7 @@
     function toast(message, type) {
       type = type || 'info';
       var container = document.getElementById('toastContainer');
+
       if (!container) {
         container = document.createElement('div');
         container.id = 'toastContainer';
@@ -74,37 +75,31 @@
         : btn.dataset._origText;
     }
 
-    // ✅ Date + Time -> ISO datetime string (local)
-    // dateStr: "YYYY-MM-DD"
-    // timeStr: "HH:mm" (vagy üres)
-    // -> "YYYY-MM-DDTHH:mm:00"
     function combineDateTime(dateStr, timeStr) {
       var d = String(dateStr || '').trim();
       if (!d) return null;
 
       var t = String(timeStr || '').trim();
-      if (!t) {
-        // nincs idő megadva -> csak dátum (backend 00:00-ra értelmezi)
-        return d;
-      }
+      if (!t) return d;
 
-      // Ha valaki "HH:mm:ss"-t adna, azt is engedjük
       if (/^\d{2}:\d{2}$/.test(t)) t = t + ':00';
-      if (!/^\d{2}:\d{2}:\d{2}$/.test(t)) {
-        // invalid time -> csak dátum
-        return d;
-      }
+      if (!/^\d{2}:\d{2}:\d{2}$/.test(t)) return d;
 
       return d + 'T' + t;
     }
 
-    function resetRelatedEmployeeSelect() {
+    function resetRelatedEmployeeSelect(message) {
       if (!relatedEmployeeEl) return;
-      relatedEmployeeEl.innerHTML = '<option value="">-- Előbb válassz telephelyet --</option>';
+
+      relatedEmployeeEl.innerHTML =
+        '<option value="">' + String(message || '-- Előbb válassz telephelyet --') + '</option>';
       relatedEmployeeEl.value = '';
       relatedEmployeeEl.disabled = true;
     }
 
+    // ------------------------------------------------------------
+    // Loaders
+    // ------------------------------------------------------------
     async function loadCommMethodsSelect(selectEl, selectedId) {
       if (!selectEl) return;
 
@@ -133,7 +128,7 @@
           }).join('');
 
         selectEl.value = selectedId != null ? String(selectedId) : '';
-        try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { }
+        try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
       } catch (e) {
         console.error('[taskIntezkedesCreate] comm methods load failed', e);
         selectEl.innerHTML = '<option value="">-- Nem sikerült betölteni --</option>';
@@ -153,7 +148,11 @@
           headers: { 'Accept': 'application/json' },
           credentials: 'same-origin'
         });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+
+        if (!res.ok) {
+          var txt = await res.text().catch(function () { return ''; });
+          throw new Error('HTTP ' + res.status + ' :: ' + txt);
+        }
 
         var items = await res.json();
         if (!Array.isArray(items)) items = [];
@@ -165,7 +164,7 @@
           }).join('');
 
         selectEl.value = selectedId != null ? String(selectedId) : '';
-        try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { }
+        try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
       } catch (e) {
         console.error('[taskIntezkedesCreate] assignees load failed', e);
         selectEl.innerHTML = '<option value="">-- Nem sikerült betölteni --</option>';
@@ -178,9 +177,7 @@
       if (!selectEl) return;
 
       if (!siteId) {
-        selectEl.innerHTML = '<option value="">-- Előbb válassz telephelyet --</option>';
-        selectEl.value = '';
-        selectEl.disabled = true;
+        resetRelatedEmployeeSelect('-- Előbb válassz telephelyet --');
         return;
       }
 
@@ -188,6 +185,8 @@
       selectEl.innerHTML = '<option value="">Betöltés...</option>';
 
       try {
+        console.log('[taskIntezkedesCreate] loading site employees for siteId=', siteId);
+
         var res = await fetch('/api/sites/' + encodeURIComponent(siteId) + '/employees', {
           method: 'GET',
           headers: { 'Accept': 'application/json' },
@@ -199,32 +198,29 @@
           throw new Error('HTTP ' + res.status + ' :: ' + txt);
         }
 
-        var items = await res.json();
-        if (!Array.isArray(items)) items = [];
+        var data = await res.json();
+        var items = Array.isArray(data && data.items) ? data.items : [];
 
         if (items.length === 0) {
-          selectEl.innerHTML = '<option value="">-- Nincs a telephelyhez kapcsolt dolgozó --</option>';
+          selectEl.innerHTML = '<option value="">-- Nincs a telephelyhez kapcsolt személy --</option>';
           selectEl.value = '';
-          selectEl.disabled = false;
           return;
         }
 
         selectEl.innerHTML =
           '<option value="">-- Válasszon --</option>' +
           items.map(function (x) {
-            var id = x.employeeId || '';
             var text = x.fullName || x.employeeName || 'Névtelen dolgozó';
 
             if (x.partnerName) {
               text += ' (' + x.partnerName + ')';
             }
 
-            return '<option value="' + String(id) + '">' + text + '</option>';
+            return '<option value="' + String(x.employeeId) + '">' + text + '</option>';
           }).join('');
 
         selectEl.value = selectedId != null ? String(selectedId) : '';
-
-        try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { }
+        try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
       } catch (e) {
         console.error('[taskIntezkedesCreate] site employees load failed', e);
         selectEl.innerHTML = '<option value="">-- Nem sikerült betölteni a kapcsolt személyeket --</option>';
@@ -244,6 +240,7 @@
           headers: { 'Accept': 'application/json' },
           credentials: 'same-origin'
         });
+
         if (!res.ok) throw new Error('HTTP ' + res.status);
 
         var items = await res.json();
@@ -256,7 +253,7 @@
           }).join('');
 
         selectEl.value = selectedId != null ? String(selectedId) : '';
-        try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { }
+        try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
       } catch (e) {
         console.error('[taskIntezkedesCreate] task types load failed', e);
         selectEl.innerHTML = '<option value="">-- Nem sikerült betölteni --</option>';
@@ -276,6 +273,7 @@
           headers: { 'Accept': 'application/json' },
           credentials: 'same-origin'
         });
+
         if (!res.ok) throw new Error('HTTP ' + res.status);
 
         var items = await res.json();
@@ -288,7 +286,7 @@
           }).join('');
 
         selectEl.value = selectedId != null ? String(selectedId) : '';
-        try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { }
+        try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
       } catch (e) {
         console.error('[taskIntezkedesCreate] task statuses load failed', e);
         selectEl.innerHTML = '<option value="">-- Nem sikerült betölteni --</option>';
@@ -302,15 +300,18 @@
     // ------------------------------------------------------------
     if (siteEl && relatedEmployeeEl) {
       if (!siteEl.value) {
-        resetRelatedEmployeeSelect();
+        resetRelatedEmployeeSelect('-- Előbb válassz telephelyet --');
       }
 
       siteEl.addEventListener('change', async function () {
         var siteId = toInt(siteEl.value);
+        console.log('[taskIntezkedesCreate] site changed:', siteEl.value, siteId);
 
         relatedEmployeeEl.value = '';
         await loadSiteEmployeesSelect(relatedEmployeeEl, siteId, '');
       });
+    } else if (relatedEmployeeEl) {
+      resetRelatedEmployeeSelect('-- Telephely mező nem található --');
     }
 
     // ------------------------------------------------------------
@@ -320,10 +321,10 @@
       isSubmitting = false;
       setSubmitting(submitBtn, false);
 
-      try { formEl.reset(); } catch (e) { }
+      try { formEl.reset(); } catch (e) {}
       formEl.classList.remove('was-validated');
 
-      resetRelatedEmployeeSelect();
+      resetRelatedEmployeeSelect('-- Előbb válassz telephelyet --');
     });
 
     modalEl.addEventListener('shown.bs.modal', async function () {
@@ -364,7 +365,6 @@
 
       var fd = new FormData(formEl);
 
-      // ✅ ScheduledDate + ScheduledTime összefűzése
       var scheduledDateStr = fd.get('ScheduledDate');
       var scheduledTimeStr = fd.get('ScheduledTime');
       var scheduledIso = combineDateTime(scheduledDateStr, scheduledTimeStr);
@@ -385,17 +385,31 @@
         TaskStatusPMId: toInt(fd.get('TaskStatusPMId')),
         AssignedToId: String(fd.get('AssignedToId') || '').trim() || null,
 
-        // ✅ ÚJ: site-hoz kapcsolt érintett dolgozó
+        // telephelyhez kapcsolt érintett dolgozó
         RelatedEmployeeId: toInt(fd.get('RelatedEmployeeId')),
 
         ScheduledDate: scheduledIso
       };
 
-      // Guards
-      if (!payload.Title) { toast('A tárgy megadása kötelező!', 'danger'); return; }
-      if (!payload.SiteId) { toast('A telephely kiválasztása kötelező!', 'danger'); return; }
-      if (!payload.PartnerId) { toast('A partner kiválasztása kötelező!', 'danger'); return; }
-      if (!payload.TaskTypePMId) { toast('A feladat típusa kötelező!', 'danger'); return; }
+      if (!payload.Title) {
+        toast('A tárgy megadása kötelező!', 'danger');
+        return;
+      }
+
+      if (!payload.SiteId) {
+        toast('A telephely kiválasztása kötelező!', 'danger');
+        return;
+      }
+
+      if (!payload.PartnerId) {
+        toast('A partner kiválasztása kötelező!', 'danger');
+        return;
+      }
+
+      if (!payload.TaskTypePMId) {
+        toast('A feladat típusa kötelező!', 'danger');
+        return;
+      }
 
       console.log('[taskIntezkedesCreate] payload', payload);
 
@@ -426,10 +440,13 @@
         var created = await res.json();
 
         toast('Intézkedés létrehozva!', 'success');
+
         var inst = bootstrap.Modal.getInstance(modalEl);
         if (inst) inst.hide();
 
-        window.dispatchEvent(new CustomEvent('tasks:reload', { detail: { created: created } }));
+        window.dispatchEvent(new CustomEvent('tasks:reload', {
+          detail: { created: created }
+        }));
       } catch (err) {
         console.error('[taskIntezkedesCreate] CREATE EXCEPTION', err);
         toast('Nem sikerült a mentés.', 'danger');
