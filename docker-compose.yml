@@ -4,37 +4,62 @@ services:
     image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: cloud9-mssql
     restart: always
+
     env_file:
       - .env.docker
+
     environment:
       ACCEPT_EULA: "Y"
+
     ports:
       - "1433:1433"
+
     volumes:
       - /srv/cloud9/mssql:/var/opt/mssql
+
     networks:
       - app-network
+
 
   app:
     build:
       context: .
       dockerfile: dockerfile
+
     container_name: cloud9-app
     restart: always
+
     depends_on:
       - mssql
+
     env_file:
       - .env.docker
+
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
       ASPNETCORE_URLS: "http://0.0.0.0:8080"
+
     ports:
       - "8080:8080"
+
     volumes:
       - /srv/cloud9/dpkeys:/var/dpkeys
+
     networks:
       - app-network
+      - cloud9_default
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=cloud9_default"
+      - "traefik.http.routers.cloud9.rule=Host(`nyugalom.cloud9ai.hu`)"
+      - "traefik.http.routers.cloud9.entrypoints=web"
+      - "traefik.http.services.cloud9.loadbalancer.server.port=8080"
+
 
 networks:
   app-network:
     driver: bridge
+
+  cloud9_default:
+    external: true
