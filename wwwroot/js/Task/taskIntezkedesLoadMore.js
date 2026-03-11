@@ -15,26 +15,21 @@
       return;
     }
 
-    var pageSize = parseInt(wrap.dataset.pageSize || '20', 10) || 20;
-    var sort = (wrap.dataset.sort || 'CreatedDate').trim() || 'CreatedDate';
-    var order = (wrap.dataset.order || 'desc').trim() || 'desc';
-    var search = (wrap.dataset.search || '').trim();
+    var state = {
+      pageSize: parseInt(wrap.dataset.pageSize || '20', 10) || 20,
+      sort: (wrap.dataset.sort || 'CreatedDate').trim() || 'CreatedDate',
+      order: (wrap.dataset.order || 'desc').trim() || 'desc',
+      search: (wrap.dataset.search || '').trim(),
+      page: 1,
+      isLoading: false,
+      renderedIds: new Set(),
+      reachedEnd: false,
+      totalCount: null,
+      activeFilters: {}
+    };
 
-    var page = 1;
-    var isLoading = false;
-    var renderedIds = new Set();
-    var reachedEnd = false;
-    var totalCount = null;
+    window.__TASKS_FILTER_AJAX__ = true;
 
-    // -------------------------------
-    // Advanced filters (modalból)
-    // -------------------------------
-    var activeFilters = {}; // pl: { statusId:"1", partnerId:"10", dueDateFrom:"2026-01-01", ... }
-    window.__TASKS_FILTER_AJAX__ = true; // hogy a modal JS ne navigáljon fallback-ként
-
-    // --------------------------------------------------
-    // Helpers
-    // --------------------------------------------------
     function esc(s) {
       var d = document.createElement('div');
       d.textContent = s == null ? '' : String(s);
@@ -52,87 +47,101 @@
     }
 
     function setInfo(text) {
-      if (!info) return;
-      info.textContent = text || '';
+      if (info) info.textContent = text || '';
     }
 
     function setInfoLoaded() {
       if (!info) return;
-      var loaded = renderedIds.size;
-
-      if (typeof totalCount === 'number') {
-        info.textContent = 'Betöltve: ' + Math.min(loaded, totalCount) + ' / ' + totalCount;
-      } else {
-        info.textContent = 'Betöltve: ' + loaded;
-      }
+      var loaded = state.renderedIds.size;
+      info.textContent = typeof state.totalCount === 'number'
+        ? 'Betöltve: ' + Math.min(loaded, state.totalCount) + ' / ' + state.totalCount
+        : 'Betöltve: ' + loaded;
     }
 
-    function setButtonLoading(loading) {
-      btn.disabled = !!loading;
-      btn.textContent = loading ? 'Betöltés...' : (reachedEnd ? 'Nincs több' : 'Több betöltése');
+    function setButtonState() {
+      btn.disabled = !!state.isLoading || !!state.reachedEnd;
+      btn.textContent = state.isLoading
+        ? 'Betöltés...'
+        : (state.reachedEnd ? 'Nincs több' : 'Több betöltése');
     }
 
     function setNoMore() {
-      reachedEnd = true;
-      btn.disabled = true;
-      btn.textContent = 'Nincs több';
+      state.reachedEnd = true;
+      setButtonState();
     }
 
-    // --- TaskType/TaskStatus "Description" kliens oldali szűréshez ---
-    function pickString(obj, paths) {
-      for (var i = 0; i < paths.length; i++) {
-        var p = paths[i];
-        var v = obj;
+    function resetList() {
+      state.page = 1;
+      state.renderedIds.clear();
+      state.reachedEnd = false;
+      state.totalCount = null;
 
-        var parts = p.split('.');
-        for (var j = 0; j < parts.length; j++) {
-          if (v == null) break;
-          v = v[parts[j]];
+      tbody.innerHTML = '';
+      setInfo('');
+      setButtonState();
+    }
+
+    function cleanFilterParams(params) {
+      var cleaned = {};
+      if (!params || typeof params !== 'object') return cleaned;
+
+      Object.keys(params).forEach(function (k) {
+        var v = params[k];
+        if (v == null) return;
+
+        v = String(v).trim();
+        if (!v) return;
+
+        if (k === 'page' || k === 'pageSize' || k === 'sort' || k === 'order' || k === 'search' || k === 'displayType') {
+          return;
         }
 
-        if (typeof v === 'string' && v.trim()) return v.trim();
-      }
-      return '';
+        cleaned[k] = v;
+      });
+
+      return cleaned;
     }
 
-    function norm(s) {
-      return (s || '').toString().trim().toLowerCase();
+    function buildUrl(page) {
+      var qs = new URLSearchParams();
+      qs.set('page', String(page));
+      qs.set('pageSize', String(state.pageSize));
+      qs.set('sort', state.sort);
+      qs.set('order', state.order);
+      qs.set('displayType', '2');
+
+      if (state.search) qs.set('search', state.search);
+
+      Object.keys(state.activeFilters).forEach(function (k) {
+        qs.set(k, state.activeFilters[k]);
+      });
+
+      return '/api/tasks/paged?' + qs.toString();
     }
 
-    // (meghagytam, ha később kell kliens oldali szűréshez)
-    function isIntezkedesTask(t) {
-      var wanted = 'intezkedes';
+    async function fetchPage(page) {
+      var json = await AppApi.get(buildUrl(page));
 
-      var typeDesc = pickString(t, [
-        'taskTypePM.description',
-        'TaskTypePM.Description',
-        'taskTypeDescription',
-        'TaskTypeDescription'
-      ]);
+      var items = Array.isArray(json)
+        ? json
+        : (json.items || json.Items || json.results || json.Results || []);
 
-      var statusDesc = pickString(t, [
-        'taskStatusPM.description',
-        'TaskStatusPM.Description',
-        'taskStatusDescription',
-        'TaskStatusDescription'
-      ]);
+      var totalCount = Array.isArray(json)
+        ? null
+        : (json.totalCount ?? json.TotalCount ?? json.totalRecords ?? json.TotalRecords ?? null);
 
-      return norm(typeDesc) === wanted && norm(statusDesc) === wanted;
+      return { items: items, totalCount: totalCount };
     }
 
     function renderRow(t) {
-      var id = Number(t && t.id);
-      if (!Number.isFinite(id)) id = Number(t && t.Id);
-      if (!Number.isFinite(id)) id = 0;
-
+      var id = Number(t && (t.id ?? t.Id)) || 0;
       var priorityColor = (t.priorityColorCode || t.PriorityColorCode || '').trim() || '#6c757d';
       var statusColor = (t.colorCode || t.ColorCode || '').trim() || '#6c757d';
-
       var assignedEmail = t.assignedToEmail || t.AssignedToEmail || '';
       var assignedName = t.assignedToName || t.AssignedToName || '';
 
       var assignedHtml = assignedEmail
-        ? `<a class="js-assigned-mail" href="mailto:${esc(assignedEmail)}">${esc(assignedName)}</a>`
+        ? '<a class="js-assigned-mail" href="mailto:' + esc(assignedEmail) + '">' + esc(assignedName) + '</a>'
         : esc(assignedName);
 
       var tr = document.createElement('tr');
@@ -181,33 +190,12 @@
               </button>
 
               <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                  <a class="dropdown-item js-edit-task" href="#" data-task-id="${esc(id)}">
-                    <i class="bi bi-pencil-square me-2"></i> Szerkesztés
-                  </a>
-                </li>
-
-                <li>
-                  <a class="dropdown-item js-task-documents" href="#" data-task-id="${esc(id)}">
-                    <i class="bi bi-paperclip me-2"></i> Fájlok
-                  </a>
-                </li>
-
-                <li>
-                  <a class="dropdown-item btn-show-history" href="#" data-task-id="${esc(id)}">
-                    <i class="bi bi-clock-history me-2"></i> Előzmények
-                  </a>
-                </li>
-
+                <li><a class="dropdown-item js-edit-task" href="#" data-task-id="${esc(id)}"><i class="bi bi-pencil-square me-2"></i> Szerkesztés</a></li>
+                <li><a class="dropdown-item js-task-documents" href="#" data-task-id="${esc(id)}"><i class="bi bi-paperclip me-2"></i> Fájlok</a></li>
+                <li><a class="dropdown-item btn-show-history" href="#" data-task-id="${esc(id)}"><i class="bi bi-clock-history me-2"></i> Előzmények</a></li>
                 <li><hr class="dropdown-divider"></li>
-
-                <li>
-                  <a class="dropdown-item text-danger js-delete-task" href="#" data-task-id="${esc(id)}">
-                    <i class="bi bi-trash me-2"></i> Törlés
-                  </a>
-                </li>
+                <li><a class="dropdown-item text-danger js-delete-task" href="#" data-task-id="${esc(id)}"><i class="bi bi-trash me-2"></i> Törlés</a></li>
               </ul>
-
             </div>
           </div>
         </td>
@@ -216,193 +204,122 @@
       return tr;
     }
 
-    async function fetchPage(p) {
-      var qs = new URLSearchParams();
-      qs.set('page', String(p));
-      qs.set('pageSize', String(pageSize));
-      qs.set('sort', sort);
-      qs.set('order', order);
-
-      // ✅ CSAK INTÉZKEDÉSEK
-      // Ha nálatok nem 2 az intézkedés, írd át a megfelelő értékre.
-      qs.set('displayType', '2');
-
-      if (search) qs.set('search', search);
-
-      // Advanced filter paramok hozzáadása (üreseket ne tegyünk be)
-      if (activeFilters && typeof activeFilters === 'object') {
-        Object.keys(activeFilters).forEach(function (k) {
-          var v = activeFilters[k];
-          if (v == null) return;
-          v = String(v).trim();
-          if (!v) return;
-
-          // ⚠️ védelem: a modal ne tudja felülírni a displayType fix szűrést
-          if (k === 'displayType') return;
-
-          qs.set(k, v);
-        });
-      }
-
-      var url = '/api/tasks/paged?' + qs.toString();
-      var res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-
-      if (!res.ok) {
-        var txt = await res.text().catch(function () { return ''; });
-        throw new Error('HTTP ' + res.status + ' :: ' + txt);
-      }
-
-      var json = await res.json();
-
-      var items = Array.isArray(json)
-        ? json
-        : (json.items || json.Items || json.results || json.Results || []);
-
-      var tc = Array.isArray(json)
-        ? null
-        : (json.totalCount ?? json.TotalCount ?? json.totalRecords ?? json.TotalRecords ?? null);
-
-      return { items: items, totalCount: tc };
-    }
-
     async function loadMore() {
-      if (isLoading || reachedEnd) return;
+      if (state.isLoading || state.reachedEnd) return;
 
-      isLoading = true;
-      setButtonLoading(true);
+      state.isLoading = true;
+      setButtonState();
       setInfo('Betöltés...');
 
       try {
-        var result = await fetchPage(page);
+        var result = await fetchPage(state.page);
         var items = result.items || [];
 
-        // totalCount: parse (akkor is, ha string)
         if (result.totalCount != null) {
           var n = parseInt(String(result.totalCount), 10);
-          if (Number.isFinite(n)) totalCount = n;
+          if (Number.isFinite(n)) state.totalCount = n;
         }
 
         if (!items.length) {
-          page += 1;
+          state.page += 1;
 
-          // fail-safe
-          if (page > 200) {
+          if (state.page > 200) {
             setInfoLoaded();
             setNoMore();
             return;
           }
 
+          state.isLoading = false;
+          setButtonState();
           setInfoLoaded();
-          isLoading = false;
-          setButtonLoading(false);
           return loadMore();
         }
 
         items.forEach(function (t) {
           var id = Number(t && (t.id ?? t.Id));
-          if (!Number.isFinite(id)) return;
-          if (renderedIds.has(id)) return;
+          if (!Number.isFinite(id) || state.renderedIds.has(id)) return;
 
-          renderedIds.add(id);
+          state.renderedIds.add(id);
           tbody.appendChild(renderRow(t));
         });
 
-        if (items.length < pageSize) {
-          if (typeof totalCount !== 'number') setNoMore();
-          else page += 1;
-        } else {
-          page += 1;
-        }
+        state.page += 1;
 
-        setInfoLoaded();
-
-        if (typeof totalCount === 'number' && renderedIds.size >= totalCount) {
+        if (items.length < state.pageSize && typeof state.totalCount !== 'number') {
           setNoMore();
         }
 
+        if (typeof state.totalCount === 'number' && state.renderedIds.size >= state.totalCount) {
+          setNoMore();
+        }
+
+        setInfoLoaded();
       } catch (e) {
         console.error('[taskIntezkedesLoadMore] load failed', e);
         setInfo('Hiba a betöltéskor (nézd meg a konzolt).');
       } finally {
-        isLoading = false;
-        setButtonLoading(false);
+        state.isLoading = false;
+        setButtonState();
       }
     }
 
-    // --------------------------------------------------
-    // CLICK DELEGATION (BUBBLE, V2, AbortController)
-    // --------------------------------------------------
-    if (wrap._delegationAbortController) {
-      try { wrap._delegationAbortController.abort(); } catch (e) { }
+    function dispatchTaskEvent(name, detail) {
+      window.dispatchEvent(new CustomEvent(name, { detail: detail }));
     }
+
+    function getTaskId(target, selector) {
+      var el = target.closest(selector);
+      if (!el) return null;
+
+      var id = parseInt(el.dataset.taskId, 10);
+      return Number.isFinite(id) ? id : null;
+    }
+
+    if (wrap._delegationAbortController) {
+      try { wrap._delegationAbortController.abort(); } catch (e) {}
+    }
+
     var ac = new AbortController();
     wrap._delegationAbortController = ac;
 
     wrap.addEventListener('click', function (e) {
-      var mail = e.target.closest('a[href^="mailto:"]');
-      if (mail) return;
+      if (e.target.closest('a[href^="mailto:"]')) return;
 
-      var view = e.target.closest('.js-view-task-btn');
-      if (view) {
-        e.preventDefault();
-        var vid = parseInt(view.dataset.taskId, 10);
-        if (!Number.isFinite(vid)) return;
-
-        console.log('[taskIntezkedesLoadMore] view click', vid);
-
-        if (window.Tasks && typeof window.Tasks.openViewModal === 'function') {
-          window.Tasks.openViewModal(vid);
-        } else {
-          window.dispatchEvent(new CustomEvent('tasks:view', { detail: { id: vid } }));
+      var handlers = [
+        {
+          selector: '.js-view-task-btn',
+          run: function (id) {
+            if (window.Tasks && typeof window.Tasks.openViewModal === 'function') {
+              window.Tasks.openViewModal(id);
+            } else {
+              dispatchTaskEvent('tasks:view', { id: id });
+            }
+          }
+        },
+        {
+          selector: '.js-edit-task',
+          run: function (id) { dispatchTaskEvent('tasks:openEdit', { id: id }); }
+        },
+        {
+          selector: '.js-task-documents',
+          run: function (id) { dispatchTaskEvent('tasks:openDocuments', { taskId: id }); }
+        },
+        {
+          selector: '.btn-show-history',
+          run: function (id) { dispatchTaskEvent('tasks:history', { id: id }); }
+        },
+        {
+          selector: '.js-delete-task',
+          run: function (id) { dispatchTaskEvent('tasks:openDelete', { id: id }); }
         }
-        return;
-      }
+      ];
 
-      var edit = e.target.closest('.js-edit-task');
-      if (edit) {
+      for (var i = 0; i < handlers.length; i++) {
+        var id = getTaskId(e.target, handlers[i].selector);
+        if (id == null) continue;
+
         e.preventDefault();
-        var eid = parseInt(edit.dataset.taskId, 10);
-        if (!Number.isFinite(eid)) return;
-
-        console.log('[taskIntezkedesLoadMore] edit click', eid);
-
-        window.dispatchEvent(new CustomEvent('tasks:openEdit', { detail: { id: eid } }));
-        return;
-      }
-
-      var files = e.target.closest('.js-task-documents');
-      if (files) {
-        e.preventDefault();
-        var tid = parseInt(files.dataset.taskId, 10);
-        if (!Number.isFinite(tid)) return;
-
-        console.log('[taskIntezkedesLoadMore] files click', tid);
-
-        window.dispatchEvent(new CustomEvent('tasks:openDocuments', { detail: { taskId: tid } }));
-        return;
-      }
-
-      var hist = e.target.closest('.btn-show-history');
-      if (hist) {
-        e.preventDefault();
-        var hid = parseInt(hist.dataset.taskId, 10);
-        if (!Number.isFinite(hid)) return;
-
-        console.log('[taskIntezkedesLoadMore] history click', hid);
-
-        window.dispatchEvent(new CustomEvent('tasks:history', { detail: { id: hid } }));
-        return;
-      }
-
-      var del = e.target.closest('.js-delete-task');
-      if (del) {
-        e.preventDefault();
-        var did = parseInt(del.dataset.taskId, 10);
-        if (!Number.isFinite(did)) return;
-
-        console.log('[taskIntezkedesLoadMore] delete click', did);
-
-        window.dispatchEvent(new CustomEvent('tasks:openDelete', { detail: { id: did } }));
+        handlers[i].run(id);
         return;
       }
     }, { signal: ac.signal });
@@ -412,9 +329,6 @@
       loadMore();
     });
 
-    // --------------------------------------------------
-    // ADVANCED FILTER MODAL -> AJAX submit (NO PAGE RELOAD)
-    // --------------------------------------------------
     (function wireAdvancedFilterModal() {
       var modalEl = document.getElementById('advancedFilterModal');
       if (!modalEl) return;
@@ -423,11 +337,7 @@
       if (!form) return;
 
       function closeModal() {
-        try {
-          var inst = bootstrap.Modal.getInstance(modalEl);
-          if (!inst) inst = new bootstrap.Modal(modalEl);
-          inst.hide();
-        } catch (e) { }
+        AppModal.hide('advancedFilterModal');
       }
 
       var partnerSel = modalEl.querySelector('#partnerFilterSelect');
@@ -438,22 +348,21 @@
           return {
             value: o.value,
             text: o.textContent,
-            partnerId: o.dataset.partnerId || ""
+            partnerId: o.dataset.partnerId || ''
           };
         });
 
         function rebuildSites(partnerId) {
           var current = siteSel.value;
-
-          siteSel.innerHTML = "";
+          siteSel.innerHTML = '';
 
           var opt0 = document.createElement('option');
-          opt0.value = "";
-          opt0.textContent = "-- Minden --";
+          opt0.value = '';
+          opt0.textContent = '-- Minden --';
           siteSel.appendChild(opt0);
 
           allSiteOptions
-            .filter(function (x) { return x.value !== ""; })
+            .filter(function (x) { return x.value !== ''; })
             .filter(function (x) { return !partnerId || x.partnerId === partnerId; })
             .forEach(function (x) {
               var opt = document.createElement('option');
@@ -463,8 +372,11 @@
               siteSel.appendChild(opt);
             });
 
-          var still = Array.from(siteSel.options).some(function (o) { return o.value === current; });
-          siteSel.value = still ? current : "";
+          var stillExists = Array.from(siteSel.options).some(function (o) {
+            return o.value === current;
+          });
+
+          siteSel.value = stillExists ? current : '';
         }
 
         rebuildSites(partnerSel.value);
@@ -477,98 +389,34 @@
         e.preventDefault();
 
         var fd = new FormData(form);
-        var cleaned = {};
+        var raw = {};
+        fd.forEach(function (v, k) { raw[k] = v; });
 
-        fd.forEach(function (v, k) {
-          var val = (v ?? "").toString().trim();
-          if (!val) return;
+        state.activeFilters = cleanFilterParams(raw);
 
-          if (k === 'page' || k === 'pageSize' || k === 'sort' || k === 'order' || k === 'search')
-            return;
+        console.log('[taskIntezkedesLoadMore] apply filters', state.activeFilters);
 
-          cleaned[k] = val;
-        });
-
-        activeFilters = cleaned;
-
-        console.log('[taskIntezkedesLoadMore] apply filters', activeFilters);
-
-        page = 1;
-        renderedIds.clear();
-        reachedEnd = false;
-        totalCount = null;
-
-        tbody.innerHTML = '';
-        btn.disabled = false;
-        btn.textContent = 'Több betöltése';
-        setInfo('');
-
+        resetList();
         closeModal();
         loadMore();
       });
     })();
 
-    // --------------------------------------------------
-    // APPLY FILTERS (Advanced filter modal -> LoadMore reset)
-    // --------------------------------------------------
     window.addEventListener('tasks:applyFilters', function (e) {
       var params = e && e.detail && (e.detail.params || e.detail);
-      if (!params || typeof params !== 'object') return;
-
-      var cleaned = {};
-      Object.keys(params).forEach(function (k) {
-        var v = params[k];
-        if (v == null) return;
-        v = String(v).trim();
-        if (!v) return;
-
-        if (k === 'page' || k === 'pageSize' || k === 'sort' || k === 'order' || k === 'search') return;
-
-        cleaned[k] = v;
-      });
-
-      activeFilters = cleaned;
-
-      page = 1;
-      renderedIds.clear();
-      reachedEnd = false;
-      totalCount = null;
-
-      tbody.innerHTML = '';
-      btn.disabled = false;
-      btn.textContent = 'Több betöltése';
-      setInfo('');
-
+      state.activeFilters = cleanFilterParams(params);
+      resetList();
       loadMore();
     });
 
     window.addEventListener('tasks:clearFilters', function () {
-      activeFilters = {};
-
-      page = 1;
-      renderedIds.clear();
-      reachedEnd = false;
-      totalCount = null;
-
-      tbody.innerHTML = '';
-      btn.disabled = false;
-      btn.textContent = 'Több betöltése';
-      setInfo('');
-
+      state.activeFilters = {};
+      resetList();
       loadMore();
     });
 
     window.addEventListener('tasks:reload', function () {
-      page = 1;
-      renderedIds.clear();
-      reachedEnd = false;
-      totalCount = null;
-
-      tbody.innerHTML = '';
-      btn.disabled = false;
-      btn.textContent = 'Több betöltése';
-      setInfo('');
-
+      resetList();
       loadMore();
     });
 
@@ -576,14 +424,15 @@
       var id = parseInt(e && e.detail && e.detail.id, 10);
       if (!Number.isFinite(id)) return;
 
-      if (renderedIds.has(id)) renderedIds.delete(id);
-      if (typeof totalCount === 'number' && totalCount > 0) totalCount -= 1;
+      if (state.renderedIds.has(id)) state.renderedIds.delete(id);
+      if (typeof state.totalCount === 'number' && state.totalCount > 0) state.totalCount -= 1;
 
       setInfoLoaded();
-      if (typeof totalCount === 'number' && renderedIds.size >= totalCount) setNoMore();
+      if (typeof state.totalCount === 'number' && state.renderedIds.size >= state.totalCount) {
+        setNoMore();
+      }
     });
 
-    // init
     loadMore();
   });
 })();

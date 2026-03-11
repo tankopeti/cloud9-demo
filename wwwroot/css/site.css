@@ -758,3 +758,60 @@ table thead.sticky-top { z-index: 1; }
   box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   border-bottom: 0;
 }
+
+.modal-edit-task-wide {
+  max-width: 92vw;
+}
+
+
+/* ============================= */
+/* TOMSELECT ALWAYS LIGHT */
+/* ============================= */
+
+#editTaskModal .ts-wrapper.single .ts-control,
+#editTaskModal .ts-wrapper.multi .ts-control,
+#newTaskModal .ts-wrapper.single .ts-control,
+#newTaskModal .ts-wrapper.multi .ts-control {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+  border-color: #ced4da !important;
+}
+
+#editTaskModal .ts-wrapper.single .ts-control .item,
+#editTaskModal .ts-wrapper.multi .ts-control .item,
+#editTaskModal .ts-wrapper.single .ts-control input,
+#editTaskModal .ts-wrapper.multi .ts-control input,
+#editTaskModal .ts-wrapper .ts-control > div,
+#newTaskModal .ts-wrapper.single .ts-control .item,
+#newTaskModal .ts-wrapper.multi .ts-control .item,
+#newTaskModal .ts-wrapper.single .ts-control input,
+#newTaskModal .ts-wrapper.multi .ts-control input,
+#newTaskModal .ts-wrapper .ts-control > div {
+  color: #212529 !important;
+}
+
+#editTaskModal .ts-dropdown,
+#newTaskModal .ts-dropdown {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+  border-color: #ced4da !important;
+}
+
+#editTaskModal .ts-dropdown .option,
+#newTaskModal .ts-dropdown .option {
+  color: #212529 !important;
+}
+
+#editTaskModal .ts-dropdown .option.active,
+#editTaskModal .ts-dropdown .active,
+#newTaskModal .ts-dropdown .option.active,
+#newTaskModal .ts-dropdown .active {
+  background-color: #0d6efd !important;
+  color: #ffffff !important;
+}
+
+#editTaskModal .ts-dropdown .option.selected,
+#newTaskModal .ts-dropdown .option.selected {
+  background-color: #e9ecef !important;
+  color: #212529 !important;
+}
