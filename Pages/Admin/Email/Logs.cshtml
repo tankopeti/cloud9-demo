@@ -1,0 +1,110 @@
+@page
+@model Cloud9_2.Pages.Admin.Email.LogsModel
+@{
+    Layout = "/Pages/Admin/_Layout.cshtml";
+    ViewData["Title"] = "Email logok";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1 fw-bold">Email logok</h1>
+        <p class="text-muted mb-0">Küldési naplók</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-8">
+                <input type="text" id="logsSearch" class="form-control" placeholder="Keresés email, tárgy, üzenet alapján...">
+            </div>
+            <div class="col-md-2">
+                <input type="text" id="logsEventType" class="form-control" placeholder="EventType">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" onclick="loadLogs()">Szűrés</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Queue ID</th>
+                        <th>Event</th>
+                        <th>Címzett</th>
+                        <th>Tárgy</th>
+                        <th>Dátum</th>
+                        <th>Üzenet</th>
+                    </tr>
+                </thead>
+                <tbody id="logsTableBody">
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">Betöltés...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', loadLogs);
+
+    async function loadLogs() {
+        const params = new URLSearchParams();
+        const search = document.getElementById('logsSearch').value.trim();
+        const eventType = document.getElementById('logsEventType').value.trim();
+
+        if (search) params.append('search', search);
+        if (eventType) params.append('eventType', eventType);
+
+        const response = await fetch(`/api/Email/logs?${params.toString()}`);
+        if (!response.ok) {
+            alert('Nem sikerült betölteni a logokat.');
+            return;
+        }
+
+        const result = await response.json();
+        const items = result.items ?? [];
+        const tbody = document.getElementById('logsTableBody');
+
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Nincs találat.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = items.map(item => `
+            <tr>
+                <td>${item.id}</td>
+                <td>${item.emailQueueId ?? ''}</td>
+                <td>${escapeHtml(item.eventType ?? '')}</td>
+                <td>${escapeHtml(item.toEmail ?? '')}</td>
+                <td>${escapeHtml(item.subject ?? '')}</td>
+                <td>${formatDate(item.eventDate)}</td>
+                <td>${escapeHtml(item.message ?? '')}</td>
+            </tr>
+        `).join('');
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function formatDate(value) {
+        if (!value) return '';
+        return new Date(value).toLocaleString();
+    }
+</script>
+}

@@ -205,9 +205,21 @@
           detail: { created: created }
         }));
       } catch (err) {
-        console.error('[taskIntezkedesCreate] CREATE EXCEPTION', err);
-        toast('Nem sikerült a mentés.', 'danger');
-      } finally {
+  console.error('[taskIntezkedesCreate] CREATE EXCEPTION', err);
+
+  let msg = 'Nem sikerült a mentés.';
+
+  if (err?.response?.data?.errors?.general?.length) {
+    msg = err.response.data.errors.general[0];
+  } else if (err?.response?.data?.message) {
+    msg = err.response.data.message;
+  } else if (err?.message) {
+    msg = err.message;
+  }
+
+  toast(msg, 'danger');
+}
+finally {
         isSubmitting = false;
         AppForms.setSubmitting(submitBtn, false);
       }

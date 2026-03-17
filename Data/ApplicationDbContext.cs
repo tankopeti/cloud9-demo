@@ -106,6 +106,10 @@ namespace Cloud9_2.Data
         public DbSet<EmployeeEmploymentStatus> EmployeeEmploymentStatuses { get; set; } = null!;
         public DbSet<EmployeeSite> EmployeeSites { get; set; } = null!;
         public DbSet<PartnerSiteLink> PartnerSiteLinks { get; set; } = null!;
+        public DbSet<EmailTemplate> EmailTemplates { get; set; }
+        public DbSet<EmailQueue> EmailQueues { get; set; }
+        public DbSet<EmailLog> EmailLogs { get; set; }
+        public DbSet<EmailTemplateVariable> EmailTemplateVariables { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -20,42 +20,39 @@ namespace Cloud9_2.Pages.Admin
             _context = context;
         }
 
-        public IList<UserActivity> UserActivities { get; set; }
-        public Dictionary<string, bool> ColumnVisibility { get; set; }
+        public IList<UserActivity> UserActivities { get; set; } = new List<UserActivity>();
+        public Dictionary<string, bool> ColumnVisibility { get; set; } = new();
 
         public async Task OnGetAsync()
         {
-            System.Console.WriteLine("OnGetAsync started.");
-
-            // Ensure only the latest 500 records are kept
             await CleanupOldRecordsAsync();
 
-            // Load records
             UserActivities = await _context.UserActivities
                 .OrderByDescending(ua => ua.LoginTime)
                 .Take(500)
                 .ToListAsync();
 
-            System.Console.WriteLine($"UserActivities Count: {UserActivities.Count}");
-            if (UserActivities.Any())
+            var allColumns = new List<string>
             {
-                System.Console.WriteLine($"Sample Record: UserId={UserActivities[0].UserId}, UserName={UserActivities[0].UserName}, LoginTime={UserActivities[0].LoginTime}");
-            }
-            else
-            {
-                System.Console.WriteLine("UserActivities is empty.");
-            }
+                "UserId",
+                "UserName",
+                "LoginTime",
+                "LogoutTime",
+                "IsActive"
+            };
 
-            // Column visibility setup
-            var allColumns = new List<string> { "UserId", "UserName", "LoginTime", "LogoutTime", "IsActive" };
-            var userRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-            System.Console.WriteLine($"User Roles: {string.Join(", ", userRoles)}");
+            var userRoles = User.FindAll(ClaimTypes.Role)
+                .Select(r => r.Value)
+                .ToList();
 
             var visibilitySettings = await _context.ColumnVisibilities
                 .Where(cv => cv.PageName == "/Admin/LoginLog" && userRoles.Contains(cv.RoleName))
                 .ToListAsync();
 
-            ColumnVisibility = allColumns.ToDictionary(col => col, col => false);
+            // Default: minden oszlop látszik
+            ColumnVisibility = allColumns.ToDictionary(col => col, col => true);
+
+            // Ha van adatbázisbeli beállítás, az felülírja a defaultot
             foreach (var setting in visibilitySettings)
             {
                 if (allColumns.Contains(setting.ColumnName))
@@ -63,19 +60,13 @@ namespace Cloud9_2.Pages.Admin
                     ColumnVisibility[setting.ColumnName] = setting.IsVisible;
                 }
             }
-
-            System.Console.WriteLine("Column Visibility:");
-            foreach (var kv in ColumnVisibility)
-            {
-                System.Console.WriteLine($"{kv.Key}: {kv.Value}");
-            }
         }
 
         private async Task CleanupOldRecordsAsync()
         {
-            int maxRecords = 500;
+            const int maxRecords = 500;
+
             int totalRecords = await _context.UserActivities.CountAsync();
-            System.Console.WriteLine($"Records Before Cleanup: {totalRecords}");
 
             if (totalRecords > maxRecords)
             {
@@ -86,11 +77,6 @@ namespace Cloud9_2.Pages.Admin
 
                 _context.UserActivities.RemoveRange(recordsToDelete);
                 await _context.SaveChangesAsync();
-                System.Console.WriteLine($"Records After Cleanup: {await _context.UserActivities.CountAsync()}");
-            }
-            else
-            {
-                System.Console.WriteLine("No cleanup needed.");
             }
         }
     }

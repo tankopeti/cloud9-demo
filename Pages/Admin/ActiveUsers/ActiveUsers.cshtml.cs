@@ -1,16 +1,12 @@
-using Microsoft.AspNetCore.Authorization; // For [Authorize]
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Cloud9_2.Models; // For ApplicationUser and UserActivity
-using Cloud9_2.Data; // Adjust to match ApplicationDbContext's namespace
+using Cloud9_2.Data;
+using Cloud9_2.Models;
 
 namespace Cloud9_2.Pages.Admin
 {
-
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public class ActiveUsersModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -20,14 +16,20 @@ namespace Cloud9_2.Pages.Admin
             _context = context;
         }
 
-        public List<UserActivity> ActiveUsers { get; set; }
+        public List<UserActivity> ActiveUsers { get; set; } = new();
 
-        public void OnGet()
+        public async Task OnGetAsync()
         {
-            ActiveUsers = _context.UserActivities
-                            .Where(a => a.IsActive)
-                            .OrderBy(a => a.LoginTime)
-                            .ToList();
+            var activeRows = await _context.UserActivities
+                .Where(a => a.IsActive && !string.IsNullOrWhiteSpace(a.UserName))
+                .OrderByDescending(a => a.LoginTime)
+                .ToListAsync();
+
+            ActiveUsers = activeRows
+                .GroupBy(a => a.UserName.Trim().ToLower())
+                .Select(g => g.First())
+                .OrderByDescending(a => a.LoginTime)
+                .ToList();
         }
     }
 }

@@ -1,0 +1,156 @@
+@page
+@model Cloud9_2.Pages.Admin.Email.QueueModel
+@{
+    Layout = "/Pages/Admin/_Layout.cshtml";
+    ViewData["Title"] = "Email queue";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1 fw-bold">Email queue</h1>
+        <p class="text-muted mb-0">Várakozó emailek kezelése</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-4">
+                <input type="text" id="queueSearch" class="form-control" placeholder="Keresés...">
+            </div>
+            <div class="col-md-3">
+                <input type="text" id="queueStatus" class="form-control" placeholder="Státusz pl. Pending">
+            </div>
+            <div class="col-md-3">
+                <input type="text" id="queueTemplateName" class="form-control" placeholder="Template név">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" onclick="loadQueue()">
+                    Szűrés
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Címzett</th>
+                        <th>Tárgy</th>
+                        <th>Státusz</th>
+                        <th>Létrehozva</th>
+                        <th>Retry</th>
+                        <th class="text-end">Műveletek</th>
+                    </tr>
+                </thead>
+                <tbody id="queueTableBody">
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">Betöltés...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', loadQueue);
+
+    async function loadQueue() {
+        const params = new URLSearchParams();
+        const search = document.getElementById('queueSearch').value.trim();
+        const status = document.getElementById('queueStatus').value.trim();
+        const templateName = document.getElementById('queueTemplateName').value.trim();
+
+        if (search) params.append('search', search);
+        if (status) params.append('status', status);
+        if (templateName) params.append('templateName', templateName);
+
+        const response = await fetch(`/api/Email/queue?${params.toString()}`);
+        if (!response.ok) {
+            alert('Nem sikerült betölteni a queue listát.');
+            return;
+        }
+
+        const result = await response.json();
+        const items = result.items ?? [];
+        const tbody = document.getElementById('queueTableBody');
+
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Nincs találat.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = items.map(item => `
+            <tr>
+                <td>${item.id}</td>
+                <td>${escapeHtml(item.toEmail ?? '')}</td>
+                <td>${escapeHtml(item.subject ?? '')}</td>
+                <td>${escapeHtml(item.status ?? '')}</td>
+                <td>${formatDate(item.createdDate)}</td>
+                <td>${item.retryCount ?? 0}</td>
+                <td class="text-end">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-warning" onclick="retryQueueItem(${item.id})">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="cancelQueueItem(${item.id})">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function retryQueueItem(id) {
+        const response = await fetch(`/api/Email/queue/${id}/retry`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) {
+            alert('Újrapróbálás sikertelen.');
+            return;
+        }
+
+        await loadQueue();
+    }
+
+    async function cancelQueueItem(id) {
+        if (!confirm('Biztosan megszakítod ezt a queue elemet?')) {
+            return;
+        }
+
+        const response = await fetch(`/api/Email/queue/${id}/cancel`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) {
+            alert('Megszakítás sikertelen.');
+            return;
+        }
+
+        await loadQueue();
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function formatDate(value) {
+        if (!value) return '';
+        return new Date(value).toLocaleString();
+    }
+</script>
+}

@@ -8,6 +8,9 @@ using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
+using System.Net;
+using System.Net.Mail;
+using Microsoft.Extensions.Options;
 
 
 namespace Cloud9_2.Controllers
@@ -32,14 +35,17 @@ namespace Cloud9_2.Controllers
         private readonly ILogger<TasksController> _logger;
         private readonly TaskPMService _taskService;
         private readonly ApplicationDbContext _context;
+        private readonly EmailService _emailService;
 
         public TasksController(
             ILogger<TasksController> logger,
             TaskPMService taskService,
+            EmailService emailService,
             ApplicationDbContext context)
         {
             _logger = logger;
             _taskService = taskService;
+            _emailService = emailService;
             _context = context;
         }
 
@@ -236,6 +242,20 @@ WHERE
             try
             {
                 var createdTask = await _taskService.CreateTaskAsync(dto, CurrentUserId);
+
+                // TESZT EMAIL KÜLDÉS
+await _emailService.SendEmailNowAsync(
+    "peter.tanko@kaarnigon.hu",
+    "Teszt email – intézkedés létrehozva",
+    $@"
+        <h3>Új intézkedés jött létre</h3>
+        <p><b>Tárgy:</b> {createdTask.Title}</p>
+        <p><b>Leírás:</b> {createdTask.Description}</p>
+        <p><b>ID:</b> {createdTask.Id}</p>
+    ",
+    isHtml: true
+);
+
                 return CreatedAtAction(nameof(GetTask), new { id = createdTask.Id }, createdTask);
             }
             catch (ValidationException ex)
@@ -243,12 +263,21 @@ WHERE
                 _logger.LogWarning(ex, "Validation error in CreateTask");
                 return BadRequest(new { errors = new { General = new[] { ex.Message } } });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "CreateTask failed. User: {UserId}, DTO: {@DTO}", CurrentUserId, dto);
-                return StatusCode(500, new { errors = new { General = new[] { "Szerver hiba. Kérjük, próbálja később." } } });
-            }
+catch (Exception ex)
+{
+    _logger.LogError(ex, "CreateTask failed. User: {UserId}, DTO: {@DTO}", CurrentUserId, dto);
 
+    return StatusCode(500, new
+    {
+        errors = new
+        {
+            general = new[]
+            {
+                ex.ToString()
+            }
+        }
+    });
+}
         }
 
 

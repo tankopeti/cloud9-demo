@@ -1,0 +1,34 @@
+@page "{id:int}"
+@model Cloud9_2.Pages.Admin.Email.DetailsModel
+@{
+    Layout = "/Pages/Admin/_Layout.cshtml";
+    ViewData["Title"] = "Email sablon részletek";
+}
+
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Email sablon részletek</h1>
+        <p class="text-muted mb-0">@Model.Template.Name</p>
+    </div>
+    <a asp-page="./Edit" asp-route-id="@Model.Template.Id" class="btn btn-primary">Szerkesztés</a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Név</dt>
+            <dd class="col-sm-9">@Model.Template.Name</dd>
+
+            <dt class="col-sm-3">Tárgy</dt>
+            <dd class="col-sm-9">@Model.Template.Subject</dd>
+
+            <dt class="col-sm-3">Aktív</dt>
+            <dd class="col-sm-9">@Model.Template.IsActive</dd>
+
+            <dt class="col-sm-3">HTML</dt>
+            <dd class="col-sm-9">
+                <pre class="bg-light p-3 rounded">@Model.Template.BodyHtml</pre>
+            </dd>
+        </dl>
+    </div>
+</div>

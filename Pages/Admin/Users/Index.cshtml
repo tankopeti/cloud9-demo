@@ -2,131 +2,165 @@
 @model Cloud9_2.Pages.Admin.Users.IndexModel
 @{
     Layout = "/Pages/Admin/_Layout.cshtml";
+    ViewData["Title"] = "Felhasználók";
 }
 
-<div class="container-fluid vh-100 d-flex flex-nowrap p-0">
-    <!-- Fixed Sidebar -->
-    <div class="d-flex flex-column flex-shrink-0 bg-light border-end" style="width: 200px;">
-        <div class="pt-3">
-            @if (User.IsInRole("SuperAdmin") || User.IsInRole("Admin"))
-            {
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link active px-3 py-2" asp-area="" asp-page="/Admin/Users/Index">
-                            <i class="bi bi-people-fill me-2"></i>Felhasználók
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link px-3 py-2" asp-area="" asp-page="/Admin/Roles/Index">
-                            <i class="bi bi-shield-lock me-2"></i>Role-ok
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link px-3 py-2" asp-area="" asp-page="/Admin/ActiveUsers/ActiveUsers">
-                            <i class="bi bi-shield-lock me-2"></i>Aktív Felhasználók
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link px-3 py-2" asp-area="" asp-page="/Admin/ManageRoles/ManageRoles">
-                            <i class="bi bi-shield-lock me-2"></i>User - Role
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link px-3 py-2" asp-area="" asp-page="/Admin/LoginLog/LoginLog">
-                            <i class="bi bi-clock-history me-2"></i>Login-Out Log
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link px-3 py-2" asp-area=""
-                            asp-page="/Admin/ColumnVisibilitySettings/ColumnVisibilitySettings">
-                            <i class="bi bi-clock-history me-2"></i>Oszlopok - Role-ok
-                        </a>
-                    </li>
-                </ul>
-            }
+<div class="users-page">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
+                    <li class="breadcrumb-item"><a href="../">Admin dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Felhasználók</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0 fw-bold d-flex align-items-center gap-2">
+                <i class="bi bi-people-fill"></i>
+                <span>Felhasználók</span>
+            </h1>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="bi bi-plus-circle me-1"></i>Új Felhasználó
+            </button>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="d-flex flex-column flex-grow-1 overflow-auto p-3" style="height: 100vh;">
-        <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb bg-body-tertiary rounded-3">
-                        <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
-                        <li class="breadcrumb-item"><a href="../">Admin dashboard</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Felhasználók</li>
-                    </ol>
-                </nav>
-            </div>
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                        <i class="bi bi-plus-circle me-1"></i>Új Felhasználó
-                    </button>
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-start gap-3">
+                <div class="fs-3 text-primary">
+                    <i class="bi bi-info-circle-fill"></i>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="input-group input-group-sm" style="width: 250px;">
-                        <input type="text" class="form-control" placeholder="Search usernames..." id="searchInput">
-                        <button class="btn btn-outline-secondary" type="button">
-                            <i class="bi bi-search"></i>
-                        </button>
+                <div>
+                    <h5 class="mb-2 fw-bold">Belépési logika új user és jelszó reset esetén</h5>
+
+                    <div class="small text-muted mb-2">
+                        Az admin által létrehozott vagy jelszó-visszaállítással módosított felhasználók
+                        ideiglenes vagy kezdeti jelszóval lépnek be.
                     </div>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown">
-                            <i class="bi bi-funnel me-1"></i>Filter
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#" data-filter="all">All Users</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="disabled">Disabled Users</a></li>
-                        </ul>
-                    </div>
+
+                    <ul class="mb-0 ps-3">
+                        <li>
+                            <strong>Új user létrehozása után:</strong>
+                            a felhasználó a megadott felhasználónévvel vagy email címmel és az admin által beállított
+                            kezdeti jelszóval tud belépni.
+                        </li>
+                        <li>
+                            <strong>Jelszó reset után:</strong>
+                            a rendszer új ideiglenes jelszót generál a következő logika szerint:
+                            <code>[UserName][yyyyMMdd]C92</code>
+                        </li>
+                        <li>
+                            <strong>Példa:</strong>
+                            ha a felhasználónév <code>email@gmail.com</code>, akkor a jelszó például:
+                            <code>email@gmail.com20260317C92</code>
+                        </li>
+                        <li>
+                            <strong>Első sikeres belépés után:</strong>
+                            a felhasználót kötelező jelszóváltoztatásra kell irányítani.
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="table-responsive border rounded">
-            <table class="table table-sm table-hover align-middle mb-0" id="usersTable">
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-md-row justify-content-md-end align-items-md-center gap-2">
+                <div class="input-group" style="max-width: 280px;">
+                    <input type="text" class="form-control" placeholder="Search usernames..." id="searchInput">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-funnel me-1"></i>Filter
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" data-filter="all">All Users</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="disabled">Disabled Users</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="usersTable">
                 <thead class="table-light">
                     <tr>
-                        <th class="ps-3">User ID</th>
+                        <th class="ps-4">User ID</th>
                         <th>Username</th>
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Access Failed</th>
                         <th>Disabled</th>
-                        <th class="pe-3 text-end">Actions</th>
+                        <th class="pe-4 text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var user in Model.Users)
                     {
                         <tr data-user-id="@user.Id">
-                            <td class="ps-3">@user.Id</td>
-                            <td>@user.UserName</td>
+                            <td class="ps-4 text-break">@user.Id</td>
+                            <td class="fw-semibold">@user.UserName</td>
                             <td>@user.Email</td>
                             <td>@user.PhoneNumber</td>
                             <td>@user.AccessFailedCount</td>
-                            <td>@(user.Disabled ? "Yes" : "No")</td>
-                            <td class="pe-3 text-end">
+                            <td>
+                                @if (user.Disabled)
+                                {
+                                    <span class="badge text-bg-danger-subtle border text-danger-emphasis">Yes</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-success-subtle border text-success-emphasis">No</span>
+                                }
+                            </td>
+                            <td class="pe-4 text-end">
                                 <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-outline-primary edit-user" data-user-id="@user.Id"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit User">
+                                    <button type="button"
+                                            class="btn btn-outline-primary edit-user"
+                                            data-user-id="@user.Id"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-title="Edit User">
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
-                                    <button type="button" class="btn btn-outline-danger delete-user" data-user-id="@user.Id"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete User">
+
+                                    <button type="button"
+                                            class="btn btn-outline-danger delete-user"
+                                            data-user-id="@user.Id"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-title="Delete User">
                                         <i class="bi bi-trash"></i>
                                     </button>
-                                    <button type="button" class="btn btn-outline-warning change-password"
-                                        data-user-id="@user.Id" data-bs-toggle="tooltip" data-bs-placement="top"
-                                        data-bs-custom-class="custom-tooltip" data-bs-title="Force Password Change">
+
+                                    <button type="button"
+                                            class="btn btn-outline-warning change-password"
+                                            data-user-id="@user.Id"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-custom-class="custom-tooltip"
+                                            data-bs-title="Force Password Change">
                                         <i class="bi bi-key"></i>
                                     </button>
-                                    <button type="button" class="btn btn-outline-info reset-password"
-                                        data-user-id="@user.Id" data-username="@user.UserName" data-bs-toggle="tooltip"
-                                        data-bs-placement="top" data-bs-title="Reset Password">
+
+                                    <button type="button"
+                                            class="btn btn-outline-info reset-password"
+                                            data-user-id="@user.Id"
+                                            data-username="@user.UserName"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-title="Reset Password">
                                         <i class="bi bi-arrow-counterclockwise"></i>
                                     </button>
                                 </div>
@@ -142,42 +176,52 @@
 <!-- Edit User Modal -->
 <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content border-0 shadow">
             <div class="modal-header">
                 <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
             <div class="modal-body">
                 <form id="editUserForm" class="needs-validation" novalidate>
                     <input type="hidden" id="editUserId" name="Id" />
+
                     <div class="mb-3">
                         <label for="editUserName" class="form-label">Username</label>
                         <input type="text" class="form-control" id="editUserName" name="UserName" required />
                         <div class="invalid-feedback">Username is required.</div>
                     </div>
+
                     <div class="mb-3">
                         <label for="editEmail" class="form-label">Email</label>
                         <input type="email" class="form-control" id="editEmail" name="Email" required />
                         <div class="invalid-feedback">A valid email is required.</div>
                     </div>
+
                     <div class="mb-3">
                         <label for="editPhoneNumber" class="form-label">Phone Number</label>
                         <input type="tel" class="form-control" id="editPhoneNumber" name="PhoneNumber" />
                     </div>
+
                     <div class="mb-3">
                         <label for="editAccessFailedCount" class="form-label">Access Failed Count</label>
-                        <input type="number" class="form-control" id="editAccessFailedCount" name="AccessFailedCount"
-                            min="0" />
+                        <input type="number"
+                               class="form-control"
+                               id="editAccessFailedCount"
+                               name="AccessFailedCount"
+                               min="0" />
                         <div class="invalid-feedback">Must be a non-negative number.</div>
                     </div>
-                    <div class="mb-3 form-check">
+
+                    <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="editDisabled" name="Disabled" />
                         <label class="form-check-label" for="editDisabled">Disabled</label>
                     </div>
                 </form>
             </div>
+
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" id="saveEditUserBtn">Save changes</button>
             </div>
         </div>
@@ -186,183 +230,259 @@
 
 <partial name="_AddUserModal" />
 
-<script src="~/js/admin/users/usersManagement.js" asp-append-version="true"></script>
 @section Scripts {
+    @* Külső script kikapcsolva, hogy ne legyen dupla submit *@
+    @* <script src="~/js/admin/users/usersManagement.js" asp-append-version="true"></script> *@
 
     <script>
-        // Initialize Bootstrap tooltips
         document.addEventListener('DOMContentLoaded', function () {
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             tooltipTriggerList.forEach(function (tooltipTriggerEl) {
                 new bootstrap.Tooltip(tooltipTriggerEl);
             });
-        });
-    </script>
 
-    <script>
-        // Delete user functionality
-        document.querySelectorAll('.delete-user').forEach(button => {
-            button.addEventListener('click', async function () {
-                const userId = this.getAttribute('data-user-id');
-                const username = this.closest('tr').querySelector('td:nth-child(2)').textContent;
+            const addUserForm = document.getElementById('addUserForm');
 
-                if (confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+            if (addUserForm) {
+                addUserForm.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+
+                    const token = addUserForm.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+                    const formData = {
+                        UserName: document.getElementById('userName')?.value.trim() || '',
+                        Email: document.getElementById('modalEmail')?.value.trim() || '',
+                        Password: document.getElementById('modalPassword')?.value || '',
+                        PhoneNumber: document.getElementById('phoneNumber')?.value.trim() || ''
+                    };
+
+                    const payload = new URLSearchParams();
+                    payload.append('__RequestVerificationToken', token);
+                    payload.append('UserName', formData.UserName);
+                    payload.append('Email', formData.Email);
+                    payload.append('Password', formData.Password);
+                    payload.append('PhoneNumber', formData.PhoneNumber);
+
+                    console.log('Add user form submitted');
+                    console.log('Add user payload:', Object.fromEntries(payload.entries()));
+
                     try {
-                        const response = await fetch('/Admin/Users/Index?handler=DeleteUser', {
+                        const response = await fetch('?handler=AddUser', {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json',
-                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
                             },
-                            body: JSON.stringify({ userId })
+                            body: payload.toString()
                         });
 
-                        if (!response.ok) {
-                            const text = await response.text();
-                            console.error('Delete failed:', response.status, text);
-                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        const raw = await response.text();
+                        console.log('Add user raw response:', raw);
+
+                        let result = {};
+                        if (raw && raw.trim() !== '') {
+                            result = JSON.parse(raw);
                         }
-
-                        const result = await response.json();
-                        if (result.success) {
-                            alert(result.message);
-                            this.closest('tr').remove();
-                        } else {
-                            alert(`Error: ${result.message}`);
-                        }
-                    } catch (error) {
-                        console.error('Fetch error:', error);
-                        alert(`Delete failed: ${error.message}`);
-                    }
-                }
-            });
-        });
-
-        // Reset password functionality
-        document.querySelectorAll('.reset-password').forEach(button => {
-            button.addEventListener('click', async function () {
-                const userId = this.getAttribute('data-user-id');
-                const username = this.getAttribute('data-username');
-                const today = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // e.g., "20250403"
-                const newPassword = `${username}${today}C92`;
-
-                if (confirm(`Reset password for "${username}" to "${newPassword}"? User will be required to change it on next login.`)) {
-                    try {
-                        const response = await fetch('/Admin/Users/Index?handler=ResetPassword', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                            },
-                            body: JSON.stringify({ userId })
-                        });
 
                         if (!response.ok) {
-                            const text = await response.text();
-                            console.error('Reset password failed:', response.status, text);
-                            throw new Error(`HTTP error! Status: ${response.status}`);
+                            throw new Error(result.message || `HTTP error! Status: ${response.status}`);
                         }
 
-                        const result = await response.json();
-                        if (result.success) {
-                            alert(`Password reset successfully to "${newPassword}". User must change it on next login.`);
-                        } else {
-                            alert(`Error: ${result.message}`);
+                        const loginIdentifier = formData.Email || formData.UserName;
+
+                        alert(
+                            `Felhasználó sikeresen létrehozva.\n\n` +
+                            `Belépési adatok:\n` +
+                            `Felhasználónév / Email: ${loginIdentifier}\n` +
+                            `Kezdeti jelszó: ${formData.Password}\n\n` +
+                            `A felhasználó ezzel a jelszóval tud először belépni.\n` +
+                            `Első belépés után kötelező jelszóváltoztatás javasolt vagy elvárt a rendszerlogika szerint.`
+                        );
+
+                        const modalElement = document.getElementById('addUserModal');
+                        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                        if (modalInstance) {
+                            modalInstance.hide();
                         }
+
+                        addUserForm.reset();
+                        location.reload();
                     } catch (error) {
-                        console.error('Fetch error:', error);
-                        alert(`Reset password failed: ${error.message}`);
+                        console.error('Error creating user:', error);
+                        alert(error.message);
                     }
-                }
+                });
+            }
+
+            document.querySelectorAll('.delete-user').forEach(button => {
+                button.addEventListener('click', async function () {
+                    const userId = this.getAttribute('data-user-id');
+                    const username = this.closest('tr').querySelector('td:nth-child(2)').textContent;
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+                    if (confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+                        try {
+                            const response = await fetch('?handler=DeleteUser', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'RequestVerificationToken': token
+                                },
+                                body: JSON.stringify({ userId })
+                            });
+
+                            const text = await response.text();
+                            console.log('Delete raw response:', text);
+
+                            let result = {};
+                            if (text && text.trim() !== '') {
+                                result = JSON.parse(text);
+                            }
+
+                            if (!response.ok) {
+                                throw new Error(result.message || `HTTP error! Status: ${response.status}`);
+                            }
+
+                            if (result.success) {
+                                alert(result.message);
+                                this.closest('tr').remove();
+                            } else {
+                                alert(`Error: ${result.message}`);
+                            }
+                        } catch (error) {
+                            console.error('Fetch error:', error);
+                            alert(`Delete failed: ${error.message}`);
+                        }
+                    }
+                });
             });
-        });
 
-        // Search by username
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', applyFilters);
-        } else {
-            console.error('Search input element not found');
-        }
+            document.querySelectorAll('.reset-password').forEach(button => {
+                button.addEventListener('click', async function () {
+                    const userId = this.getAttribute('data-user-id');
+                    const username = this.getAttribute('data-username');
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                    const newPassword = `${username}${today}C92`;
 
-        // Filter by disabled users
-        document.querySelectorAll('.dropdown-menu a[data-filter]').forEach(filterLink => {
-            filterLink.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.querySelectorAll('.dropdown-menu a[data-filter]').forEach(link => link.classList.remove('active'));
-                this.classList.add('active');
-                applyFilters();
+                    if (confirm(`Reset password for "${username}" to "${newPassword}"? User will be required to change it on next login.`)) {
+                        try {
+                            const payload = new URLSearchParams();
+                            payload.append('__RequestVerificationToken', token);
+                            payload.append('UserId', userId);
+
+                            const response = await fetch('?handler=ResetPassword', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                                },
+                                body: payload.toString()
+                            });
+
+                            const text = await response.text();
+                            console.log('Reset password raw response:', text);
+
+                            let result = {};
+                            if (text && text.trim() !== '') {
+                                result = JSON.parse(text);
+                            }
+
+                            if (!response.ok) {
+                                throw new Error(result.message || `HTTP error! Status: ${response.status}`);
+                            }
+
+                            if (result.success) {
+                                alert(
+                                    `Jelszó sikeresen visszaállítva.\n\n` +
+                                    `Felhasználó: ${username}\n` +
+                                    `Új ideiglenes jelszó: ${newPassword}\n\n` +
+                                    `A felhasználónak ezzel kell belépnie.\n` +
+                                    `Első sikeres belépés után kötelező jelszót módosítania.`
+                                );
+                            } else {
+                                alert(`Error: ${result.message}`);
+                            }
+                        } catch (error) {
+                            console.error('Fetch error:', error);
+                            alert(`Reset password failed: ${error.message}`);
+                        }
+                    }
+                });
             });
-        });
 
-        // Combined filter function
-        function applyFilters() {
-            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-            const filter = document.querySelector('.dropdown-item.active')?.getAttribute('data-filter') || 'all';
-            const rows = document.querySelectorAll('#usersTable tbody tr');
+            const searchInput = document.getElementById('searchInput');
 
-            rows.forEach(row => {
-                const username = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                const isDisabled = row.querySelector('td:nth-child(6)').textContent.toLowerCase() === 'yes';
+            if (searchInput) {
+                searchInput.addEventListener('input', applyFilters);
+            }
 
-                const matchesSearch = username.includes(searchTerm);
-                const matchesFilter = filter === 'all' || (filter === 'disabled' && isDisabled);
-
-                row.style.display = matchesSearch && matchesFilter ? '' : 'none';
+            document.querySelectorAll('.dropdown-menu a[data-filter]').forEach(filterLink => {
+                filterLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelectorAll('.dropdown-menu a[data-filter]').forEach(link => link.classList.remove('active'));
+                    this.classList.add('active');
+                    applyFilters();
+                });
             });
-        }
 
-        // Set initial filter to 'all' on page load
-        document.addEventListener('DOMContentLoaded', () => {
             const allFilter = document.querySelector('.dropdown-menu a[data-filter="all"]');
             if (allFilter) {
                 allFilter.classList.add('active');
                 applyFilters();
             }
+
+            function applyFilters() {
+                const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+                const filter = document.querySelector('.dropdown-menu a[data-filter].active')?.getAttribute('data-filter') || 'all';
+                const rows = document.querySelectorAll('#usersTable tbody tr');
+
+                rows.forEach(row => {
+                    const username = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const isDisabled = row.querySelector('td:nth-child(6)').textContent.toLowerCase().includes('yes');
+
+                    const matchesSearch = username.includes(searchTerm);
+                    const matchesFilter = filter === 'all' || (filter === 'disabled' && isDisabled);
+
+                    row.style.display = matchesSearch && matchesFilter ? '' : 'none';
+                });
+            }
         });
     </script>
+
+    <style>
+        .users-page .breadcrumb {
+            margin-bottom: 0;
+        }
+
+        .users-page .table th,
+        .users-page .table td {
+            padding-top: .9rem;
+            padding-bottom: .9rem;
+            vertical-align: middle;
+        }
+
+        .users-page .dropdown-item.active {
+            background-color: rgba(13, 110, 253, 0.1);
+            color: inherit;
+        }
+
+        .custom-tooltip .tooltip-inner {
+            background-color: var(--bs-warning);
+            color: var(--bs-black);
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+        }
+
+        .custom-tooltip .tooltip-arrow::before {
+            border-top-color: var(--bs-warning);
+        }
+
+        .users-page code {
+            background: rgba(13, 110, 253, 0.08);
+            color: var(--bs-primary-text-emphasis, #0d6efd);
+            padding: 0.15rem 0.35rem;
+            border-radius: 0.375rem;
+            font-size: 0.9em;
+        }
+    </style>
 }
-@Html.AntiForgeryToken()
-
-<style>
-    body {
-        overflow: hidden;
-    }
-
-    .nav-link {
-        border-radius: 0.25rem;
-        margin: 0.1rem 0;
-    }
-
-    .nav-link.active {
-        background-color: rgba(13, 110, 253, 0.1);
-    }
-
-    .table th,
-    .table td {
-        padding: 0.5rem 0.75rem;
-    }
-
-    .gap-2 {
-        gap: 0.5rem;
-    }
-
-    .dropdown-item.active {
-        background-color: rgba(13, 110, 253, 0.1);
-    }
-
-    /* Custom tooltip styling */
-    .custom-tooltip .tooltip-inner {
-        background-color: var(--bs-warning);
-        /* Matches btn-outline-warning */
-        color: var(--bs-black);
-        font-size: 0.875rem;
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.25rem;
-    }
-
-    .custom-tooltip .tooltip-arrow::before {
-        border-top-color: var(--bs-warning);
-        /* Arrow matches tooltip background */
-    }
-</style>

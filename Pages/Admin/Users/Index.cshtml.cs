@@ -1,15 +1,10 @@
-using Microsoft.AspNetCore.Authorization; // Added for [Authorize]
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Cloud9_2.Models;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
 
 namespace Cloud9_2.Pages.Admin.Users
 {
@@ -27,7 +22,7 @@ namespace Cloud9_2.Pages.Admin.Users
             _roleManager = roleManager;
         }
 
-        public IList<UserViewModel> Users { get; set; }
+        public IList<UserViewModel> Users { get; set; } = new List<UserViewModel>();
 
         public async Task OnGetAsync()
         {
@@ -48,89 +43,170 @@ namespace Cloud9_2.Pages.Admin.Users
                 .ToListAsync();
         }
 
-        public async Task<IActionResult> OnPostAddUserAsync([FromBody] UserDtoWrapper wrapper)
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> OnPostAddUser(UserDto dto)
+{
+    Console.WriteLine("OnPostAddUser HIT");
+
+    try
+    {
+        if (dto == null)
         {
-            try
+            return new JsonResult(new
             {
-                Console.WriteLine($"Received request: {JsonSerializer.Serialize(wrapper)}");
-
-                if (wrapper?.UserDto == null)
-                {
-                    return BadRequest(new { error = "Invalid request data: UserDto is null" });
-                }
-
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState
-                        .Where(x => x.Value.Errors.Count > 0)
-                        .SelectMany(x => x.Value.Errors.Select(e => new
-                        {
-                            Field = x.Key.Replace("UserDto.", ""),
-                            Message = e.ErrorMessage
-                        }));
-                    return BadRequest(new { Errors = errors });
-                }
-
-                var user = new ApplicationUser
-                {
-                    UserName = wrapper.UserDto.UserName,
-                    Email = wrapper.UserDto.Email,
-                    PhoneNumber = wrapper.UserDto.PhoneNumber,
-                    MustChangePassword = false
-                };
-
-                var result = await _userManager.CreateAsync(user, wrapper.UserDto.Password);
-
-                if (!result.Succeeded)
-                {
-                    var errors = result.Errors.Select(e => new
-                    {
-                        Field = e.Code.Contains("Email") ? "Email" :
-                                e.Code.Contains("Password") ? "Password" :
-                                e.Code.Contains("UserName") ? "UserName" : "",
-                        Message = e.Description
-                    });
-                    return BadRequest(new { Errors = errors });
-                }
-
-                return new JsonResult(new
-                {
-                    Id = user.Id,
-                    UserName = user.UserName,
-                    Email = user.Email,
-                    PhoneNumber = user.PhoneNumber,
-                    AccessFailedCount = user.AccessFailedCount,
-                    Disabled = user.Disabled
-                });
-            }
-            catch (Exception ex)
+                success = false,
+                message = "A kérés adatai hiányoznak."
+            })
             {
-                Console.WriteLine($"Exception in OnPostAddUserAsync: {ex}");
-                return BadRequest(new { error = $"Server error: {ex.Message}" });
-            }
+                StatusCode = 400
+            };
         }
+
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Where(x => x.Value.Errors.Count > 0)
+                .SelectMany(x => x.Value.Errors.Select(e => new
+                {
+                    field = x.Key,
+                    message = e.ErrorMessage
+                }))
+                .ToList();
+
+            return new JsonResult(new
+            {
+                success = false,
+                message = "Validációs hiba.",
+                errors
+            })
+            {
+                StatusCode = 400
+            };
+        }
+
+        var existingUserByName = await _userManager.FindByNameAsync(dto.UserName);
+        if (existingUserByName != null)
+        {
+            return new JsonResult(new
+            {
+                success = false,
+                message = "Ez a felhasználónév már létezik."
+            })
+            {
+                StatusCode = 400
+            };
+        }
+
+        var existingUserByEmail = await _userManager.FindByEmailAsync(dto.Email);
+        if (existingUserByEmail != null)
+        {
+            return new JsonResult(new
+            {
+                success = false,
+                message = "Ez az email cím már használatban van."
+            })
+            {
+                StatusCode = 400
+            };
+        }
+
+        var user = new ApplicationUser
+        {
+            UserName = dto.UserName,
+            Email = dto.Email,
+            PhoneNumber = string.IsNullOrWhiteSpace(dto.PhoneNumber) ? null : dto.PhoneNumber,
+            MustChangePassword = false
+        };
+
+        var result = await _userManager.CreateAsync(user, dto.Password);
+
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors.Select(e => new
+            {
+                field = e.Code,
+                message = e.Description
+            }).ToList();
+
+            return new JsonResult(new
+            {
+                success = false,
+                message = "A felhasználó létrehozása sikertelen.",
+                errors
+            })
+            {
+                StatusCode = 400
+            };
+        }
+
+        return new JsonResult(new
+        {
+            success = true,
+            message = "Felhasználó sikeresen létrehozva.",
+            user = new
+            {
+                id = user.Id,
+                userName = user.UserName,
+                email = user.Email,
+                phoneNumber = user.PhoneNumber,
+                accessFailedCount = user.AccessFailedCount,
+                disabled = user.Disabled
+            }
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Exception in OnPostAddUser: {ex}");
+
+        return new JsonResult(new
+        {
+            success = false,
+            message = $"Szerver hiba: {ex.Message}"
+        })
+        {
+            StatusCode = 500
+        };
+    }
+}
 
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> OnPostDeleteUserAsync([FromBody] DeleteUserDto dto)
         {
             if (string.IsNullOrEmpty(dto?.UserId))
             {
-                return new JsonResult(new { success = false, message = "User ID is required." });
+                return new JsonResult(new { success = false, message = "User ID is required." })
+                {
+                    StatusCode = 400
+                };
             }
 
             var user = await _userManager.FindByIdAsync(dto.UserId);
             if (user == null)
             {
-                return new JsonResult(new { success = false, message = "User not found." });
+                return new JsonResult(new { success = false, message = "User not found." })
+                {
+                    StatusCode = 404
+                };
             }
 
             var result = await _userManager.DeleteAsync(user);
             if (result.Succeeded)
             {
-                return new JsonResult(new { success = true, message = $"User {user.UserName} deleted successfully." });
+                return new JsonResult(new
+                {
+                    success = true,
+                    message = $"User {user.UserName} deleted successfully."
+                });
             }
 
-            return new JsonResult(new { success = false, message = "Error deleting user: " + string.Join(", ", result.Errors.Select(e => e.Description)) });
+            return new JsonResult(new
+            {
+                success = false,
+                message = "Error deleting user: " + string.Join(", ", result.Errors.Select(e => e.Description))
+            })
+            {
+                StatusCode = 400
+            };
         }
 
         public async Task<IActionResult> OnPostForcePasswordChangeAsync(string id)
@@ -138,7 +214,14 @@ namespace Cloud9_2.Pages.Admin.Users
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
             {
-                return NotFound(new { error = "User not found" });
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = "User not found."
+                })
+                {
+                    StatusCode = 404
+                };
             }
 
             user.MustChangePassword = true;
@@ -146,24 +229,55 @@ namespace Cloud9_2.Pages.Admin.Users
 
             if (!result.Succeeded)
             {
-                var errors = result.Errors.Select(e => new { Field = "", Message = e.Description });
-                return BadRequest(new { Errors = errors });
+                var errors = result.Errors.Select(e => new
+                {
+                    field = "",
+                    message = e.Description
+                }).ToList();
+
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = "Update failed.",
+                    errors
+                })
+                {
+                    StatusCode = 400
+                };
             }
 
-            return new JsonResult(new { success = true, message = $"User {user.UserName} must now change their password." });
+            return new JsonResult(new
+            {
+                success = true,
+                message = $"User {user.UserName} must now change their password."
+            });
         }
 
         public async Task<IActionResult> OnPostEditUserAsync([FromBody] EditUserDto dto)
         {
             if (dto == null || string.IsNullOrEmpty(dto.Id))
             {
-                return BadRequest(new { error = "Invalid user data" });
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = "Invalid user data."
+                })
+                {
+                    StatusCode = 400
+                };
             }
 
             var user = await _userManager.FindByIdAsync(dto.Id);
             if (user == null)
             {
-                return NotFound(new { error = "User not found" });
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = "User not found."
+                })
+                {
+                    StatusCode = 404
+                };
             }
 
             user.UserName = dto.UserName;
@@ -175,8 +289,21 @@ namespace Cloud9_2.Pages.Admin.Users
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
             {
-                var errors = result.Errors.Select(e => new { Field = e.Code, Message = e.Description });
-                return BadRequest(new { Errors = errors });
+                var errors = result.Errors.Select(e => new
+                {
+                    field = e.Code,
+                    message = e.Description
+                }).ToList();
+
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = "A felhasználó módosítása sikertelen.",
+                    errors
+                })
+                {
+                    StatusCode = 400
+                };
             }
 
             return new JsonResult(new
@@ -194,70 +321,106 @@ namespace Cloud9_2.Pages.Admin.Users
             });
         }
 
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> OnPostResetPasswordAsync([FromBody] ResetPasswordDto dto)
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> OnPostResetPassword(ResetPasswordDto dto)
+{
+    try
+    {
+        if (string.IsNullOrEmpty(dto?.UserId))
         {
-            try
+            return new JsonResult(new
             {
-                if (string.IsNullOrEmpty(dto?.UserId))
-                {
-                    return new JsonResult(new { success = false, message = "User ID is required." });
-                }
-
-                var user = await _userManager.FindByIdAsync(dto.UserId);
-                if (user == null)
-                {
-                    return new JsonResult(new { success = false, message = "User not found." });
-                }
-
-                // Generate new password: username + current date + "C92" (e.g., "john.doe20250403C92")
-                string today = DateTime.UtcNow.ToString("yyyyMMdd");
-                string newPassword = $"{user.UserName}{today}C92";
-
-                // Reset password
-                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var resetResult = await _userManager.ResetPasswordAsync(user, token, newPassword);
-
-                if (!resetResult.Succeeded)
-                {
-                    return new JsonResult(new { success = false, message = "Error resetting password: " + string.Join(", ", resetResult.Errors.Select(e => e.Description)) });
-                }
-
-                // Require password change on next login
-                user.MustChangePassword = true;
-                var updateResult = await _userManager.UpdateAsync(user);
-
-                if (!updateResult.Succeeded)
-                {
-                    return new JsonResult(new { success = false, message = "Error setting password change requirement: " + string.Join(", ", updateResult.Errors.Select(e => e.Description)) });
-                }
-
-                return new JsonResult(new { success = true, message = $"Password reset to {newPassword} for {user.UserName}. User must change it on next login." });
-            }
-            catch (Exception ex)
+                success = false,
+                message = "User ID is required."
+            })
             {
-                Console.WriteLine($"Exception in OnPostResetPasswordAsync: {ex}");
-                return new JsonResult(new { success = false, message = $"Server error: {ex.Message}" });
-            }
+                StatusCode = 400
+            };
         }
+
+        var user = await _userManager.FindByIdAsync(dto.UserId);
+        if (user == null)
+        {
+            return new JsonResult(new
+            {
+                success = false,
+                message = "User not found."
+            })
+            {
+                StatusCode = 404
+            };
+        }
+
+        string today = DateTime.UtcNow.ToString("yyyyMMdd");
+        string newPassword = $"{user.UserName}{today}C92";
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var resetResult = await _userManager.ResetPasswordAsync(user, token, newPassword);
+
+        if (!resetResult.Succeeded)
+        {
+            return new JsonResult(new
+            {
+                success = false,
+                message = "Error resetting password: " + string.Join(", ", resetResult.Errors.Select(e => e.Description))
+            })
+            {
+                StatusCode = 400
+            };
+        }
+
+        user.MustChangePassword = true;
+        var updateResult = await _userManager.UpdateAsync(user);
+
+        if (!updateResult.Succeeded)
+        {
+            return new JsonResult(new
+            {
+                success = false,
+                message = "Error setting password change requirement: " + string.Join(", ", updateResult.Errors.Select(e => e.Description))
+            })
+            {
+                StatusCode = 400
+            };
+        }
+
+        return new JsonResult(new
+        {
+            success = true,
+            message = $"Password reset to {newPassword} for {user.UserName}. User must change it on next login."
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Exception in OnPostResetPassword: {ex}");
+        return new JsonResult(new
+        {
+            success = false,
+            message = $"Server error: {ex.Message}"
+        })
+        {
+            StatusCode = 500
+        };
+    }
+}
     }
 
     public class EditUserDto
     {
-        public string Id { get; set; }
-        public string UserName { get; set; }
-        public string Email { get; set; }
-        public string PhoneNumber { get; set; }
+        public string Id { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
         public int AccessFailedCount { get; set; }
         public bool Disabled { get; set; }
     }
 
     public class UserViewModel
     {
-        public string Id { get; set; }
-        public string UserName { get; set; }
-        public string Email { get; set; }
-        public string PhoneNumber { get; set; }
+        public string Id { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
         public bool LockoutEnabled { get; set; }
         public bool EmailConfirmed { get; set; }
         public bool PhoneNumberConfirmed { get; set; }
@@ -271,32 +434,27 @@ namespace Cloud9_2.Pages.Admin.Users
     public class UserDto
     {
         [Required(ErrorMessage = "Username is required")]
-        public string UserName { get; set; }
+        public string UserName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email format")]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Password is required")]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters")]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
 
         [Phone(ErrorMessage = "Invalid phone number format")]
-        public string PhoneNumber { get; set; }
-    }
-
-    public class UserDtoWrapper
-    {
-        public UserDto UserDto { get; set; }
+        public string? PhoneNumber { get; set; }
     }
 
     public class DeleteUserDto
     {
-        public string UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
     }
 
     public class ResetPasswordDto
     {
-        public string UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
     }
 }

@@ -2,187 +2,176 @@
 @model Cloud9_2.Pages.Admin.Roles.IndexModel
 @{
     Layout = "/Pages/Admin/_Layout.cshtml";
+    ViewData["Title"] = "Jogosultság típusok";
 }
 
-<div class="container-fluid vh-100 d-flex flex-nowrap p-0">
-    <!-- Fixed Sidebar -->
-    <div class="d-flex flex-column flex-shrink-0 bg-light border-end" style="width: 200px;">
-        <div class="pt-3">
-            @if (User.IsInRole("SuperAdmin") || User.IsInRole("Admin"))
-            {
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link px-3 py-2" asp-area="" asp-page="/Admin/Users/Index">
-                            <i class="bi bi-people-fill me-2"></i>Felhasználók
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active px-3 py-2" asp-area="" asp-page="/Admin/Roles/Index">
-                            <i class="bi bi-shield-lock me-2"></i>Role-ok
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link px-3 py-2" asp-area="" asp-page="/Admin/ActiveUsers/ActiveUsers">
-                            <i class="bi bi-shield-lock me-2"></i>Aktív Felhasználók
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link px-3 py-2" asp-area="" asp-page="/Admin/ManageRoles/ManageRoles">
-                            <i class="bi bi-shield-lock me-2"></i>User - Role
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link px-3 py-2" asp-area="" asp-page="/Admin/LoginLog/LoginLog">
-                            <i class="bi bi-shield-lock me-2"></i>Login-Out Log
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link px-3 py-2" asp-area="" asp-page="/Admin/ColumnVisibilitySettings/ColumnVisibilitySettings">
-                            <i class="bi bi-clock-history me-2"></i>Oszlopok - Role-ok
-                        </a>
-                    </li>
-                </ul>
-            }
-        </div>
-    </div>
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
+                <li class="breadcrumb-item"><a href="../">Admin dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Jogosultság típusok</li>
+            </ol>
+        </nav>
 
-    <!-- Main Content -->
-    <div class="d-flex flex-column flex-grow-1 overflow-auto p-3" style="height: 100vh;">
-        <!-- Header Section -->
-        <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb bg-body-tertiary rounded-3">
-                        <li class="breadcrumb-item"><a href="../../">Főoldal</a></li>
-                        <li class="breadcrumb-item"><a href="../">Admin dashboard</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Jogosultság típusok</li>
-                    </ol>
-                </nav>
+        <h1 class="h3 mb-1 fw-bold d-flex align-items-center gap-2">
+            <i class="bi bi-shield-lock"></i>
+            <span>Jogosultság típusok</span>
+        </h1>
+
+        <p class="text-muted mb-0">Rendszer szerepkörök kezelése</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <button type="button"
+                        class="btn btn-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#addRoleModal">
+                    <i class="bi bi-plus-circle me-1"></i>Add New Role
+                </button>
             </div>
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addRoleModal">
-                        <i class="bi bi-plus-circle me-1"></i>Add New Role
+
+            <div class="d-flex align-items-center gap-2">
+                <div class="input-group" style="max-width: 280px;">
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Search roles..."
+                           id="searchInput" />
+                    <button class="btn btn-outline-secondary" type="button" tabindex="-1">
+                        <i class="bi bi-search"></i>
                     </button>
                 </div>
-
-                <div class="d-flex align-items-center gap-2">
-                    <div class="input-group input-group-sm" style="width: 250px;">
-                        <input type="text" class="form-control" placeholder="Search roles..." id="searchInput">
-                        <button class="btn btn-outline-secondary" type="button">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    </div>
-                    @* <div class="dropdown">
-                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-funnel me-1"></i>Filter
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">All Roles</a></li>
-                            <li><a class="dropdown-item" href="#">System Roles</a></li>
-                            <li><a class="dropdown-item" href="#">Custom Roles</a></li>
-                        </ul>
-                    </div> *@
-                </div>
             </div>
         </div>
-
-        <!-- Roles Table -->
-        <div class="table-responsive border rounded">
-            <table class="table table-sm table-hover align-middle mb-0" id="rolesTable">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-3">Role ID</th>
-                        <th>Role Name</th>
-                        <th>Normalized Name</th>
-                        <th class="pe-3 text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var role in Model.Roles)
-                    {
-                        <tr data-role-id="@role.Id">
-                            <td class="ps-3 text-truncate" style="max-width: 200px;">@role.Id</td>
-                            <td>@role.Name</td>
-                            <td>@role.NormalizedName</td>
-                            <td class="pe-3 text-end">
-                                <div class="btn-group btn-group-sm" role="group" aria-label="Role actions">
-                                    <button type="button" class="btn btn-outline-primary edit-role" data-bs-toggle="modal"
-                                        data-bs-target="#roleModal" data-role-id="@role.Id" data-role-name="@role.Name"
-                                        title="Edit role">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-outline-danger delete-role" data-bs-toggle="modal"
-                                        data-bs-target="#roleModal" data-role-id="@role.Id" title="Delete role">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Footer -->
-        <div class="mt-3">
-            <a asp-page="/Admin/Users" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-arrow-left me-1"></i>Back to Users
-            </a>
-        </div>
     </div>
+</div>
 
-    <!-- Modals -->
-    <partial name="_AddRoleModal" />
-    <partial name="_RoleModal" />
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="rolesTable">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Role ID</th>
+                    <th>Role Name</th>
+                    <th>Normalized Name</th>
+                    <th class="pe-4 text-end">Actions</th>
+                </tr>
+            </thead>
+<tbody>
+    @if (Model.Roles != null && Model.Roles.Any())
+    {
+        @foreach (var role in Model.Roles)
+        {
+            <tr data-role-id="@role.Id">
+                <td class="ps-4 text-truncate" style="max-width: 220px;">@role.Id</td>
+                <td class="role-name">@role.Name</td>
+                <td class="role-normalized-name">@role.NormalizedName</td>
+                <td class="pe-4 text-end">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Role actions">
+                        <button type="button"
+                                class="btn btn-outline-primary edit-role"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editRoleModal"
+                                data-role-id="@role.Id"
+                                data-role-name="@role.Name"
+                                title="Edit role">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
 
-    <!-- Add the JavaScript file -->
+                        <button type="button"
+                                class="btn btn-outline-danger delete-role"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteRoleModal"
+                                data-role-id="@role.Id"
+                                data-role-name="@role.Name"
+                                title="Delete role">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        }
+    }
+    else
+    {
+        <tr id="emptyRolesRow">
+            <td colspan="4" class="text-center text-muted py-4">Nincs szerepkör.</td>
+        </tr>
+    }
+</tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a asp-page="/Admin/Users" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Users
+    </a>
+</div>
+
+<partial name="_RoleModals" />
+
+@section Scripts {
     <script src="~/js/admin/roles/rolesManagement.js" asp-append-version="true"></script>
 
-    <!-- Search Functionality -->
-@section Scripts {
-        <script>
-            // Search by role name
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
             const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.addEventListener('input', function (e) {
-                    const searchTerm = e.target.value.toLowerCase();
-                    const rows = document.querySelectorAll('#rolesTable tbody tr');
+            const tableBody = document.querySelector('#rolesTable tbody');
 
-                    rows.forEach(row => {
-                        const roleName = row.querySelector('td:nth-child(2)').textContent.toLowerCase(); // Role Name column
-                        row.style.display = roleName.includes(searchTerm) ? '' : 'none';
-                    });
-                });
-            } else {
-                console.error('Search input element not found');
+            if (!searchInput || !tableBody) {
+                console.error('Roles search initialization failed');
+                return;
             }
-        </script>
-}
 
-    <!-- Anti-forgery token for AJAX requests -->
-@Html.AntiForgeryToken()
+            searchInput.addEventListener('input', function (e) {
+                const searchTerm = (e.target.value || '').toLowerCase().trim();
+                const rows = tableBody.querySelectorAll('tr[data-role-id]');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const roleName = row.querySelector('.role-name')?.textContent.toLowerCase() || '';
+                    const normalizedName = row.querySelector('.role-normalized-name')?.textContent.toLowerCase() || '';
+                    const matches = roleName.includes(searchTerm) || normalizedName.includes(searchTerm);
+
+                    row.style.display = matches ? '' : 'none';
+
+                    if (matches) {
+                        visibleCount++;
+                    }
+                });
+
+                let emptySearchRow = document.getElementById('emptySearchRow');
+
+                if (visibleCount === 0 && rows.length > 0) {
+                    if (!emptySearchRow) {
+                        emptySearchRow = document.createElement('tr');
+                        emptySearchRow.id = 'emptySearchRow';
+                        emptySearchRow.innerHTML = `
+                            <td colspan="4" class="text-center text-muted py-4">
+                                Nincs találat a keresésre.
+                            </td>
+                        `;
+                        tableBody.appendChild(emptySearchRow);
+                    }
+                } else {
+                    if (emptySearchRow) {
+                        emptySearchRow.remove();
+                    }
+                }
+            });
+        });
+    </script>
 
     <style>
-        body {
-            overflow: hidden;
-        }
-
-        .nav-link {
-            border-radius: 0.25rem;
-            margin: 0.1rem 0;
-        }
-
-        .nav-link.active {
-            background-color: rgba(13, 110, 253, 0.1);
-        }
-
         .table th,
         .table td {
-            padding: 0.5rem 0.75rem;
-        }
-
-        .gap-2 {
-            gap: 0.5rem;
+            padding: 0.75rem 1rem;
         }
     </style>
+}

@@ -128,6 +128,10 @@ builder.Services.AddControllers();
 // Register Twilio settings from appsettings.json
 builder.Services.Configure<TwilioSettings>(builder.Configuration.GetSection("Twilio"));
 
+builder.Services.AddScoped<EmailService>();
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITenantConnectionStringProvider, SubdomainTenantConnectionStringProvider>();
 

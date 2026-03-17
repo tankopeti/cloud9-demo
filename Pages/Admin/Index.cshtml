@@ -1,26 +1,144 @@
 @page
 @model Cloud9_2.Pages.Admin.IndexModel
+
 @{
-    Layout = "_Layout"; // Full layout for authenticated users
+    Layout = "_Layout";
 }
 
-
-<div class="container-fluid vh-100 d-flex flex-nowrap p-0">
-    <!-- Fixed Sidebar -->
-    <div class="d-flex flex-column flex-shrink-0 bg-light border-end" style="width: 200px;">
-        <div class="pt-3">
-            @if (User.IsInRole("SuperAdmin"))
-            {
-                
-            }
+<div class="container-fluid py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Admin Dashboard</h1>
+            <p class="text-muted mb-0">Központi áttekintés az admin funkciókról és rendszeraktivitásról.</p>
+        </div>
+        <div class="mt-3 mt-md-0">
+            <span class="badge bg-success-subtle text-success border">System online</span>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="d-flex flex-column flex-grow-1 overflow-auto p-3" style="height: 100vh;">
-        <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h1 class="h3 mb-0">Admin dashboard</h1>
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-2">Összes felhasználó</div>
+                    <div class="fs-3 fw-semibold">@Model.TotalUsers</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-2">Online felhasználók</div>
+                    <div class="fs-3 fw-semibold">@Model.OnlineUsers</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-2">Szerepkörök</div>
+                    <div class="fs-3 fw-semibold">@Model.TotalRoles</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-2">Login log rekordok</div>
+                    <div class="fs-3 fw-semibold">@Model.LoginLogCount</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Quick actions -->
+        <div class="col-12 col-xl-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h2 class="h5 mb-1">Gyors műveletek</h2>
+                    <p class="text-muted small mb-0">Legfontosabb admin oldalak közvetlen elérése.</p>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a asp-page="/Admin/Roles/Index" class="btn btn-outline-primary text-start">
+                            Szerepkörök kezelése
+                        </a>
+                        <a asp-page="/Admin/ActiveUsers/Index" class="btn btn-outline-primary text-start">
+                            Aktív felhasználók
+                        </a>
+                        <a asp-page="/Admin/LoginLog/Index" class="btn btn-outline-primary text-start">
+                            Login log megnyitása
+                        </a>
+                        <a asp-page="/Admin/Users/Index" class="btn btn-outline-primary text-start">
+                            Felhasználók kezelése
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Online users -->
+        <div class="col-12 col-xl-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h2 class="h5 mb-1">Jelenleg online</h2>
+                    <p class="text-muted small mb-0">Gyors áttekintés az aktív felhasználókról.</p>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentOnlineUsers.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var user in Model.RecentOnlineUsers)
+                            {
+                                <div class="list-group-item px-0">
+                                    <div class="fw-semibold">@user.UserName</div>
+                                    <div class="text-muted small">
+                                        Utolsó aktivitás: @(user.LastActivity?.ToString("yyyy-MM-dd HH:mm") ?? "-")
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted">Jelenleg nincs online felhasználó.</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent logins -->
+        <div class="col-12 col-xl-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h2 class="h5 mb-1">Legutóbbi bejelentkezések</h2>
+                    <p class="text-muted small mb-0">Az utolsó néhány login esemény.</p>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentLoginLogs.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var log in Model.RecentLoginLogs)
+                            {
+                                <div class="list-group-item px-0">
+                                    <div class="fw-semibold">@log.UserName</div>
+                                    <div class="text-muted small">
+                                        @log.LoginTime.ToString("yyyy-MM-dd HH:mm")
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted">Nincs megjeleníthető login rekord.</div>
+                    }
+                </div>
             </div>
         </div>
     </div>

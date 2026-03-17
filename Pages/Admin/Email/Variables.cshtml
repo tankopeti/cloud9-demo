@@ -1,0 +1,343 @@
+@page
+@model Cloud9_2.Pages.Admin.Email.VariablesModel
+@{
+    Layout = "/Pages/Admin/_Layout.cshtml";
+    ViewData["Title"] = "Email template változók";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Email Template változók</h1>
+        <p class="text-muted mb-0">Placeholder változók kezelése</p>
+    </div>
+
+    <button class="btn btn-primary" type="button" onclick="openCreateModal()">
+        <i class="bi bi-plus-circle me-1"></i>Új változó
+    </button>
+</div>
+
+<div class="alert alert-info border-0 shadow-sm rounded-4 mb-4">
+    <div class="fw-semibold mb-2">
+        <i class="bi bi-info-circle me-2"></i>Használat
+    </div>
+    <div class="small">
+        A sablonokban a változók ilyen formában használhatók: <code>{{CustomerName}}</code>, <code>{{OrderNumber}}</code>.
+        Ezeket a rendszer a küldéskor tölti fel valós adatokkal az adott modulból. Itt csak azt adod meg,
+        hogy milyen változók engedélyezettek, mi a jelentésük, és milyen példával jelenjenek meg a szerkesztőben.
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Template</th>
+                        <th>Variable</th>
+                        <th>Leírás</th>
+                        <th>Példa</th>
+                        <th class="text-end">Műveletek</th>
+                    </tr>
+                </thead>
+                <tbody id="variablesTable">
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">Betöltés...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="variableModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="variableModalTitle">Új template változó</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="variableId">
+
+                <div class="mb-3">
+                    <label class="form-label">Template</label>
+                    <select id="templateSelect" class="form-select"></select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Variable name</label>
+                    <input id="variableName" class="form-control" placeholder="CustomerName">
+                    <div class="form-text">
+                        A sablonban így használható: <code>{{CustomerName}}</code>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Leírás</label>
+                    <input id="variableDescription" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Példa érték</label>
+                    <input id="variableExample" class="form-control" placeholder="Kovács Péter">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Minta beszúrás</label>
+                    <input class="form-control" id="variablePreviewToken" readonly>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Mégse</button>
+                <button class="btn btn-primary" type="button" onclick="saveVariable()">Mentés</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="variableDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title">Változó részletei</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Template</dt>
+                    <dd class="col-sm-8" id="detailsTemplate"></dd>
+
+                    <dt class="col-sm-4">Variable</dt>
+                    <dd class="col-sm-8"><code id="detailsVariable"></code></dd>
+
+                    <dt class="col-sm-4">Leírás</dt>
+                    <dd class="col-sm-8" id="detailsDescription"></dd>
+
+                    <dt class="col-sm-4">Példa</dt>
+                    <dd class="col-sm-8" id="detailsExample"></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let templates = [];
+    let flatVariables = [];
+    let variableModal;
+    let variableDetailsModal;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        variableModal = new bootstrap.Modal(document.getElementById('variableModal'));
+        variableDetailsModal = new bootstrap.Modal(document.getElementById('variableDetailsModal'));
+
+        document.getElementById('variableName').addEventListener('input', updatePreviewToken);
+
+        await loadTemplates();
+        renderVariables();
+    });
+
+    async function loadTemplates() {
+        const res = await fetch("/api/Email/templates");
+
+        if (!res.ok) {
+            alert("Nem sikerült betölteni a template listát.");
+            return;
+        }
+
+        templates = await res.json();
+
+        const select = document.getElementById("templateSelect");
+        select.innerHTML = templates.map(t =>
+            `<option value="${t.id}">${escapeHtml(t.name)}</option>`
+        ).join("");
+
+        rebuildFlatVariables();
+    }
+
+    function rebuildFlatVariables() {
+        flatVariables = [];
+
+        templates.forEach(t => {
+            const vars = t.variables || [];
+            vars.forEach(v => {
+                flatVariables.push({
+                    id: v.id,
+                    templateId: t.id,
+                    templateName: t.name,
+                    variableName: v.variableName,
+                    description: v.description ?? "",
+                    exampleValue: v.exampleValue ?? ""
+                });
+            });
+        });
+    }
+
+    function renderVariables() {
+        const tbody = document.getElementById("variablesTable");
+        rebuildFlatVariables();
+
+        if (!templates || templates.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">Nincs sablon</td>
+                </tr>
+            `;
+            return;
+        }
+
+        if (flatVariables.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">Még nincs felvett változó</td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = flatVariables.map(v => `
+            <tr>
+                <td class="fw-semibold">${escapeHtml(v.templateName)}</td>
+                <td><code>{{${escapeHtml(v.variableName)}}}</code></td>
+                <td>${escapeHtml(v.description)}</td>
+                <td>${escapeHtml(v.exampleValue)}</td>
+                <td class="text-end">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-info" type="button" onclick="openDetailsModal(${v.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-primary" type="button" onclick="openEditModal(${v.id})">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" type="button" onclick="deleteVariable(${v.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join("");
+    }
+
+    function openCreateModal() {
+        document.getElementById("variableModalTitle").textContent = "Új template változó";
+        document.getElementById("variableId").value = "";
+        document.getElementById("templateSelect").disabled = false;
+        document.getElementById("templateSelect").value = templates.length > 0 ? templates[0].id : "";
+        document.getElementById("variableName").value = "";
+        document.getElementById("variableDescription").value = "";
+        document.getElementById("variableExample").value = "";
+        updatePreviewToken();
+        variableModal.show();
+    }
+
+    function openDetailsModal(id) {
+        const v = flatVariables.find(x => x.id === id);
+        if (!v) return;
+
+        document.getElementById("detailsTemplate").textContent = v.templateName;
+        document.getElementById("detailsVariable").textContent = `{{${v.variableName}}}`;
+        document.getElementById("detailsDescription").textContent = v.description || "-";
+        document.getElementById("detailsExample").textContent = v.exampleValue || "-";
+
+        variableDetailsModal.show();
+    }
+
+    function openEditModal(id) {
+        const v = flatVariables.find(x => x.id === id);
+        if (!v) return;
+
+        document.getElementById("variableModalTitle").textContent = "Template változó szerkesztése";
+        document.getElementById("variableId").value = v.id;
+        document.getElementById("templateSelect").value = v.templateId;
+        document.getElementById("templateSelect").disabled = true;
+        document.getElementById("variableName").value = v.variableName;
+        document.getElementById("variableDescription").value = v.description;
+        document.getElementById("variableExample").value = v.exampleValue;
+        updatePreviewToken();
+
+        variableModal.show();
+    }
+
+    function updatePreviewToken() {
+        const name = document.getElementById("variableName").value.trim();
+        document.getElementById("variablePreviewToken").value = name ? `{{${name}}}` : "";
+    }
+
+    async function saveVariable() {
+        const id = document.getElementById("variableId").value;
+        const templateId = document.getElementById("templateSelect").value;
+
+        const payload = {
+            variableName: document.getElementById("variableName").value.trim(),
+            description: document.getElementById("variableDescription").value.trim(),
+            exampleValue: document.getElementById("variableExample").value.trim(),
+            sortOrder: 0
+        };
+
+        if (!payload.variableName) {
+            alert("A variable name kötelező.");
+            return;
+        }
+
+        if (!id) {
+            const res = await fetch(`/api/Email/templates/${templateId}/variables`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                alert("Mentés sikertelen.");
+                return;
+            }
+        } else {
+            const res = await fetch(`/api/Email/variables/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                alert("Szerkesztés sikertelen.");
+                return;
+            }
+        }
+
+        variableModal.hide();
+        await loadTemplates();
+        renderVariables();
+    }
+
+    async function deleteVariable(id) {
+        if (!confirm("Biztosan törlöd ezt a változót?")) return;
+
+        const res = await fetch(`/api/Email/variables/${id}`, {
+            method: "DELETE"
+        });
+
+        if (!res.ok) {
+            alert("Törlés sikertelen.");
+            return;
+        }
+
+        await loadTemplates();
+        renderVariables();
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+</script>
+}
