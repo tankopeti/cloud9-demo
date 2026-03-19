@@ -13,8 +13,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const partnerSelectEl = document.getElementById("createPartnerId");
   const statusSelectEl = document.getElementById("createStatusId");
   const communicationTypeSelectEl = document.getElementById("createDefaultCommunicationTypeId");
+  const siteTypeSelectEl = document.getElementById("createSiteTypeId");
 
   console.log("communicationTypeSelectEl:", communicationTypeSelectEl);
+  console.log("siteTypeSelectEl:", siteTypeSelectEl);
 
   // CSRF
   const csrf =
@@ -90,6 +92,42 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("communication type options after load:", selectEl.options.length);
   }
 
+  async function loadSiteTypesIntoSelect(selectEl, selectedId = null) {
+    if (!selectEl) {
+      console.warn("site type select not found");
+      return;
+    }
+
+    const base = window.API_BASE || "";
+    const res = await fetch(`${base}/api/SitesIndex/meta/site-types`, {
+      credentials: "include",
+      headers: { Accept: "application/json" }
+    });
+
+    console.log("site types response status:", res.status);
+
+    if (!res.ok) throw new Error("Failed to load site types");
+
+    const data = await res.json();
+    console.log("site types data:", data);
+
+    selectEl.innerHTML = '<option value="">-- Válassz telephely típust --</option>';
+
+    data.forEach(x => {
+      const opt = document.createElement("option");
+      opt.value = x.id;
+      opt.textContent = x.name ?? "";
+
+      if (selectedId && String(selectedId) === String(opt.value)) {
+        opt.selected = true;
+      }
+
+      selectEl.appendChild(opt);
+    });
+
+    console.log("site type options after load:", selectEl.options.length);
+  }
+
   function nullIfEmpty(v) {
     const s = (v ?? "").toString().trim();
     return s ? s : null;
@@ -119,6 +157,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (communicationTypeSelectEl) {
       communicationTypeSelectEl.value = "";
     }
+
+    if (siteTypeSelectEl) {
+      siteTypeSelectEl.value = "";
+    }
   }
 
   form.addEventListener("submit", async (e) => {
@@ -140,12 +182,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const statusIdRaw = valByName("statusId");
     const defaultCommunicationTypeIdRaw = valByName("defaultCommunicationTypeId");
+    const siteTypeIdRaw = valByName("siteTypeId");
 
     const dto = {
       siteId: 0,
       partnerId,
 
       siteName: nullIfEmpty(valByName("siteName")),
+      siteTypeId: siteTypeIdRaw ? Number(siteTypeIdRaw) : null,
+
       addressLine1: nullIfEmpty(valByName("addressLine1")),
       addressLine2: nullIfEmpty(valByName("addressLine2")),
       city: nullIfEmpty(valByName("city")),
@@ -217,6 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
           "error",
           err?.errors?.PartnerId?.[0] ||
             err?.errors?.SiteName?.[0] ||
+            err?.errors?.SiteTypeId?.[0] ||
             err?.errors?.DefaultCommunicationTypeId?.[0] ||
             err?.title ||
             err?.message ||
@@ -248,6 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
   modalEl.addEventListener("shown.bs.modal", async () => {
     console.log("modal shown");
     console.log("communicationTypeSelectEl options before load:", communicationTypeSelectEl?.options?.length);
+    console.log("siteTypeSelectEl options before load:", siteTypeSelectEl?.options?.length);
 
     try {
       if (statusSelectEl && statusSelectEl.options.length <= 1) {
@@ -259,6 +306,13 @@ document.addEventListener("DOMContentLoaded", () => {
         await loadCommunicationTypesIntoSelect(communicationTypeSelectEl, null);
       } else {
         console.log("communication type select missing or already loaded");
+      }
+
+      if (siteTypeSelectEl && siteTypeSelectEl.options.length <= 1) {
+        console.log("loading site types...");
+        await loadSiteTypesIntoSelect(siteTypeSelectEl, null);
+      } else {
+        console.log("site type select missing or already loaded");
       }
     } catch (e) {
       console.error("Failed to load modal select data:", e);

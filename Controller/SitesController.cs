@@ -224,6 +224,12 @@ namespace Cloud9_2.Controllers
                     statusId = site.StatusId,
                     siteTypeId = site.SiteTypeId,
 
+siteType = site.SiteType == null ? null : new
+{
+    id = site.SiteType.SiteTypeId,
+    name = site.SiteType.Name
+},
+
                     defaultCommunicationTypeId = site.DefaultCommunicationTypeId,
                     defaultCommunicationTypeName = site.DefaultCommunicationType != null
                         ? site.DefaultCommunicationType.Name
@@ -314,6 +320,23 @@ namespace Cloud9_2.Controllers
             return Ok(items);
         }
 
+
+[HttpGet("meta/site-types")]
+public async Task<IActionResult> GetSiteTypes()
+{
+    var items = await _context.SiteTypes
+        .AsNoTracking()
+        .Where(x => x.IsActive == true)
+        .OrderBy(x => x.Name)
+        .Select(x => new
+        {
+            id = x.SiteTypeId,
+            name = x.Name
+        })
+        .ToListAsync();
+
+    return Ok(items);
+}
 
         // POST: /api/SitesIndex  (AJAX create)
         [HttpPost]

@@ -1,96 +1,99 @@
-2026-03-06 13:21:57.68 Server      Microsoft SQL Server 2019 (RTM-CU32-GDR) (KB5068404) - 15.0.4455.2 (X64) 
+2026-03-18 14:22:21.95 Server      Microsoft SQL Server 2019 (RTM-CU32-GDR) (KB5068404) - 15.0.4455.2 (X64) 
 	Oct  7 2025 21:10:15 
 	Copyright (C) 2019 Microsoft Corporation
 	Developer Edition (64-bit) on Linux (Ubuntu 20.04.6 LTS) <X64>
-2026-03-06 13:21:57.68 Server      UTC adjustment: 0:00
-2026-03-06 13:21:57.68 Server      (c) Microsoft Corporation.
-2026-03-06 13:21:57.68 Server      All rights reserved.
-2026-03-06 13:21:57.68 Server      Server process ID is 384.
-2026-03-06 13:21:57.68 Server      Logging SQL Server messages in file '/var/opt/mssql/log/errorlog'.
-2026-03-06 13:21:57.68 Server      Registry startup parameters: 
+2026-03-18 14:22:21.95 Server      UTC adjustment: 0:00
+2026-03-18 14:22:21.95 Server      (c) Microsoft Corporation.
+2026-03-18 14:22:21.95 Server      All rights reserved.
+2026-03-18 14:22:21.95 Server      Server process ID is 380.
+2026-03-18 14:22:21.95 Server      Logging SQL Server messages in file '/var/opt/mssql/log/errorlog'.
+2026-03-18 14:22:21.95 Server      Registry startup parameters: 
 	 -d /var/opt/mssql/data/master.mdf
 	 -l /var/opt/mssql/data/mastlog.ldf
 	 -e /var/opt/mssql/log/errorlog
-2026-03-06 13:21:57.68 Server      SQL Server detected 1 sockets with 8 cores per socket and 8 logical processors per socket, 8 total logical processors; using 8 logical processors based on SQL Server licensing. This is an informational message; no user action is required.
-2026-03-06 13:21:57.69 Server      SQL Server is starting at normal priority base (=7). This is an informational message only. No user action is required.
-2026-03-06 13:21:57.69 Server      Detected 3135 MB of RAM. This is an informational message; no user action is required.
-2026-03-06 13:21:57.69 Server      Using conventional memory in the memory manager.
-2026-03-06 13:21:57.69 Server      Page exclusion bitmap is enabled.
-2026-03-06 13:21:57.72 Server      Buffer pool extension is not supported on Linux platform.
-2026-03-06 13:21:57.72 Server      Buffer Pool: Allocating 524288 bytes for 410962 hashPages.
-2026-03-06 13:21:57.79 Server      Buffer pool extension is already disabled. No action is necessary.
-2026-03-06 13:21:57.90 Server      Successfully initialized the TLS configuration. Allowed TLS protocol versions are ['1.0 1.1 1.2']. Allowed TLS ciphers are ['ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:!DHE-RSA-AES256-GCM-SHA384:!DHE-RSA-AES128-GCM-SHA256:!DHE-RSA-AES256-SHA:!DHE-RSA-AES128-SHA'].
-2026-03-06 13:21:57.93 Server      Query Store settings initialized with enabled = 1, 
-2026-03-06 13:21:57.94 Server      The maximum number of dedicated administrator connections for this instance is '1'
-2026-03-06 13:21:57.94 Server      Node configuration: node 0: CPU mask: 0x00000000000000ff:0 Active CPU mask: 0x00000000000000ff:0. This message provides a description of the NUMA configuration for this computer. This is an informational message only. No user action is required.
-2026-03-06 13:21:57.95 Server      Using dynamic lock allocation.  Initial allocation of 2500 Lock blocks and 5000 Lock Owner blocks per node.  This is an informational message only.  No user action is required.
-2026-03-06 13:21:57.96 Server      In-Memory OLTP initialized on lowend machine.
-2026-03-06 13:21:58.00 Server      [INFO] Created Extended Events session 'hkenginexesession'
-2026-03-06 13:21:58.01 Server      Database Instant File Initialization: enabled. For security and performance considerations see the topic 'Database Instant File Initialization' in SQL Server Books Online. This is an informational message only. No user action is required.
-2026-03-06 13:21:58.01 Server      Total Log Writer threads: 2. This is an informational message; no user action is required.
-2026-03-06 13:21:58.01 Server      clflush is selected for pmem flush operation.
-2026-03-06 13:21:58.01 Server      Software Usage Metrics is disabled.
-2026-03-06 13:21:58.02 spid9s      [1]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
-2026-03-06 13:21:58.02 spid9s      Starting up database 'master'.
-2026-03-06 13:21:58.09 Server      CLR version v4.0.30319 loaded.
-2026-03-06 13:21:58.26 spid9s      Resource governor reconfiguration succeeded.
-2026-03-06 13:21:58.26 spid9s      SQL Server Audit is starting the audits. This is an informational message. No user action is required.
-2026-03-06 13:21:58.26 spid9s      SQL Server Audit has started the audits. This is an informational message. No user action is required.
-2026-03-06 13:21:58.35 spid9s      SQL Trace ID 1 was started by login "sa".
-2026-03-06 13:21:58.38 spid9s      Server name is '8480c8103e0d'. This is an informational message only. No user action is required.
-2026-03-06 13:21:58.39 spid26s     Always On: The availability replica manager is starting. This is an informational message only. No user action is required.
-2026-03-06 13:21:58.40 spid26s     Always On: The availability replica manager is waiting for the instance of SQL Server to allow client connections. This is an informational message only. No user action is required.
-2026-03-06 13:21:58.40 spid30s     [5]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
-2026-03-06 13:21:58.40 spid12s     [32767]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
-2026-03-06 13:21:58.40 spid28s     [7]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
-2026-03-06 13:21:58.40 spid29s     [6]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
-2026-03-06 13:21:58.40 spid27s     [4]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
-2026-03-06 13:21:58.40 spid30s     Starting up database 'Cloud9_Nyugalom'.
-2026-03-06 13:21:58.40 spid28s     Starting up database 'Source_20260215'.
-2026-03-06 13:21:58.40 spid12s     Starting up database 'mssqlsystemresource'.
-2026-03-06 13:21:58.40 spid29s     Starting up database 'Cloud9_CegB'.
-2026-03-06 13:21:58.40 spid27s     Starting up database 'msdb'.
-2026-03-06 13:21:58.41 spid12s     The resource database build version is 15.00.4455. This is an informational message only. No user action is required.
-2026-03-06 13:21:58.44 spid12s     [3]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
-2026-03-06 13:21:58.44 spid12s     Starting up database 'model'.
-2026-03-06 13:21:58.51 spid29s     Parallel redo is started for database 'Cloud9_CegB' with worker pool size [4].
-2026-03-06 13:21:58.51 spid30s     Parallel redo is started for database 'Cloud9_Nyugalom' with worker pool size [4].
-2026-03-06 13:21:58.51 spid23s     A self-generated certificate was successfully loaded for encryption.
-2026-03-06 13:21:58.51 spid28s     Parallel redo is started for database 'Source_20260215' with worker pool size [4].
-2026-03-06 13:21:58.54 spid23s     Server is listening on [ 'any' <ipv6> 1433].
-2026-03-06 13:21:58.55 spid23s     Server is listening on [ 'any' <ipv4> 1433].
-2026-03-06 13:21:58.56 Server      Server is listening on [ ::1 <ipv6> 1434].
-2026-03-06 13:21:58.56 Server      Server is listening on [ 127.0.0.1 <ipv4> 1434].
-2026-03-06 13:21:58.56 Server      Dedicated admin connection support was established for listening locally on port 1434.
-2026-03-06 13:21:58.56 spid12s     Clearing tempdb database.
-2026-03-06 13:21:58.59 spid23s     Server is listening on [ ::1 <ipv6> 1431].
-2026-03-06 13:21:58.59 spid23s     Server is listening on [ 127.0.0.1 <ipv4> 1431].
-2026-03-06 13:21:58.60 spid28s     CHECKDB for database 'Source_20260215' finished without errors on 2026-02-03 14:03:45.153 (local time). This is an informational message only; no user action is required.
-2026-03-06 13:21:58.60 spid28s     Database 'Source_20260215' is a cloned database. This database should be used for diagnostic purposes only and is not supported for use in a production environment.
-2026-03-06 13:21:58.60 spid23s     SQL Server is now ready for client connections. This is an informational message; no user action is required.
-2026-03-06 13:21:58.61 spid28s     Recovery is writing a checkpoint in database 'msdb' (4). This is an informational message only. No user action is required.
-2026-03-06 13:21:58.63 spid9s      Parallel redo is shutdown for database 'Cloud9_Nyugalom' with worker pool size [4].
-2026-03-06 13:21:58.63 spid29s     Parallel redo is shutdown for database 'Cloud9_CegB' with worker pool size [4].
-2026-03-06 13:21:58.64 spid29s     Parallel redo is shutdown for database 'Source_20260215' with worker pool size [4].
-2026-03-06 13:21:58.75 Server      Common language runtime (CLR) functionality initialized.
-2026-03-06 13:21:58.76 spid12s     [2]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
-2026-03-06 13:21:58.77 spid12s     Starting up database 'tempdb'.
-2026-03-06 13:21:59.47 spid12s     The tempdb database has 8 data file(s).
-2026-03-06 13:21:59.48 spid26s     The Service Broker endpoint is in disabled or stopped state.
-2026-03-06 13:21:59.48 spid26s     The Database Mirroring endpoint is in disabled or stopped state.
-2026-03-06 13:21:59.50 spid26s     Service Broker manager has started.
-2026-03-06 13:21:59.51 spid9s      Recovery is complete. This is an informational message only. No user action is required.
-2026-03-06 13:29:22.67 spid61      Attempting to load library 'xplog70.dll' into memory. This is an informational message only. No user action is required.
-2026-03-06 13:29:22.69 spid61      Using 'xplog70.dll' version '2019.150.4455' to execute extended stored procedure 'xp_msver'. This is an informational message only; no user action is required.
-2026-03-07 08:35:25.35 Logon       Error: 18456, Severity: 14, State: 38.
-2026-03-07 08:35:25.35 Logon       Login failed for user 'sa'. Reason: Failed to open the explicitly specified database 'Cloud9.2'. [CLIENT: 172.21.0.1]
-2026-03-07 08:35:35.39 Logon       Error: 18456, Severity: 14, State: 38.
-2026-03-07 08:35:35.39 Logon       Login failed for user 'sa'. Reason: Failed to open the explicitly specified database 'Cloud9.2'. [CLIENT: 172.21.0.1]
-2026-03-07 09:03:55.48 spid65      Attempting to load library 'xpstar.dll' into memory. This is an informational message only. No user action is required.
-2026-03-07 09:03:55.51 spid65      Using 'xpstar.dll' version '2019.150.4455' to execute extended stored procedure 'xp_instance_regread'. This is an informational message only; no user action is required.
-2026-03-07 10:01:06.02 Backup      Database backed up. Database: Cloud9_Nyugalom, creation date(time): 2026/02/26(12:45:45), pages dumped: 9101, first LSN: 55:14488:1, last LSN: 55:14512:1, number of dump devices: 1, device information: (FILE=1, TYPE=DISK: {'/var/opt/mssql/data/Cloud9_Nyugalom-202637-11-0-31.bak'}). This is an informational message only. No user action is required.
-2026-03-07 10:01:06.04 Backup      BACKUP DATABASE successfully processed 8962 pages in 0.071 seconds (986.080 MB/sec).
-2026-03-07 10:01:56.83 Backup      Database backed up. Database: Cloud9_Nyugalom, creation date(time): 2026/02/26(12:45:45), pages dumped: 9101, first LSN: 55:14608:1, last LSN: 55:14632:1, number of dump devices: 1, device information: (FILE=1, TYPE=DISK: {'/var/opt/mssql/data/Cloud9_Nyugalom-202637-11-1-46.bak'}). This is an informational message only. No user action is required.
-2026-03-07 10:01:56.84 Backup      BACKUP DATABASE successfully processed 8962 pages in 0.047 seconds (1489.611 MB/sec).
-2026-03-07 10:05:45.16 Backup      Database backed up. Database: Cloud9_Nyugalom, creation date(time): 2026/02/26(12:45:45), pages dumped: 9101, first LSN: 55:14728:1, last LSN: 55:14752:1, number of dump devices: 1, device information: (FILE=1, TYPE=DISK: {'/var/opt/mssql/data/Cloud9_Nyugalom-202637-11-4-17.bak'}). This is an informational message only. No user action is required.
-2026-03-07 10:05:45.18 Backup      BACKUP DATABASE successfully processed 8962 pages in 0.055 seconds (1272.940 MB/sec).
+2026-03-18 14:22:21.95 Server      SQL Server detected 1 sockets with 8 cores per socket and 8 logical processors per socket, 8 total logical processors; using 8 logical processors based on SQL Server licensing. This is an informational message; no user action is required.
+2026-03-18 14:22:21.95 Server      SQL Server is starting at normal priority base (=7). This is an informational message only. No user action is required.
+2026-03-18 14:22:21.95 Server      Detected 3135 MB of RAM. This is an informational message; no user action is required.
+2026-03-18 14:22:21.95 Server      Using conventional memory in the memory manager.
+2026-03-18 14:22:21.95 Server      Page exclusion bitmap is enabled.
+2026-03-18 14:22:21.99 Server      Buffer pool extension is not supported on Linux platform.
+2026-03-18 14:22:21.99 Server      Buffer Pool: Allocating 524288 bytes for 417067 hashPages.
+2026-03-18 14:22:22.05 Server      Buffer pool extension is already disabled. No action is necessary.
+2026-03-18 14:22:22.15 Server      Successfully initialized the TLS configuration. Allowed TLS protocol versions are ['1.0 1.1 1.2']. Allowed TLS ciphers are ['ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:!DHE-RSA-AES256-GCM-SHA384:!DHE-RSA-AES128-GCM-SHA256:!DHE-RSA-AES256-SHA:!DHE-RSA-AES128-SHA'].
+2026-03-18 14:22:22.19 Server      Query Store settings initialized with enabled = 1, 
+2026-03-18 14:22:22.20 Server      The maximum number of dedicated administrator connections for this instance is '1'
+2026-03-18 14:22:22.20 Server      Node configuration: node 0: CPU mask: 0x00000000000000ff:0 Active CPU mask: 0x00000000000000ff:0. This message provides a description of the NUMA configuration for this computer. This is an informational message only. No user action is required.
+2026-03-18 14:22:22.20 Server      Using dynamic lock allocation.  Initial allocation of 2500 Lock blocks and 5000 Lock Owner blocks per node.  This is an informational message only.  No user action is required.
+2026-03-18 14:22:22.22 Server      In-Memory OLTP initialized on lowend machine.
+2026-03-18 14:22:22.26 Server      [INFO] Created Extended Events session 'hkenginexesession'
+2026-03-18 14:22:22.26 Server      Database Instant File Initialization: enabled. For security and performance considerations see the topic 'Database Instant File Initialization' in SQL Server Books Online. This is an informational message only. No user action is required.
+2026-03-18 14:22:22.26 Server      Total Log Writer threads: 2. This is an informational message; no user action is required.
+2026-03-18 14:22:22.27 Server      clflush is selected for pmem flush operation.
+2026-03-18 14:22:22.27 Server      Software Usage Metrics is disabled.
+2026-03-18 14:22:22.28 spid9s      [1]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
+2026-03-18 14:22:22.28 spid9s      Starting up database 'master'.
+2026-03-18 14:22:22.35 Server      CLR version v4.0.30319 loaded.
+2026-03-18 14:22:22.36 spid9s      24 transactions rolled forward in database 'master' (1:0). This is an informational message only. No user action is required.
+2026-03-18 14:22:22.39 spid9s      0 transactions rolled back in database 'master' (1:0). This is an informational message only. No user action is required.
+2026-03-18 14:22:22.40 spid9s      Recovery is writing a checkpoint in database 'master' (1). This is an informational message only. No user action is required.
+2026-03-18 14:22:22.51 spid9s      Resource governor reconfiguration succeeded.
+2026-03-18 14:22:22.51 spid9s      SQL Server Audit is starting the audits. This is an informational message. No user action is required.
+2026-03-18 14:22:22.51 spid9s      SQL Server Audit has started the audits. This is an informational message. No user action is required.
+2026-03-18 14:22:22.61 spid9s      SQL Trace ID 1 was started by login "sa".
+2026-03-18 14:22:22.63 spid9s      Server name is '8480c8103e0d'. This is an informational message only. No user action is required.
+2026-03-18 14:22:22.65 spid26s     Always On: The availability replica manager is starting. This is an informational message only. No user action is required.
+2026-03-18 14:22:22.65 spid26s     Always On: The availability replica manager is waiting for the instance of SQL Server to allow client connections. This is an informational message only. No user action is required.
+2026-03-18 14:22:22.65 spid30s     [5]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
+2026-03-18 14:22:22.65 spid12s     [32767]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
+2026-03-18 14:22:22.65 spid28s     [4]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
+2026-03-18 14:22:22.65 spid27s     [6]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
+2026-03-18 14:22:22.65 spid29s     [7]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
+2026-03-18 14:22:22.66 spid12s     Starting up database 'mssqlsystemresource'.
+2026-03-18 14:22:22.65 spid30s     Starting up database 'Cloud9_Nyugalom'.
+2026-03-18 14:22:22.66 spid28s     Starting up database 'msdb'.
+2026-03-18 14:22:22.66 spid29s     Starting up database 'Source_20260215'.
+2026-03-18 14:22:22.66 spid27s     Starting up database 'Cloud9_CegB'.
+2026-03-18 14:22:22.66 spid12s     The resource database build version is 15.00.4455. This is an informational message only. No user action is required.
+2026-03-18 14:22:22.69 spid12s     [3]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
+2026-03-18 14:22:22.69 spid12s     Starting up database 'model'.
+2026-03-18 14:22:22.74 spid23s     A self-generated certificate was successfully loaded for encryption.
+2026-03-18 14:22:22.76 spid28s     22 transactions rolled forward in database 'msdb' (4:0). This is an informational message only. No user action is required.
+2026-03-18 14:22:22.76 spid23s     Server is listening on [ 'any' <ipv6> 1433].
+2026-03-18 14:22:22.76 spid27s     Parallel redo is started for database 'Cloud9_CegB' with worker pool size [4].
+2026-03-18 14:22:22.76 spid30s     Parallel redo is started for database 'Cloud9_Nyugalom' with worker pool size [4].
+2026-03-18 14:22:22.77 spid23s     Server is listening on [ 'any' <ipv4> 1433].
+2026-03-18 14:22:22.77 spid27s     1 transactions rolled forward in database 'Cloud9_CegB' (6:0). This is an informational message only. No user action is required.
+2026-03-18 14:22:22.78 spid29s     Parallel redo is started for database 'Source_20260215' with worker pool size [4].
+2026-03-18 14:22:22.78 spid29s     2 transactions rolled forward in database 'Source_20260215' (7:0). This is an informational message only. No user action is required.
+2026-03-18 14:22:22.78 Server      Server is listening on [ ::1 <ipv6> 1434].
+2026-03-18 14:22:22.79 Server      Server is listening on [ 127.0.0.1 <ipv4> 1434].
+2026-03-18 14:22:22.79 Server      Dedicated admin connection support was established for listening locally on port 1434.
+2026-03-18 14:22:22.79 spid23s     Server is listening on [ ::1 <ipv6> 1431].
+2026-03-18 14:22:22.81 spid23s     Server is listening on [ 127.0.0.1 <ipv4> 1431].
+2026-03-18 14:22:22.81 spid12s     Clearing tempdb database.
+2026-03-18 14:22:22.81 spid23s     SQL Server is now ready for client connections. This is an informational message; no user action is required.
+2026-03-18 14:22:22.84 spid29s     CHECKDB for database 'Source_20260215' finished without errors on 2026-02-03 14:03:45.153 (local time). This is an informational message only; no user action is required.
+2026-03-18 14:22:22.85 spid29s     Database 'Source_20260215' is a cloned database. This database should be used for diagnostic purposes only and is not supported for use in a production environment.
+2026-03-18 14:22:22.85 spid27s     0 transactions rolled back in database 'Cloud9_CegB' (6:0). This is an informational message only. No user action is required.
+2026-03-18 14:22:22.85 spid29s     0 transactions rolled back in database 'msdb' (4:0). This is an informational message only. No user action is required.
+2026-03-18 14:22:22.85 spid29s     Recovery is writing a checkpoint in database 'msdb' (4). This is an informational message only. No user action is required.
+2026-03-18 14:22:22.85 spid27s     Parallel redo is shutdown for database 'Cloud9_CegB' with worker pool size [4].
+2026-03-18 14:22:22.86 spid27s     0 transactions rolled back in database 'Source_20260215' (7:0). This is an informational message only. No user action is required.
+2026-03-18 14:22:22.86 spid27s     Parallel redo is shutdown for database 'Source_20260215' with worker pool size [4].
+2026-03-18 14:22:22.90 spid30s     Recovery of database 'Cloud9_Nyugalom' (5) is 0% complete (approximately 43 seconds remain). Phase 2 of 3. This is an informational message only. No user action is required.
+2026-03-18 14:22:23.01 Server      Common language runtime (CLR) functionality initialized.
+2026-03-18 14:22:23.04 spid12s     [2]. Feature Status: PVS: 0. CTR: 0. ConcurrentPFSUpdate: 1.
+2026-03-18 14:22:23.04 spid12s     Starting up database 'tempdb'.
+2026-03-18 14:22:23.30 spid30s     8 transactions rolled forward in database 'Cloud9_Nyugalom' (5:0). This is an informational message only. No user action is required.
+2026-03-18 14:22:23.32 spid9s      0 transactions rolled back in database 'Cloud9_Nyugalom' (5:0). This is an informational message only. No user action is required.
+2026-03-18 14:22:23.32 spid9s      Recovery is writing a checkpoint in database 'Cloud9_Nyugalom' (5). This is an informational message only. No user action is required.
+2026-03-18 14:22:23.33 spid9s      Parallel redo is shutdown for database 'Cloud9_Nyugalom' with worker pool size [4].
+2026-03-18 14:22:23.50 spid12s     The tempdb database has 8 data file(s).
+2026-03-18 14:22:23.51 spid26s     The Service Broker endpoint is in disabled or stopped state.
+2026-03-18 14:22:23.51 spid26s     The Database Mirroring endpoint is in disabled or stopped state.
+2026-03-18 14:22:23.53 spid9s      Recovery is complete. This is an informational message only. No user action is required.
+2026-03-18 14:22:23.53 spid26s     Service Broker manager has started.
+2026-03-18 14:29:14.62 spid60      Attempting to load library 'xplog70.dll' into memory. This is an informational message only. No user action is required.
+2026-03-18 14:29:14.66 spid60      Using 'xplog70.dll' version '2019.150.4455' to execute extended stored procedure 'xp_msver'. This is an informational message only; no user action is required.
+2026-03-18 14:31:18.72 spid52      Attempting to load library 'xpstar.dll' into memory. This is an informational message only. No user action is required.
+2026-03-18 14:31:18.75 spid52      Using 'xpstar.dll' version '2019.150.4455' to execute extended stored procedure 'xp_instance_regread'. This is an informational message only; no user action is required.

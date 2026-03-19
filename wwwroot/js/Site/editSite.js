@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const partnerSelectEl = document.getElementById("editPartnerId");
   const statusSelectEl = document.getElementById("editStatusId");
   const communicationTypeSelectEl = document.getElementById("editDefaultCommunicationTypeId");
+  const siteTypeSelectEl = document.getElementById("editSiteTypeId");
 
   let partnerTS = null;
 
@@ -84,7 +85,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const opt = document.createElement("option");
       opt.value = s.id;
       opt.textContent = s.name;
-      if (selectedId != null && String(selectedId) === String(s.id)) opt.selected = true;
+      if (selectedId != null && String(selectedId) === String(s.id)) {
+        opt.selected = true;
+      }
       selectEl.appendChild(opt);
     });
   }
@@ -101,6 +104,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = await res.json();
 
     selectEl.innerHTML = '<option value="">-- Válassz kommunikációs módot --</option>';
+
+    data.forEach(x => {
+      const opt = document.createElement("option");
+      opt.value = x.id;
+      opt.textContent = x.name ?? "";
+      if (selectedId != null && String(selectedId) === String(x.id)) {
+        opt.selected = true;
+      }
+      selectEl.appendChild(opt);
+    });
+  }
+
+  async function loadSiteTypesIntoSelect(selectEl, selectedId = null) {
+    if (!selectEl) return;
+
+    const res = await fetch("/api/SitesIndex/meta/site-types", {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" }
+    });
+    if (!res.ok) throw new Error("Failed to load site types");
+
+    const data = await res.json();
+
+    selectEl.innerHTML = '<option value="">-- Válassz telephely típust --</option>';
 
     data.forEach(x => {
       const opt = document.createElement("option");
@@ -181,6 +208,10 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       }
 
+      if (siteTypeSelectEl) {
+        await loadSiteTypesIntoSelect(siteTypeSelectEl, d.siteTypeId);
+      }
+
       setChecked("editIsPrimary", d.isPrimary === true);
       setChecked("editIsActive", d.isActive !== false);
     } catch (err) {
@@ -211,6 +242,8 @@ document.addEventListener("DOMContentLoaded", () => {
         SiteId: siteId,
         PartnerId: partnerId,
         SiteName: get("editSiteName") || null,
+        SiteTypeId: get("editSiteTypeId") ? Number(get("editSiteTypeId")) : null,
+
         AddressLine1: get("editAddressLine1") || null,
         AddressLine2: get("editAddressLine2") || null,
         City: get("editCity") || null,
@@ -265,7 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const updated = await res.json();
-      patchRow(updated);
+      window.Sites?.reload?.();
       window.c92?.showToast?.("success", "Telephely frissítve");
       bootstrap.Modal.getInstance(modalEl)?.hide();
     },
@@ -293,14 +326,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const status = s.status?.name || "—";
     tds[9].innerHTML = `<span class="badge">${status}</span>`;
-    tds[10].innerHTML = s.isPrimary ? `<span class="badge bg-primary">Elsődleges</span>` : "-";
+    tds[10].innerHTML = s.isPrimary
+      ? `<span class="badge bg-primary">Elsődleges</span>`
+      : "-";
   }
 
   /* ---------------- UTILS ---------------- */
 
   function resetForm() {
     [
-      "editSiteId", "editSiteName", "editAddressLine1", "editAddressLine2",
+      "editSiteId", "editSiteName", "editSiteTypeId",
+      "editAddressLine1", "editAddressLine2",
       "editCity", "editState", "editPostalCode", "editCountry",
       "editContactPerson1", "editContactPerson2", "editContactPerson3",
       "editPhone1", "editPhone2", "editPhone3",

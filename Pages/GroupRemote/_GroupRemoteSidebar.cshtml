@@ -8,15 +8,6 @@
 @* --- END MODIFICATION --- *@
 
     <div class="pt-3">
-      <div class="px-3 mb-3">
-    <a asp-page="/GroupRemote/Dashboard"
-       class="dashboard-btn d-flex align-items-center justify-content-center gap-2 text-decoration-none">
-
-        <i class="bi bi-speedometer2"></i>
-        <span>Dashboard</span>
-
-    </a>
-</div>
         @if (User.IsInRole("SuperAdmin") || User.IsInRole("Admin") || User.IsInRole("GroupRemoteUser"))
         {
 <ul class="nav flex-column">

@@ -160,6 +160,7 @@ namespace Cloud9_2.Services
             {
                 Title = dto.Title,
                 Description = dto.Description,
+                Description2 = dto.Description2,
                 IsActive = dto.IsActive,
 
                 TaskTypePMId = dto.TaskTypePMId.Value,
@@ -171,6 +172,8 @@ namespace Cloud9_2.Services
                 ActualHours = dto.ActualHours,
                 AssignedToId = dto.AssignedToId,
                 ScheduledDate = dto.ScheduledDate,
+                OptionalDate1 = dto.OptionalDate1,
+                OptionalDate2 = dto.OptionalDate2,
                 CommunicationTypeId = dto.CommunicationTypeId,
                 CommunicationDescription = dto.CommunicationDescription,
                 TaskPMcomMethodID = dto.TaskPMcomMethodID,
@@ -317,6 +320,7 @@ namespace Cloud9_2.Services
             // -------------------------------------------------
             task.Title = dto.Title;
             task.Description = dto.Description;
+            task.Description2 = dto.Description2;
             task.TaskTypePMId = dto.TaskTypePMId;
 
             if (dto.TaskStatusPMId.HasValue)
@@ -343,6 +347,8 @@ namespace Cloud9_2.Services
             task.CommunicationDescription = dto.CommunicationDescription;
 
             task.ScheduledDate = dto.ScheduledDate;
+            task.OptionalDate1 = dto.OptionalDate1;
+            task.OptionalDate2 = dto.OptionalDate2;
             task.CustomerCommunicationId = dto.CustomerCommunicationId;
 
             task.UpdatedDate = DateTime.UtcNow;
@@ -393,14 +399,22 @@ namespace Cloud9_2.Services
                 }
             }
 
-            // -------------------------------------------------
-            // COMPLETED DATE LOGIC
-            // -------------------------------------------------
-            if (task.TaskStatusPMId == 3 && task.CompletedDate == null)
-                task.CompletedDate = DateTime.UtcNow;
+task.ScheduledDate = dto.ScheduledDate;
+task.CustomerCommunicationId = dto.CustomerCommunicationId;
 
-            if (task.TaskStatusPMId != 3 && task.CompletedDate.HasValue)
-                task.CompletedDate = null;
+task.UpdatedDate = DateTime.UtcNow;
+
+// -------------------------------------------------
+// COMPLETED DATE LOGIC
+// -------------------------------------------------
+if (dto.ReopenTask)
+{
+    task.CompletedDate = null;
+}
+else if (dto.CompletedDate.HasValue && !task.CompletedDate.HasValue)
+{
+    task.CompletedDate = dto.CompletedDate.Value;
+}
 
             // -------------------------------------------------
             // RESOURCES (ADD ONLY)
@@ -454,6 +468,12 @@ namespace Cloud9_2.Services
             // -------------------------------------------------
             // SAVE
             // -------------------------------------------------
+
+            _logger.LogInformation(
+                "Before save TaskId={TaskId}, OptionalDate1={OptionalDate1}, OptionalDate2={OptionalDate2}",
+                task.Id, task.OptionalDate1, task.OptionalDate2
+            );
+
             await _context.SaveChangesAsync();
 
             _logger.LogInformation(
@@ -648,6 +668,7 @@ namespace Cloud9_2.Services
                 Id = task.Id,
                 Title = task.Title,
                 Description = task.Description,
+                Description2 = task.Description2,
                 IsActive = task.IsActive,
 
                 TaskTypePMId = task.TaskTypePMId,
@@ -673,6 +694,8 @@ namespace Cloud9_2.Services
                 EstimatedHours = task.EstimatedHours,
                 ActualHours = task.ActualHours,
                 ScheduledDate = task.ScheduledDate,
+                OptionalDate1 = task.OptionalDate1,
+                OptionalDate2 = task.OptionalDate2,
 
                 CreatedById = task.CreatedById,
                 CreatedByName = FullName(task.CreatedBy),

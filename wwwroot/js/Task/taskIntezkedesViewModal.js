@@ -7,7 +7,7 @@
 
   const API = {
     taskById: (id) => `/api/tasks/${encodeURIComponent(id)}`,
-    taskAudit: (id) => `/api/tasks/${encodeURIComponent(id)}/audit`
+    taskAudit: (id) => `/api/tasks/${encodeURIComponent(id)}/audit?_=${Date.now()}`
   };
 
   const el = {};
@@ -67,6 +67,22 @@
     node.innerHTML = value == null || value === '' ? '–' : String(value);
   }
 
+  function setCompletedDate(value) {
+    const node = qs('#viewCompletedDate');
+    if (!node) return;
+
+    node.classList.remove('text-muted', 'fw-semibold', 'text-success');
+
+    if (value) {
+      node.textContent = fmtDate(value);
+      node.classList.add('fw-semibold', 'text-success');
+      return;
+    }
+
+    node.textContent = 'Nincs lezárva';
+    node.classList.add('text-muted');
+  }
+
   function show(node) {
     if (node) node.classList.remove('d-none');
   }
@@ -99,6 +115,8 @@
     setText('#viewCommunicationDescription', '–');
 
     setText('#viewScheduledDate', '–');
+    setText('#viewOptionalDate1', '–');
+    setText('#viewOptionalDate2', '–');
     setText('#viewDueDate', '–');
 
     setText('#viewCreatedDate', '–');
@@ -106,17 +124,19 @@
     setText('#viewUpdatedDate', '–');
     setText('#viewUpdatedBy', '–');
 
+    setCompletedDate(null);
+
     resetAttachments();
   }
 
   function resetTitle() {
     if (!el.title) return;
-    el.title.innerHTML = '<i class="bi bi-eye me-2"></i> Intézkedés részletei';
+    el.title.innerHTML = '<i class="bi bi-eye-fill"></i> Intézkedés részletei';
   }
 
   function setTitle(taskId, title) {
     if (!el.title) return;
-    el.title.innerHTML = `<i class="bi bi-eye me-2"></i> Intézkedés #${esc(taskId)} – ${esc(title)}`;
+    el.title.innerHTML = `<i class="bi bi-eye-fill"></i> Intézkedés #${esc(taskId)} – ${esc(title)}`;
   }
 
   function setLoading() {
@@ -154,8 +174,22 @@
     }
   }
 
-  function setHistoryLoading() {
-    resetHistory();
+  function setHistoryLoading(taskId) {
+    if (el.viewHistoryTaskTitle) {
+      el.viewHistoryTaskTitle.textContent = taskId ? ('Intézkedés #' + taskId) : 'Betöltés...';
+    }
+
+    if (el.viewHistoryCountBadge) {
+      el.viewHistoryCountBadge.textContent = '0';
+    }
+
+    if (el.viewHistoryList) {
+      el.viewHistoryList.innerHTML = '';
+    }
+
+    show(el.viewHistoryLoading);
+    hide(el.viewHistoryContent);
+    hide(el.viewHistoryEmpty);
   }
 
   function setHistoryEmpty(taskTitle) {
@@ -176,7 +210,7 @@
     }
   }
 
-  function setHistoryError() {
+  function setHistoryError(message) {
     if (el.viewHistoryTaskTitle) {
       el.viewHistoryTaskTitle.textContent = 'Előzmények nem tölthetők be';
     }
@@ -191,8 +225,9 @@
 
     if (el.viewHistoryList) {
       el.viewHistoryList.innerHTML = `
-        <div class="alert alert-warning mb-0">
-          Nem sikerült betölteni az előzményeket.
+        <div class="alert alert-danger mb-0">
+          <div class="fw-semibold">Nem sikerült betölteni az előzményeket.</div>
+          <div class="small mt-1">${esc(message || 'Ismeretlen hiba')}</div>
         </div>
       `;
     }
@@ -207,101 +242,163 @@
     return [];
   }
 
-function renderHistoryItems(items, taskTitle) {
-  if (el.viewHistoryTaskTitle) {
-    el.viewHistoryTaskTitle.textContent = text(taskTitle || 'Intézkedés');
+  function translateAuditField(fieldName) {
+    const map = {
+      Id: 'Azonosító',
+      Title: 'Tárgy',
+      Description: 'Leírás',
+      PartnerId: 'Partner',
+      RelatedPartnerId: 'Kapcsolt partner',
+      SiteId: 'Telephely',
+      TaskTypePMId: 'Feladat típusa',
+      TaskPriorityPMId: 'Prioritás',
+      TaskStatusPMId: 'Státusz',
+      AssignedToId: 'Felelős',
+      TaskPMcomMethodID: 'Kommunikáció módja',
+      CommunicationDescription: 'Név / elérhetőség / részletek',
+      ScheduledDate: 'Beütemezve',
+      DueDate: 'Határidő',
+      RelatedEmployeeId: 'Kapcsolt személy',
+      CreatedDate: 'Létrehozva',
+      UpdatedDate: 'Módosítva',
+      CompletedDate: 'Lezárva'
+    };
+
+    return map[fieldName] || fieldName;
   }
 
-  hide(el.viewHistoryLoading);
-  show(el.viewHistoryContent);
+  function formatAuditValue(fieldName, value) {
+    if (value == null || value === '' || String(value).toLowerCase() === 'null') {
+      return '–';
+    }
 
-  if (!Array.isArray(items) || items.length === 0) {
+    if (
+      fieldName === 'ScheduledDate' ||
+      fieldName === 'DueDate' ||
+      fieldName === 'CreatedDate' ||
+      fieldName === 'UpdatedDate' ||
+      fieldName === 'CompletedDate'
+    ) {
+      return fmtDate(value);
+    }
+
+    return String(value);
+  }
+
+  function localizeAuditChanges(changesText) {
+    if (!changesText) return '–';
+
+    const parts = String(changesText)
+      .split(';')
+      .map(x => x.trim())
+      .filter(Boolean);
+
+    const localized = parts.map(part => {
+      const match = part.match(/^([A-Za-z0-9_]+)\s*:\s*(.*?)\s*→\s*(.*)$/);
+      if (!match) return esc(part);
+
+      const fieldName = match[1];
+      const oldValue = match[2];
+      const newValue = match[3];
+
+      return esc(translateAuditField(fieldName)) +
+        ': ' +
+        esc(formatAuditValue(fieldName, oldValue)) +
+        ' → ' +
+        esc(formatAuditValue(fieldName, newValue));
+    });
+
+    return localized.join('\n');
+  }
+
+  function historyMetaForAction(action) {
+    const a = String(action || '').toLowerCase();
+
+    if (a === 'created') {
+      return { icon: 'bi-plus-circle-fill', badge: 'bg-success', label: 'Létrehozva' };
+    }
+    if (a === 'updated') {
+      return { icon: 'bi-pencil-square', badge: 'bg-primary', label: 'Módosítva' };
+    }
+    if (a === 'deleted') {
+      return { icon: 'bi-trash-fill', badge: 'bg-danger', label: 'Törölve' };
+    }
+    if (a === 'statuschanged' || a === 'status_change' || a === 'status') {
+      return { icon: 'bi-arrow-repeat', badge: 'bg-warning text-dark', label: 'Státusz módosítva' };
+    }
+    if (a === 'assignedchanged' || a === 'assigned_to' || a === 'assigneechanged') {
+      return { icon: 'bi-person-check-fill', badge: 'bg-info text-dark', label: 'Felelős módosítva' };
+    }
+    if (a === 'closed' || a === 'completed' || a === 'taskclosed') {
+      return { icon: 'bi-lock-fill', badge: 'bg-danger', label: 'Lezárva' };
+    }
+    if (a === 'reopened' || a === 'reopen' || a === 'taskreopened') {
+      return { icon: 'bi-unlock-fill', badge: 'bg-success', label: 'Újranyitva' };
+    }
+
+    return { icon: 'bi-info-circle-fill', badge: 'bg-secondary', label: action || 'Esemény' };
+  }
+
+  function renderHistoryItems(items, task) {
+    const taskId = getValue(task, 'id', 'Id');
+    const taskTitle = getValue(task, 'title', 'Title') || '';
+
+    if (el.viewHistoryTaskTitle) {
+      el.viewHistoryTaskTitle.textContent = taskId
+        ? ('Intézkedés #' + taskId + (taskTitle ? ' – ' + taskTitle : ''))
+        : (taskTitle || 'Előzmények');
+    }
+
+    hide(el.viewHistoryLoading);
+    show(el.viewHistoryContent);
+
+    if (!Array.isArray(items) || items.length === 0) {
+      if (el.viewHistoryCountBadge) {
+        el.viewHistoryCountBadge.textContent = '0';
+      }
+
+      show(el.viewHistoryEmpty);
+
+      if (el.viewHistoryList) {
+        el.viewHistoryList.innerHTML = '';
+      }
+
+      return;
+    }
+
+    hide(el.viewHistoryEmpty);
+
     if (el.viewHistoryCountBadge) {
-      el.viewHistoryCountBadge.textContent = '0';
+      el.viewHistoryCountBadge.textContent = String(items.length);
     }
 
-    show(el.viewHistoryEmpty);
+    if (!el.viewHistoryList) return;
 
-    if (el.viewHistoryList) {
-      el.viewHistoryList.innerHTML = '';
-    }
-    return;
+    el.viewHistoryList.innerHTML = items.map(function (x) {
+      const action = getValue(x, 'action', 'Action');
+      const changedAt = getValue(x, 'changedAt', 'ChangedAt');
+      const changedByName = getValue(x, 'changedByName', 'ChangedByName');
+      const changes = getValue(x, 'changes', 'Changes');
+
+      const meta = historyMetaForAction(action);
+      const when = fmtDate(changedAt) || '—';
+      const who = changedByName ? esc(changedByName) : '—';
+      const localizedChanges = changes ? localizeAuditChanges(changes) : '–';
+
+      return '' +
+        '<div class="border-start border-3 ps-3 ms-2 mb-4 position-relative">' +
+        '  <div class="position-absolute top-0 start-0 translate-middle rounded-circle bg-success" style="width:12px;height:12px;"></div>' +
+        '  <div class="d-flex flex-wrap align-items-center gap-2 mb-1">' +
+        '    <span class="badge ' + meta.badge + '">' +
+        '      <i class="bi ' + meta.icon + ' me-1"></i>' + esc(meta.label) +
+        '    </span>' +
+        '    <span class="small text-muted">' + esc(when) + '</span>' +
+        '  </div>' +
+        '  <div class="fw-semibold">' + who + '</div>' +
+        '  <div class="small text-body mt-1" style="white-space: pre-wrap;">' + localizedChanges + '</div>' +
+        '</div>';
+    }).join('');
   }
-
-  hide(el.viewHistoryEmpty);
-
-  if (el.viewHistoryCountBadge) {
-    el.viewHistoryCountBadge.textContent = String(items.length);
-  }
-
-  if (!el.viewHistoryList) return;
-
-  el.viewHistoryList.innerHTML = items.map(function (item) {
-    const changedAt = getValue(
-      item,
-      'changedAt',
-      'ChangedAt',
-      'createdAt',
-      'CreatedAt',
-      'auditDate',
-      'AuditDate',
-      'timestamp',
-      'Timestamp'
-    );
-
-    const changedBy = getValue(
-      item,
-      'changedByName',
-      'ChangedByName',
-      'userName',
-      'UserName',
-      'createdByName',
-      'CreatedByName'
-    ) || 'Ismeretlen';
-
-    const action = getValue(
-      item,
-      'actionTypeName',
-      'ActionTypeName',
-      'actionType',
-      'ActionType',
-      'eventType',
-      'EventType'
-    ) || 'Módosítás';
-
-    const detailsHtml = getValue(item, 'detailsHtml', 'DetailsHtml');
-
-    const description = getValue(
-      item,
-      'description',
-      'Description',
-      'details',
-      'Details',
-      'message',
-      'Message'
-    );
-
-    const renderedDetails = detailsHtml
-      ? String(detailsHtml)
-      : `<div class="small text-body-secondary">Nincs részletezés.</div>`;
-
-    return `
-      <div class="border-start ps-3 ms-1 mb-4">
-        <div class="d-flex justify-content-between align-items-start gap-3">
-          <div>
-            <div class="fw-semibold">${esc(action)}</div>
-            <div class="small text-body-secondary">${esc(changedBy)}</div>
-          </div>
-          <div class="small text-body-secondary text-nowrap">${esc(fmtDate(changedAt))}</div>
-        </div>
-
-        <div class="mt-2">
-          ${detailsHtml ? renderedDetails : `<div class="small text-body-secondary">${esc(description || 'Nincs részletezés.')}</div>`}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
 
   function resetModal() {
     resetTitle();
@@ -424,7 +521,10 @@ function renderHistoryItems(items, taskTitle) {
     );
 
     const scheduledDate = getValue(task, 'scheduledDate', 'ScheduledDate');
+    const optionalDate1 = getValue(task, 'optionalDate1', 'OptionalDate1');
+    const optionalDate2 = getValue(task, 'optionalDate2', 'OptionalDate2');
     const dueDate = getValue(task, 'dueDate', 'DueDate');
+    const completedDate = getValue(task, 'completedDate', 'CompletedDate');
 
     const createdDate = getValue(task, 'createdDate', 'CreatedDate');
     const updatedDate = getValue(task, 'updatedDate', 'UpdatedDate');
@@ -450,12 +550,16 @@ function renderHistoryItems(items, taskTitle) {
     setText('#viewCommunicationDescription', communicationDescription);
 
     setText('#viewScheduledDate', fmtDate(scheduledDate));
+    setText('#viewOptionalDate1', fmtDate(optionalDate1));
+    setText('#viewOptionalDate2', fmtDate(optionalDate2));
+    
     setText('#viewDueDate', fmtDate(dueDate));
 
     setText('#viewCreatedDate', fmtDate(createdDate));
     setText('#viewCreatedBy', createdByName);
     setText('#viewUpdatedDate', fmtDate(updatedDate));
     setText('#viewUpdatedBy', updatedByName);
+    setCompletedDate(completedDate);
 
     renderAttachments(task);
     bindEditButton(id);
@@ -481,7 +585,7 @@ function renderHistoryItems(items, taskTitle) {
 
     resetFields();
     setLoading();
-    setHistoryLoading();
+    setHistoryLoading(idNum);
     AppModal.show(MODAL_ID);
 
     try {
@@ -490,18 +594,19 @@ function renderHistoryItems(items, taskTitle) {
         fetchTaskAudit(idNum)
       ]);
 
-      const vm = renderTask(task);
+      renderTask(task);
+
       const items = getAuditItems(audit);
 
       if (!items.length) {
-        setHistoryEmpty(vm.title);
+        setHistoryEmpty(getValue(task, 'title', 'Title'));
       } else {
-        renderHistoryItems(items, vm.title);
+        renderHistoryItems(items, task);
       }
     } catch (err) {
       console.error('[taskIntezkedesViewModal] load failed', err);
       setError('Nem sikerült betölteni a feladatot.');
-      setHistoryError();
+      setHistoryError(err && err.message ? err.message : 'Nem sikerült betölteni az előzményeket.');
     }
   }
 

@@ -287,6 +287,8 @@ catch (Exception ex)
         [HttpPut("{id}")]
         public async Task<ActionResult<TaskPMDto>> UpdateTask(int id, [FromBody] TaskUpdateDto dto)
         {
+            _logger.LogInformation("UpdateTask DTO: {@Dto}", dto);
+            
             if (id != dto.Id)
                 return BadRequest("Task ID in URL does not match payload.");
 

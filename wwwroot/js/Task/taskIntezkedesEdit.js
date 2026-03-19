@@ -43,6 +43,7 @@
     }
 
     var submitBtn = AppForms.qs(formEl, 'button[type="submit"]');
+    var closeBtn = AppForms.qs(formEl, '#btnCloseTask');
 
     var el = {
       id: AppForms.qs(formEl, '#EditId, [name="Id"]'),
@@ -62,7 +63,12 @@
       commDesc: AppForms.qs(formEl, '#EditCommunicationDescription, [name="CommunicationDescription"]'),
 
       scheduledDate: AppForms.qs(formEl, '#EditScheduledDate, [name="ScheduledDate"]'),
-      partnerHidden: AppForms.qs(formEl, '#editAutoPartnerId, [name="PartnerId"]')
+      optionalDate1: AppForms.qs(formEl, '#EditOptionalDate1, [name="OptionalDate1"]'),
+      optionalDate2: AppForms.qs(formEl, '#EditOptionalDate2, [name="OptionalDate2"]'),
+      partnerHidden: AppForms.qs(formEl, '#editAutoPartnerId, [name="PartnerId"]'),
+
+      completedDate: AppForms.qs(formEl, '#EditCompletedDate, [name="CompletedDate"]'),
+      reopenTask: AppForms.qs(formEl, '#EditReopenTask, [name="ReopenTask"]')
     };
 
     var historyEl = {
@@ -141,6 +147,52 @@
       }
     }
 
+    function nowIsoLocalLike() {
+      var d = new Date();
+      return d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0') + 'T' +
+        String(d.getHours()).padStart(2, '0') + ':' +
+        String(d.getMinutes()).padStart(2, '0') + ':' +
+        String(d.getSeconds()).padStart(2, '0');
+    }
+
+    function isTaskClosed(task) {
+      return !!pick(task, ['completedDate', 'CompletedDate']);
+    }
+
+    function setSubmitStateByTask(task) {
+      var isClosed = isTaskClosed(task);
+
+      if (submitBtn) {
+        submitBtn.disabled = !!isClosed;
+        submitBtn.classList.toggle('disabled', !!isClosed);
+      }
+    }
+
+    function setCloseButtonState(task) {
+      if (!closeBtn) return;
+
+      var isClosed = isTaskClosed(task);
+
+      closeBtn.disabled = false;
+      closeBtn.classList.remove('disabled');
+
+      if (isClosed) {
+        closeBtn.innerHTML = '<i class="bi bi-unlock me-1"></i> Újranyitás';
+        closeBtn.classList.remove('btn-outline-danger');
+        closeBtn.classList.add('btn-outline-success');
+        closeBtn.setAttribute('title', 'Ez az intézkedés le van zárva. Kattints az újranyitáshoz.');
+      } else {
+        closeBtn.innerHTML = '<i class="bi bi-lock me-1"></i> Lezárás';
+        closeBtn.classList.remove('btn-outline-success');
+        closeBtn.classList.add('btn-outline-danger');
+        closeBtn.removeAttribute('title');
+      }
+
+      setSubmitStateByTask(task);
+    }
+
     function sleep(ms) {
       return new Promise(function (resolve) {
         setTimeout(resolve, ms);
@@ -148,7 +200,7 @@
     }
 
     async function waitForTomSelect(selectEl, timeoutMs) {
-      timeoutMs = timeoutMs || 3500;
+      timeoutMs = timeoutMs || 800;
       var step = 50;
       var tries = Math.ceil(timeoutMs / step);
 
@@ -158,34 +210,6 @@
       }
 
       return selectEl && selectEl.tomselect ? selectEl.tomselect : null;
-    }
-
-    async function waitAndSetSelectValue(selectEl, value) {
-      if (!selectEl) return;
-
-      var v = value == null ? '' : String(value);
-      if (!v) {
-        selectEl.value = '';
-        try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
-        return;
-      }
-
-      for (var i = 0; i < 60; i++) {
-        var hasOption = Array.from(selectEl.options || []).some(function (o) {
-          return String(o.value) === v;
-        });
-
-        if (hasOption) {
-          selectEl.value = v;
-          try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
-          return;
-        }
-
-        await sleep(50);
-      }
-
-      selectEl.value = v;
-      try { selectEl.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
     }
 
     async function fetchSelectCached(url) {
@@ -206,6 +230,21 @@
     async function loadSimpleSelect(selectEl, url, selectedId, placeholder) {
       if (!selectEl) return;
 
+      if (window.AppSelects && typeof window.AppSelects.load === 'function') {
+        await window.AppSelects.load(
+          selectEl,
+          url,
+          selectedId != null ? String(selectedId) : '',
+          placeholder || '-- Válasszon --'
+        );
+
+        try {
+          selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch (e) {}
+
+        return;
+      }
+
       selectEl.disabled = true;
       selectEl.innerHTML = '<option value="">Betöltés...</option>';
 
@@ -218,7 +257,10 @@
             return '<option value="' + String(x.id) + '">' + String(x.text) + '</option>';
           }).join('');
 
-        await waitAndSetSelectValue(selectEl, selectedId);
+        selectEl.value = selectedId != null ? String(selectedId) : '';
+        try {
+          selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch (e) {}
       } catch (err) {
         console.error('[taskBejelentesEdit] loadSimpleSelect failed', url, err);
         selectEl.innerHTML = '<option value="">-- Nem sikerült betölteni --</option>';
@@ -230,7 +272,7 @@
     async function loadTomOrSimpleSelect(selectEl, url, selectedId, placeholder) {
       if (!selectEl) return;
 
-      var ts = await waitForTomSelect(selectEl, 2500);
+      var ts = await waitForTomSelect(selectEl, 800);
 
       if (!ts) {
         return loadSimpleSelect(selectEl, url, selectedId, placeholder);
@@ -252,12 +294,12 @@
         ts.addOptions(options);
         ts.setValue(selectedId != null ? String(selectedId) : '', true);
         ts.refreshOptions(false);
-        ts.enable();
       } catch (err) {
         console.error('[taskBejelentesEdit] loadTomOrSimpleSelect failed', url, err);
         ts.clearOptions();
         ts.addOption({ id: '', text: '-- Nem sikerült betölteni --' });
         ts.setValue('', true);
+      } finally {
         ts.enable();
       }
     }
@@ -348,7 +390,8 @@
         DueDate: 'Határidő',
         RelatedEmployeeId: 'Kapcsolt személy',
         CreatedDate: 'Létrehozva',
-        UpdatedDate: 'Módosítva'
+        UpdatedDate: 'Módosítva',
+        CompletedDate: 'Lezárva'
       };
 
       return map[fieldName] || fieldName;
@@ -363,7 +406,8 @@
         fieldName === 'ScheduledDate' ||
         fieldName === 'DueDate' ||
         fieldName === 'CreatedDate' ||
-        fieldName === 'UpdatedDate'
+        fieldName === 'UpdatedDate' ||
+        fieldName === 'CompletedDate'
       ) {
         return formatHuDateTime(value);
       }
@@ -414,6 +458,12 @@
       }
       if (a === 'assignedchanged' || a === 'assigned_to' || a === 'assigneechanged') {
         return { icon: 'bi-person-check-fill', badge: 'bg-info text-dark', label: 'Felelős módosítva' };
+      }
+      if (a === 'closed' || a === 'completed' || a === 'taskclosed') {
+        return { icon: 'bi-lock-fill', badge: 'bg-danger', label: 'Lezárva' };
+      }
+      if (a === 'reopened' || a === 'reopen' || a === 'taskreopened') {
+        return { icon: 'bi-unlock-fill', badge: 'bg-success', label: 'Újranyitva' };
       }
 
       return { icon: 'bi-info-circle-fill', badge: 'bg-secondary', label: action || 'Esemény' };
@@ -525,8 +575,29 @@
       AppForms.setSubmitting(submitBtn, false);
       state.currentId = null;
 
-      try { formEl.reset(); } catch (e) {}
-      formEl.classList.remove('was-validated');
+      AppForms.reset(formEl);
+
+      if (el.completedDate) {
+        el.completedDate.value = '';
+      }
+
+      if (el.reopenTask) {
+        el.reopenTask.value = 'false';
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('disabled');
+      }
+
+      if (closeBtn) {
+        closeBtn.disabled = false;
+        closeBtn.classList.remove('disabled');
+        closeBtn.classList.remove('btn-outline-success');
+        closeBtn.classList.add('btn-outline-danger');
+        closeBtn.innerHTML = '<i class="bi bi-lock me-1"></i> Lezárás';
+        closeBtn.removeAttribute('title');
+      }
 
       resetHistoryPanel();
     }
@@ -538,6 +609,14 @@
 
       formEl.classList.remove('was-validated');
       resetHistoryPanel();
+
+      if (el.completedDate) {
+        el.completedDate.value = '';
+      }
+
+      if (el.reopenTask) {
+        el.reopenTask.value = 'false';
+      }
 
       AppModal.show(MODAL_ID);
       AppForms.setSubmitting(submitBtn, true);
@@ -553,6 +632,9 @@
           priorityId: pick(task, ['taskPriorityPMId', 'TaskPriorityPMId']),
           assignedToId: pick(task, ['assignedToId', 'AssignedToId']) || '',
           scheduledDate: pick(task, ['scheduledDate', 'ScheduledDate']),
+          optionalDate1: pick(task, ['optionalDate1', 'OptionalDate1']),
+          optionalDate2: pick(task, ['optionalDate2', 'OptionalDate2']),
+          completedDate: pick(task, ['completedDate', 'CompletedDate']),
           partnerId: pick(task, ['partnerId', 'PartnerId']),
           relatedPartnerId: pick(task, ['relatedPartnerId', 'RelatedPartnerId']),
           siteId: pick(task, ['siteId', 'SiteId']),
@@ -567,31 +649,42 @@
         if (el.title) el.title.value = data.title;
         if (el.desc) el.desc.value = data.desc;
         if (el.scheduledDate) el.scheduledDate.value = fmtForInputDate(data.scheduledDate);
+        if (el.optionalDate1) el.optionalDate1.value = data.optionalDate1 ? data.optionalDate1.substring(0, 16) : '';
+        if (el.optionalDate2) el.optionalDate2.value = data.optionalDate2 ? data.optionalDate2.substring(0, 16) : '';
         if (el.partnerHidden) el.partnerHidden.value = data.partnerId != null ? String(data.partnerId) : '';
+        if (el.completedDate) el.completedDate.value = data.completedDate || '';
+        if (el.reopenTask) el.reopenTask.value = 'false';
+
+        setCloseButtonState(task);
 
         if (el.relatedPartner) {
           el.relatedPartner.value = data.relatedPartnerId != null ? String(data.relatedPartnerId) : '';
-          try { el.relatedPartner.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+          try {
+            el.relatedPartner.dispatchEvent(new Event('change', { bubbles: true }));
+          } catch (e) {}
         }
 
         await Promise.all([
           loadTomOrSimpleSelect(el.taskType, API.taskTypes(DISPLAY_TYPE), data.taskTypeId, '-- Válasszon --'),
           loadTomOrSimpleSelect(el.status, API.taskStatuses(DISPLAY_TYPE), data.statusId, '-- Válasszon --'),
           loadSimpleSelect(el.assignedTo, API.assignees, data.assignedToId, '-- Válasszon --'),
-          loadSimpleSelect(el.commMethod, API.commMethods, data.commMethodId, '-- Válasszon --'),
-          loadHistoryPanel(taskIdVal, task)
+          loadSimpleSelect(el.commMethod, API.commMethods, data.commMethodId, '-- Válasszon --')
         ]);
+
+        loadHistoryPanel(taskIdVal, task);
 
         if (el.priority) {
           el.priority.value = data.priorityId != null ? String(data.priorityId) : '';
-          try { el.priority.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+          try {
+            el.priority.dispatchEvent(new Event('change', { bubbles: true }));
+          } catch (e) {}
         }
 
         if (el.commDesc) el.commDesc.value = String(data.commDesc || '');
 
         if (el.site && data.siteId != null) {
           var siteIdStr = String(data.siteId);
-          var ts = await waitForTomSelect(el.site, 5000);
+          var ts = await waitForTomSelect(el.site, 1200);
 
           if (ts) {
             ts.addOption({
@@ -610,7 +703,9 @@
             ts.refreshOptions(false);
           } else {
             el.site.value = siteIdStr;
-            try { el.site.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+            try {
+              el.site.dispatchEvent(new Event('change', { bubbles: true }));
+            } catch (e) {}
           }
         }
       } catch (err) {
@@ -640,17 +735,64 @@
       openEditModal(id);
     });
 
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function () {
+        if (state.isSubmitting || state.isOpening) return;
+
+        var currentlyClosed = !!(el.completedDate && el.completedDate.value);
+
+        if (currentlyClosed) {
+          if (!window.confirm('Biztosan újra szeretnéd nyitni ezt az intézkedést?')) {
+            return;
+          }
+
+          if (el.reopenTask) {
+            el.reopenTask.value = 'true';
+          }
+
+          if (el.completedDate) {
+            el.completedDate.value = '';
+          }
+
+          formEl.requestSubmit();
+          return;
+        }
+
+        if (!formEl.checkValidity()) {
+          formEl.classList.add('was-validated');
+          toast('Lezárás előtt töltsd ki a kötelező mezőket.', 'warning');
+          return;
+        }
+
+        if (!window.confirm('Biztosan le szeretnéd zárni ezt az intézkedést? (Intézkedés esetén az érkezés és a távozás időpontját kötelező megadni)')) {
+          return;
+        }
+
+        if (el.reopenTask) {
+          el.reopenTask.value = 'false';
+        }
+
+        if (el.completedDate && !el.completedDate.value) {
+          el.completedDate.value = nowIsoLocalLike();
+        }
+
+        formEl.requestSubmit();
+      });
+    }
+
     formEl.addEventListener('submit', async function (e) {
       e.preventDefault();
       if (state.isSubmitting) return;
 
-      if (!formEl.checkValidity()) {
+      var fd = new FormData(formEl);
+
+      var reopenTask = String(fd.get('ReopenTask') || '').toLowerCase() === 'true';
+
+      if (!reopenTask && !formEl.checkValidity()) {
         formEl.classList.add('was-validated');
         toast('Kérlek töltsd ki a kötelező mezőket.', 'warning');
         return;
       }
-
-      var fd = new FormData(formEl);
 
       var id = AppForms.toInt(fd.get('Id')) || state.currentId;
       if (!id) {
@@ -676,6 +818,10 @@
       var sd = fd.get('ScheduledDate') ? String(fd.get('ScheduledDate')) : null;
       if (sd) sd = sd + 'T00:00:00';
 
+      var completedDate = fd.get('CompletedDate')
+        ? String(fd.get('CompletedDate')).trim()
+        : null;
+
       var payload = {
         Id: id,
         Title: String(fd.get('Title') || '').trim(),
@@ -689,36 +835,74 @@
         AssignedToId: String(fd.get('AssignedToId') || '').trim() || null,
         TaskPMcomMethodID: AppForms.toInt(fd.get('TaskPMcomMethodID')),
         CommunicationDescription: String(fd.get('CommunicationDescription') || '').trim() || null,
-        ScheduledDate: sd
+        ScheduledDate: sd,
+        OptionalDate1: fd.get('OptionalDate1') || null,
+        OptionalDate2: fd.get('OptionalDate2') || null,
+        CompletedDate: completedDate || null,
+        ReopenTask: reopenTask
       };
 
-      if (!payload.Title) {
-        toast('A tárgy (cím) megadása kötelező!', 'danger');
-        return;
-      }
+      console.log('[taskBejelentesEdit] payload', payload);
 
-      if (!payload.SiteId) {
-        toast('A telephely kiválasztása kötelező!', 'danger');
-        return;
-      }
+      if (!reopenTask) {
+        if (!payload.Title) {
+          toast('A tárgy (cím) megadása kötelező!', 'danger');
+          return;
+        }
 
-      if (!payload.TaskTypePMId) {
-        toast('A feladat típusa kötelező!', 'danger');
-        return;
-      }
+        if (!payload.SiteId) {
+          toast('A telephely kiválasztása kötelező!', 'danger');
+          return;
+        }
 
-      if (!payload.PartnerId) {
-        toast('Telephely kiválasztásakor Partner kötelező (Site választásból jön).', 'danger');
-        return;
+        if (!payload.TaskTypePMId) {
+          toast('A feladat típusa kötelező!', 'danger');
+          return;
+        }
+
+        if (!payload.PartnerId) {
+          toast('Telephely kiválasztásakor Partner kötelező (Site választásból jön).', 'danger');
+          return;
+        }
       }
 
       state.isSubmitting = true;
       AppForms.setSubmitting(submitBtn, true);
+      if (closeBtn) closeBtn.disabled = true;
 
       try {
         var updated = await AppApi.put(API.updateTask(id), payload);
 
-        toast('Intézkedés frissítve!', 'success');
+        if (updated) {
+          if (el.completedDate) {
+            el.completedDate.value = pick(updated, ['completedDate', 'CompletedDate']) || '';
+          }
+
+          if (el.reopenTask) {
+            el.reopenTask.value = 'false';
+          }
+
+          setCloseButtonState(updated);
+        }
+
+        var successMessage = 'Intézkedés frissítve!';
+        if (payload.ReopenTask) {
+          successMessage = 'Intézkedés újranyitva!';
+        } else if (payload.CompletedDate) {
+          successMessage = 'Intézkedés lezárva!';
+        }
+
+        toast(successMessage, 'success');
+
+        if (updated && (updated.id || updated.Id)) {
+          try {
+            updateRowFromTask(updated);
+          } catch (_) {
+            await refreshRow(id);
+          }
+        } else {
+          await refreshRow(id);
+        }
 
         if (updated && (updated.id || updated.Id)) {
           try {
@@ -731,16 +915,46 @@
         }
 
         try {
-          await loadHistoryPanel(id, updated || { Id: id, Title: payload.Title });
+          loadHistoryPanel(id, updated || { Id: id, Title: payload.Title });
         } catch (_) {}
 
+        if (payload.ReopenTask) {
+          if (updated) {
+            if (el.completedDate) {
+              el.completedDate.value = pick(updated, ['completedDate', 'CompletedDate']) || '';
+            }
+
+            if (el.reopenTask) {
+              el.reopenTask.value = 'false';
+            }
+
+            setCloseButtonState(updated);
+          }
+
+          return;
+        }
+
         AppModal.hide(MODAL_ID);
+        
       } catch (err) {
         console.error('[taskBejelentesEdit] update exception', err);
-        toast('Nem sikerült a mentés.', 'danger');
+
+        var errorMessage = 'Nem sikerült a mentés.';
+        if (payload.ReopenTask) {
+          errorMessage = 'Nem sikerült az újranyitás.';
+        } else if (payload.CompletedDate) {
+          errorMessage = 'Nem sikerült a lezárás.';
+        }
+
+        toast(errorMessage, 'danger');
       } finally {
         state.isSubmitting = false;
         AppForms.setSubmitting(submitBtn, false);
+        if (closeBtn) closeBtn.disabled = false;
+
+        if (el.reopenTask) {
+          el.reopenTask.value = 'false';
+        }
       }
     });
   });

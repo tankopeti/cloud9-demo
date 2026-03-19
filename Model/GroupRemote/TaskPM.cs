@@ -15,6 +15,7 @@ namespace Cloud9_2.Models
         public string Title { get; set; } = string.Empty;
 
         public string? Description { get; set; }
+        public string? Description2 { get; set; }
 
         public bool IsActive { get; set; } = true;
 
@@ -33,6 +34,10 @@ namespace Cloud9_2.Models
         [Display(Name = "Beütemezés dátuma")]
         public DateTime? ScheduledDate { get; set; }
 
+        public DateTime? OptionalDate1 { get; set; }
+
+        public DateTime? OptionalDate2 { get; set; }
+
         [Display(Name = "Estimated Hours")]
         [Range(0, 999.99, ErrorMessage = "Estimated hours must be between 0 and 999.99")]
         public decimal? EstimatedHours { get; set; }
@@ -44,15 +49,15 @@ namespace Cloud9_2.Models
         public string? CreatedById { get; set; }
         public ApplicationUser? CreatedBy { get; set; }
 
+        [Display(Name = "Created Date")]
+        public DateTime? CreatedDate { get; set; }
+
         [Display(Name = "Kommunikáció módja")]
         public string? CommunicationDescription { get; set; }
         public short? TaskPMcomMethodID { get; set; }
 
         [ForeignKey(nameof(TaskPMcomMethodID))]
         public TaskPMcomMethod? TaskPMcomMethod { get; set; }
-
-        [Display(Name = "Created Date")]
-        public DateTime? CreatedDate { get; set; }
 
         public string? AssignedToId { get; set; }
         public ApplicationUser? AssignedTo { get; set; }
@@ -110,6 +115,7 @@ namespace Cloud9_2.Models
 
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
+        public string? Description2 { get; set; }
         public bool IsActive { get; set; }
         public int? TaskTypePMId { get; set; }
         public string? TaskTypePMName { get; set; }
@@ -122,6 +128,8 @@ namespace Cloud9_2.Models
         public int? TaskPriorityPMId { get; set; }
         public string? TaskPriorityPMName { get; set; }
         public DateTime? DueDate { get; set; }
+        public DateTime? OptionalDate1 { get; set; }
+        public DateTime? OptionalDate2 { get; set; }
         public DateTime? ScheduledDate { get; set; }
         public decimal? EstimatedHours { get; set; }
         public decimal? ActualHours { get; set; }
@@ -168,6 +176,7 @@ namespace Cloud9_2.Models
         public string Title { get; set; } = string.Empty;
 
         public string? Description { get; set; }
+        public string? Description2 { get; set; }
         public string? CommunicationDescription { get; set; }
         public short? TaskPMcomMethodID { get; set; }
         public int? RelatedPartnerId { get; set; }
@@ -183,6 +192,8 @@ namespace Cloud9_2.Models
         public int? TaskPriorityPMId { get; set; }
 
         public DateTime? DueDate { get; set; }
+        public DateTime? OptionalDate1 { get; set; }
+        public DateTime? OptionalDate2 { get; set; }
         public DateTime? ScheduledDate { get; set; }
 
         [Range(0, 999.99, ErrorMessage = "Estimated hours must be between 0 and 999.99")]
@@ -224,6 +235,7 @@ namespace Cloud9_2.Models
         public string Title { get; set; } = string.Empty;
 
         public string? Description { get; set; }
+        public string? Description2 { get; set; }
         public string? CommunicationDescription { get; set; }
         public short? TaskPMcomMethodID { get; set; }
 
@@ -239,8 +251,13 @@ namespace Cloud9_2.Models
         public int? TaskPriorityPMId { get; set; }
 
         public DateTime? DueDate { get; set; }
+        public DateTime? OptionalDate1 { get; set; }
+        public DateTime? OptionalDate2 { get; set; }
 
         public DateTime? ScheduledDate { get; set; }
+
+        public DateTime? CompletedDate { get; set; }
+        public bool ReopenTask { get; set; }
 
         [Range(0, 999.99, ErrorMessage = "Estimated hours must be between 0 and 999.99")]
         public decimal? EstimatedHours { get; set; }

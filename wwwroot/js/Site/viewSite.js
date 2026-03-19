@@ -29,7 +29,7 @@
 
         const d = await res.json();
 
-        // ---- normalize (snake/camel/Pascal vegyes) ----
+        // ---- normalize ----
         const id = d.siteId ?? d.SiteId ?? siteId;
         const siteName = d.siteName ?? d.SiteName ?? 'Telephely';
 
@@ -82,15 +82,16 @@
           d.DefaultCommunicationTypeName ??
           '—';
 
-        const linkedPartners =
-          d.linkedPartners ??
-          d.LinkedPartners ??
-          [];
+        // ✅ site type
+        const siteTypeName =
+          d.siteType?.name ??
+          d.SiteType?.Name ??
+          d.siteTypeName ??
+          d.SiteTypeName ??
+          '—';
 
-        const linkedEmployees =
-          d.linkedEmployees ??
-          d.LinkedEmployees ??
-          [];
+        const linkedPartners = d.linkedPartners ?? d.LinkedPartners ?? [];
+        const linkedEmployees = d.linkedEmployees ?? d.LinkedEmployees ?? [];
 
         // ---- render ----
         contentEl.innerHTML = `
@@ -110,7 +111,6 @@
 
 <div class="row g-4">
 
-  <!-- BAL -->
   <div class="col-lg-6">
 
     ${card('Alapadatok', `
@@ -125,6 +125,10 @@
       <div class="d-flex justify-content-between">
         <strong>PartnerId:</strong>
         <span class="ms-3 text-end">${esc(partnerIdVal)}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <strong>Telephely típusa:</strong>
+        <span class="ms-3 text-end">${mutedIfEmpty(siteTypeName)}</span>
       </div>
       <hr/>
       <div class="d-flex justify-content-between">
@@ -156,12 +160,10 @@
     `, 'text-info')}
 
     ${card('Kapcsolt személyek', renderLinkedEmployees(linkedEmployees), 'text-info')}
-
     ${card('Kapcsolt partnerek', renderLinkedPartners(linkedPartners), 'text-info')}
 
   </div>
 
-  <!-- JOBB -->
   <div class="col-lg-6">
 
     ${card('Kapcsolattartók', `
@@ -172,53 +174,20 @@
 
     ${card('Elérhetőségek', `
       <div class="row g-2">
-        <div class="col-md-6">
-          <div class="text-muted small">Vezetékes (1)</div>
-          <div>${mutedIfEmpty(phone1)}</div>
-        </div>
-        <div class="col-md-6">
-          <div class="text-muted small">Vezetékes (2)</div>
-          <div>${mutedIfEmpty(phone2)}</div>
-        </div>
-        <div class="col-md-6">
-          <div class="text-muted small">Vezetékes (3)</div>
-          <div>${mutedIfEmpty(phone3)}</div>
-        </div>
+        <div class="col-md-6"><div class="text-muted small">Vezetékes (1)</div><div>${mutedIfEmpty(phone1)}</div></div>
+        <div class="col-md-6"><div class="text-muted small">Vezetékes (2)</div><div>${mutedIfEmpty(phone2)}</div></div>
+        <div class="col-md-6"><div class="text-muted small">Vezetékes (3)</div><div>${mutedIfEmpty(phone3)}</div></div>
 
-        <div class="col-md-6">
-          <div class="text-muted small">Mobil (1)</div>
-          <div>${mutedIfEmpty(mobile1)}</div>
-        </div>
-        <div class="col-md-6">
-          <div class="text-muted small">Mobil (2)</div>
-          <div>${mutedIfEmpty(mobile2)}</div>
-        </div>
-        <div class="col-md-6">
-          <div class="text-muted small">Mobil (3)</div>
-          <div>${mutedIfEmpty(mobile3)}</div>
-        </div>
+        <div class="col-md-6"><div class="text-muted small">Mobil (1)</div><div>${mutedIfEmpty(mobile1)}</div></div>
+        <div class="col-md-6"><div class="text-muted small">Mobil (2)</div><div>${mutedIfEmpty(mobile2)}</div></div>
+        <div class="col-md-6"><div class="text-muted small">Mobil (3)</div><div>${mutedIfEmpty(mobile3)}</div></div>
 
-        <div class="col-md-6">
-          <div class="text-muted small">Üzenető app 1</div>
-          <div>${mutedIfEmpty(msg1)}</div>
-        </div>
-        <div class="col-md-6">
-          <div class="text-muted small">Üzenető app 2</div>
-          <div>${mutedIfEmpty(msg2)}</div>
-        </div>
-        <div class="col-md-6">
-          <div class="text-muted small">Üzenető app 3</div>
-          <div>${mutedIfEmpty(msg3)}</div>
-        </div>
+        <div class="col-md-6"><div class="text-muted small">Üzenető app 1</div><div>${mutedIfEmpty(msg1)}</div></div>
+        <div class="col-md-6"><div class="text-muted small">Üzenető app 2</div><div>${mutedIfEmpty(msg2)}</div></div>
+        <div class="col-md-6"><div class="text-muted small">Üzenető app 3</div><div>${mutedIfEmpty(msg3)}</div></div>
 
-        <div class="col-md-6">
-          <div class="text-muted small">e-Mail (1)</div>
-          <div>${mailHtml(mail1)}</div>
-        </div>
-        <div class="col-md-6">
-          <div class="text-muted small">e-Mail (2)</div>
-          <div>${mailHtml(mail2)}</div>
-        </div>
+        <div class="col-md-6"><div class="text-muted small">e-Mail (1)</div><div>${mailHtml(mail1)}</div></div>
+        <div class="col-md-6"><div class="text-muted small">e-Mail (2)</div><div>${mailHtml(mail2)}</div></div>
       </div>
     `, 'text-info')}
 
@@ -244,24 +213,19 @@
       }
     });
 
-    // ---------------- Helpers ----------------
+    // helpers
     function loadingHtml(text) {
-      return `
-        <div class="text-center py-5">
-          <div class="spinner-border text-info" role="status"></div>
-          <p class="mt-3 mb-0 text-muted">${esc(text)}</p>
+      return `<div class="text-center py-5">
+          <div class="spinner-border text-info"></div>
+          <p class="mt-3 text-muted">${esc(text)}</p>
         </div>`;
     }
 
     function card(title, bodyHtml, titleClass) {
-      const cls = titleClass || 'text-info';
-      return `
-        <div class="p-3 border rounded bg-light">
-          <h6 class="mb-3 ${cls}">${esc(title)}</h6>
-          ${bodyHtml}
-        </div>
-        <div class="mt-3"></div>
-      `;
+      return `<div class="p-3 border rounded bg-light">
+        <h6 class="${titleClass}">${esc(title)}</h6>
+        ${bodyHtml}
+      </div><div class="mt-3"></div>`;
     }
 
     function renderStatus(st) {
@@ -270,111 +234,37 @@
       return `<span class="badge text-white" style="background:${esc(color)}">${esc(name)}</span>`;
     }
 
-    function renderLinkedPartners(items) {
-      if (!Array.isArray(items) || items.length === 0) {
-        return `<div class="text-muted">Nincs kapcsolt partner.</div>`;
-      }
-
-      return `
-        <div class="list-group list-group-flush">
-          ${items.map(x => `
-            <div class="list-group-item px-0 bg-transparent">
-              <div class="fw-semibold">${esc(x.partnerName ?? x.PartnerName ?? '—')}</div>
-              <div class="small text-muted">
-                Típus: ${esc(x.partnerTypeName ?? x.PartnerTypeName ?? '—')}
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      `;
-    }
-
-function renderLinkedEmployees(items) {
-  if (!Array.isArray(items) || items.length === 0) {
-    return `<div class="text-muted">Nincs kapcsolt személy.</div>`;
-  }
-
-  return `
-    <div class="list-group list-group-flush">
-      ${items.map(x => {
-        const fullName =
-          [x.firstName ?? x.FirstName ?? '', x.lastName ?? x.LastName ?? '']
-            .join(' ')
-            .trim();
-
-        const employeeName =
-          x.employeeName ??
-          x.EmployeeName ??
-          (fullName || '—');
-
-        const email = x.email ?? x.Email ?? '';
-        const phone = x.phone ?? x.Phone ?? x.phoneNumber ?? x.PhoneNumber ?? '';
-        const jobTitle = x.jobTitle ?? x.JobTitle ?? '';
-
-        const rawPartner =
-          x.partnerName ??
-          x.PartnerName ??
-          x.partner ??
-          x.Partner ??
-          '';
-
-        const partnerName =
-          typeof rawPartner === 'string'
-            ? rawPartner
-            : rawPartner?.companyName ??
-              rawPartner?.CompanyName ??
-              rawPartner?.name ??
-              rawPartner?.Name ??
-              '';
-
-        const isPrimary = (x.isPrimary ?? x.IsPrimary) === true;
-
-        return `
-          <div class="list-group-item px-0 bg-transparent">
-            <div class="d-flex justify-content-between align-items-start gap-2">
-              <div>
-                <div class="fw-semibold">${esc(employeeName)}</div>
-                <div class="small text-muted">${jobTitle ? esc(jobTitle) : '—'}</div>
-                ${partnerName ? `<div class="small text-muted"><i class="bi bi-building me-1"></i>${esc(partnerName)}</div>` : ``}
-                <div class="small mt-1">${email ? `<a href="mailto:${escAttr(email)}">${esc(email)}</a>` : `<span class="text-muted">—</span>`}</div>
-                <div class="small">${phone ? esc(phone) : `<span class="text-muted">—</span>`}</div>
-              </div>
-              <div>
-                ${isPrimary ? `<span class="badge bg-primary">Elsődleges</span>` : ``}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
-}
-
     function mutedIfEmpty(v) {
-      const s = (v ?? '').toString().trim();
-      return s ? esc(s) : `<span class="text-muted">—</span>`;
+      return v ? esc(v) : `<span class="text-muted">—</span>`;
     }
 
     function mailHtml(v) {
-      const s = (v ?? '').toString().trim();
-      if (!s) return `<span class="text-muted">—</span>`;
-      return `<a href="mailto:${escAttr(s)}">${esc(s)}</a>`;
+      return v ? `<a href="mailto:${esc(v)}">${esc(v)}</a>` : `<span class="text-muted">—</span>`;
     }
 
     function nlOrDash(v) {
-      const s = (v ?? '').toString().trim();
-      if (!s) return `<span class="text-muted">—</span>`;
-      return esc(s).replace(/\n/g, '<br>');
+      return v ? esc(v).replace(/\n/g, '<br>') : `<span class="text-muted">—</span>`;
     }
 
     function esc(v) {
       const d = document.createElement('div');
-      d.textContent = v == null ? '' : String(v);
+      d.textContent = v ?? '';
       return d.innerHTML;
     }
 
     function escAttr(v) {
       return esc(v).replaceAll('`', '&#096;');
     }
+
+    function renderLinkedPartners(items) {
+      if (!items?.length) return `<div class="text-muted">Nincs kapcsolt partner.</div>`;
+      return items.map(x => `<div>${esc(x.partnerName)}</div>`).join('');
+    }
+
+    function renderLinkedEmployees(items) {
+      if (!items?.length) return `<div class="text-muted">Nincs kapcsolt személy.</div>`;
+      return items.map(x => `<div>${esc(x.employeeName)}</div>`).join('');
+    }
+
   });
 })();

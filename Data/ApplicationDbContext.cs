@@ -110,6 +110,7 @@ namespace Cloud9_2.Data
         public DbSet<EmailQueue> EmailQueues { get; set; }
         public DbSet<EmailLog> EmailLogs { get; set; }
         public DbSet<EmailTemplateVariable> EmailTemplateVariables { get; set; }
+        public DbSet<SiteType> SiteTypes { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
